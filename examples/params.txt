@@ -1,0 +1,23 @@
+# Reference species
+REFSPC=spc1
+
+# Output directory
+OUTPUTDIR=APCFs.300K
+#OUTPUTDIR=Out_RACA.anctest
+
+# Block resolution (bp)
+RESOLUTION=300000
+
+# Newick tree file
+# Refer to the sample file 'tree.txt'.
+TREEFILE=tree.txt
+
+# Minimum adjacency scores
+MINADJSCR=0.0001
+
+# Config and make files for syntenic fragment construction
+# Refer to the sample files 'config.SFs' and 'Makefile.SFs'.
+# You need to change settings in the sample configuration file (config.SFs) according to your data
+# You don't need to change anything in the Makefile.SFs.
+CONFIGSFSFILE=config.SFs
+MAKESFSFILE=Makefile.SFs
