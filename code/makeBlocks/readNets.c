@@ -78,6 +78,12 @@ printf("MINLEN=%d\n", MINLEN);
 
 			sprintf(netfile, "%s/%s/%s/net/%s.net", 
 								Netdir, Spename[0], Spename[ss], refchrom);
+			
+			if (access(netfile, F_OK) == -1) {
+                		fprintf(stderr, "- skip %s (file not exists)\n", netfile);
+                		continue;
+           		}
+			
 			fprintf(stderr, "- reading %s\n", netfile);
 			nf = ckopen(netfile, "r");
 
