@@ -25,7 +25,7 @@ int get_level(char *s) {
 
 int main (int argc, char* argv[]) {
 	FILE *nf, *of;
-	char buf[500], type[20], chrom[50], refchrom[50], netfile[100], outfile[100], netdir[100];
+	char buf[500], type[20], chrom[50], refchrom[50], netfile[500], outfile[500], netdir[500];
 	char gapchrom[MAXDEP][50], gaporient[MAXDEP];
 	int level, fbeg, flen, sbeg, slen, cid, i, j, rs, ss;
 	int fgapbeg[MAXDEP], fgapend[MAXDEP], sgapbeg[MAXDEP], sgapend[MAXDEP];
