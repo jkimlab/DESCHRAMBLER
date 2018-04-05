@@ -40,10 +40,10 @@ extern char Spename[MAXSPE][100];
 extern int Spetag[MAXSPE];	
 extern int Chrassmz;	 
 extern int Spechrassm[MAXSPE]; 
-extern char Treestr[200];	
-extern char Treestr2[200];
-extern char Netdir[200];	
-extern char Chaindir[200];	
+extern char Treestr[500];	
+extern char Treestr2[500];
+extern char Netdir[500];	
+extern char Chaindir[500];	
 extern int MINLEN;
 extern int HSACHR;
 
