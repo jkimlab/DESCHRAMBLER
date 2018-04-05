@@ -6,10 +6,10 @@ int Spetag[MAXSPE];
 int Chrassmz = 0;
 int Spechrassm[MAXSPE];
 char Spename[MAXSPE][100] = {"\0"};
-char Treestr[200] = "\0";
-char Treestr2[200] = "\0";
-char Netdir[200] = "\0";
-char Chaindir[200] = "\0";
+char Treestr[500] = "\0";
+char Treestr2[500] = "\0";
+char Netdir[500] = "\0";
+char Chaindir[500] = "\0";
 int MINLEN = 0;
 int HSACHR = 0;
 
