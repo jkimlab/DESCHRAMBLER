@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
 	FILE *jfp;
 	int i, j, count;
 	char buf[500];
-	struct seg_list *head[MAXSPE][MAXCHR];
+	struct seg_list ***head;
 	struct seg_list *pp, *p, *q, *sg;
 	struct block_list *blkhead, *bk;
 	int total[MAXSPE];
@@ -29,8 +29,10 @@ int main(int argc, char* argv[]) {
 	if (argc != 3)
 		fatal("arg: config.file block-list");
 
+	head = malloc(sizeof(struct seg_list**) * MAXSPE);
 	for (j = 0; j < MAXSPE; j++) {
 		total[j] = 0;
+		head[j] = malloc(sizeof(struct seg_list*) * MAXCHR);
 		for (i = 0; i < MAXCHR; i++)
 			head[j][i] = NULL;
 	}
@@ -140,5 +142,12 @@ int main(int argc, char* argv[]) {
 	
 	free_block_list(blkhead);
 
+	for (i = 0; i < MAXSPE; i++) {
+        	for (j = 0; j < MAXCHR; j++) {
+            		free(head[i][j]);
+        	}
+        	free(head[i]);
+   	 }
+	
 	return 0;
 }
