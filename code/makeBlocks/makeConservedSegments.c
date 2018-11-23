@@ -81,8 +81,8 @@ int main(int argc, char* argv[]) {
 	FILE *orthorder;
 	char buf[50000], spe[20];
 	struct block_list *blkhead, *blklast, *s;
-	int i, j, rs, num, total, k, terminal, count;
-	int perm[MAXSPE][MAXORDER], status[MAXSPE];
+	int i, j, rs, num, total, k, terminal, count, **perm;
+	int status[MAXSPE];
 	char *pt;
 	struct seg_list *p;
 	
@@ -97,8 +97,10 @@ int main(int argc, char* argv[]) {
 	
 	for (s = blkhead; s != NULL; s = s->next)
 		++total;
-					
+		
+	perm = malloc(sizeof(int*) * MAXSPE);
 	for (i = 0; i < Spesz; i++) {
+		perm[i] = malloc(sizeof(int) * MAXORDER);
 		if (Spetag[i] == 2)
 			continue;
 		for (j = 0; j < MAXORDER; j++)
@@ -180,6 +182,8 @@ int main(int argc, char* argv[]) {
 	}
 	
 	free_block_list(blkhead);
+	
+	for (i = 0; i < MAXSPE; i++) free(perm[i]);
 
 	return 0;
 }
