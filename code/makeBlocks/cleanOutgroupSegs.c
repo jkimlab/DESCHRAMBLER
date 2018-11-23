@@ -92,8 +92,6 @@ void remove_tiny_pieces(struct block_list *head) {
 	} 
 }
 
-static struct perm_array pmay[MAXSPE][MAXORDER*10];
-
 int main(int argc, char* argv[]) {
 	FILE *orthorder;
 	char buf[100000], spe[20];
@@ -102,12 +100,18 @@ int main(int argc, char* argv[]) {
 	int outorder[MAXSPE];
 	char *pt;
 	struct seg_list *p;
+	struct perm_array **pmay;
 	
 	if (argc != 4)
 		fatal("args: config.file conserved-segs outgroup-segs-orders");
 
 	get_spename(argv[1]);
 	blkhead = get_block_list(argv[2]);
+	
+	pmay = malloc(sizeof(struct perm_array*) * MAXSPE);
+    	for (i = 0; i < MAXSPE; i++) {
+        	pmay[i] = malloc(sizeof(struct perm_array) * (MAXORDER*10));
+    	}
 	
 	for (total = 0, bk = blkhead; bk != NULL; bk = bk->next)
 		++total;
@@ -193,6 +197,9 @@ int main(int argc, char* argv[]) {
 		printf("\n");
 	}
 	free_block_list(blkhead);
+	
+	for (i = 0; i < MAXSPE; i++) free(pmay[i]);
+    	free(pmay);
 	
 	return 0;
 }
