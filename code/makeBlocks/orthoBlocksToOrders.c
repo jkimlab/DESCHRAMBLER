@@ -91,13 +91,6 @@ int main(int argc, char* argv[]) {
 	}
 	
 	free_block_list(blkhead);
-
-	for (i = 0; i < MAXSPE; i++) {
-        	for (j = 0; j < MAXCHR; j++) {
-            		free(head[i][j]);
-        	}
-        	free(head[i]);
-    	}
-
+	
 	return 0;
 }
