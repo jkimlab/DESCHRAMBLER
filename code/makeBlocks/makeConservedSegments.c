@@ -182,8 +182,6 @@ int main(int argc, char* argv[]) {
 	}
 	
 	free_block_list(blkhead);
-	
-	for (i = 0; i < MAXSPE; i++) free(perm[i]);
 
 	return 0;
 }
