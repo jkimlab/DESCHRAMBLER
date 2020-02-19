@@ -2,6 +2,13 @@
                        DESCHRAMBLER 
           ======================================
 
+0. Warning
+----------
+    Please do not use a '.' symbol as a part of a chromosome name.
+    The '.' symbol is used as a delimiter to separate a species name and a chromosome name in output files. 
+    If the '.' symbol is already in a chromosome name in your sequence files, please convert it to other symbol,
+    like '_', before creating the chain/net files. 
+
 1. How to compile?
 ------------------
 
@@ -182,9 +189,6 @@
     (http://bioinfo.konkuk.ac.kr/DESCHRAMBLER). 
     
     
-5. Warning
-----------
-    Please do not use a '.' symbol as a part of a chromosome name.
-    The '.' symbol is used as a delimiter to separate a species name and a chromosome name in output files. 
+
 
 
