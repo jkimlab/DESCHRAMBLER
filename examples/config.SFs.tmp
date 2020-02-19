@@ -9,6 +9,7 @@
 # species-name tag1 tag2
 # tag1 (0: ref-species, 1: descendents, 2: outgroup)
 # tag2 (1: chromosome assembly, 0: others)
+# Warning for tag2: Use the value 1 only when a chromosome name starts with "chr". 
 >species
 spc1 0 1
 spc2 1 1 
