@@ -57,9 +57,9 @@ my $new_apcfid = 1;
 print "$topline\n";
 foreach my $len (sort {$b<=>$a} keys %apcf_lens) {
 	my $rar = $apcf_lens{$len};
-	print "# APCF $new_apcfid\n";
-	$new_apcfid++;
 	foreach my $apcfid (@$rar) {
+		print "# APCF $new_apcfid\n";
+		$new_apcfid++;
 		my $apcf_line = $apcf_lines{$apcfid};
 		print "$apcf_line\n";
 	}
