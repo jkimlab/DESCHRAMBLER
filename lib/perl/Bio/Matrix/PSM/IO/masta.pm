@@ -1,5 +1,4 @@
 #---------------------------------------------------------
-# $Id: masta.pm 16123 2009-09-17 12:57:27Z cjfields $
 
 =head1 NAME
 
@@ -63,7 +62,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Stefan Kirov
 
@@ -76,6 +75,7 @@ Email skirov@utk.edu
 
 # Let the code begin...
 package Bio::Matrix::PSM::IO::masta;
+$Bio::Matrix::PSM::IO::masta::VERSION = '1.7.8';
 use Bio::Matrix::PSM::SiteMatrix;
 use vars qw(@HEADER);
 use strict;
@@ -196,7 +196,7 @@ sub next_psm {
 
 	if ($line !~ /[^ACGTacgt]/g) {
 	    # This is a set of aligned sequences
-	    $self->throw("Mixing between types is not allowed or a parsing error occured\n") 
+	    $self->throw("Mixing between types is not allowed or a parsing error occurred\n")
 		if (($self->{_mtype} != 3) && ($mtype)) ;
 	    $self->throw("Bad sequence- different length: $line\n") 
 		if (($len) && ($len!=length($line)));
@@ -210,12 +210,12 @@ sub next_psm {
 	    $line=~s/[\s\t]+/\t/g;
 	    my @data=split(/[\s\t]+/,$line);
 	    if ($#data==3) {
-		$self->throw("Mixing between types is not allowed or a parsing error occured\n") if (($mtype)&&($self->{_mtype} !=1)) ;
+		$self->throw("Mixing between types is not allowed or a parsing error occurred\n") if (($mtype)&&($self->{_mtype} !=1)) ;
 		$self->{_mtype}=1;
 		$mtype=1;
 	    }
 	    else   {
-		$self->throw("Mixing between types is not allowedor a parsing error occured\n") if (($mtype)&&($self->{_mtype} !=2)) ;
+		$self->throw("Mixing between types is not allowedor a parsing error occurred\n") if (($mtype)&&($self->{_mtype} !=2)) ;
 		$self->{_mtype}=2;
 		$mtype=1;
 	    }

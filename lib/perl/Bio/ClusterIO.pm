@@ -1,4 +1,3 @@
-# $Id: ClusterIO.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::ClusterIO.pm
 #
@@ -125,7 +124,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Andrew Macgregor
 
@@ -186,6 +185,18 @@ sub new {
 	return "Bio::ClusterIO::$format"->new(@args);
     }
 }
+
+=head2 format
+
+ Title   : format
+ Usage   : $format = $stream->format()
+ Function: Get the cluster format
+ Returns : cluster format
+ Args    : none
+
+=cut
+
+# format() method inherited from Bio::Root::IO
 
 
 # _initialize is chained for all ClusterIO classes
@@ -313,7 +324,7 @@ sub TIEHANDLE {
 
 sub READLINE {
   my $self = shift;
-  return $self->{'seqio'}->next_seq() unless wantarray;
+  return $self->{'seqio'}->next_seq() || undef unless wantarray;
   my (@list, $obj);
   push @list, $obj while $obj = $self->{'seqio'}->next_seq();
   return @list;

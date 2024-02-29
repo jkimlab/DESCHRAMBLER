@@ -1,4 +1,3 @@
-# $Id: Population.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::PopGen::Population
 #
@@ -29,7 +28,7 @@ Bio::PopGen::Population - A population of individuals
   }
 
   for my $name ( $population->get_marker_names ) {
-    my $marker = $population->get_Marker();
+    my $marker = $population->get_Marker($name);
   }
 
   my $num_inds = $population->get_number_individuals;
@@ -78,7 +77,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 email or the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -245,7 +244,7 @@ sub set_Allele_Frequency {
 					     FREQUENCY
 					     FREQUENCIES
 					     )], @args);
-   if( defined $frequencies ) { # this supercedes the res
+   if( defined $frequencies ) { # this supersedes the res
        if( ref($frequencies) =~ /HASH/i ) {
 	   my ($markername,$alleles);
 	   while( ($markername,$alleles) = each %$frequencies ) {
@@ -438,11 +437,13 @@ sub get_Marker{
 	   my %alleles;
 	   my $count;
 	   for my $al ( map { $_->get_Alleles} @genotypes ) {
-	     $count++; 
-	     $alleles{$al}++
+	       next if($al eq '?');
+	       $count++; 
+	       $alleles{$al}++
 	   }
 	   foreach my $allele ( keys %alleles ) {
 	       $marker->add_Allele_Frequency($allele, $alleles{$allele}/$count);
+	       $marker->{_marker_coverage} = $count/2;
 	   }
        }
        $self->{'_allele_freqs'}->{$markername} = $marker;
@@ -487,7 +488,7 @@ sub get_number_individuals{
  Function: Fixes the number of individuals, call this with
            0 to unset.
            Only use this if you know what you are doing,
-           this is only relavent when you are just adding
+           this is only relevant when you are just adding
            allele frequency data for a population and want to
            calculate something like theta
  Returns : none

@@ -1,4 +1,3 @@
-# $Id: HMMERHSP.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Search::HSP::HMMERHSP
 #
@@ -19,7 +18,7 @@ Bio::Search::HSP::HMMERHSP - A HSP object for HMMER results
 =head1 SYNOPSIS
 
     use Bio::Search::HSP::HMMERHSP;
-    # us it just like a Bio::Search::HSP::GenericHSP object
+    # use it just like a Bio::Search::HSP::GenericHSP object
 
 =head1 DESCRIPTION
 
@@ -53,7 +52,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -66,9 +65,7 @@ Internal methods are usually preceded with a _
 
 =cut
 
-
 # Let the code begin...
-
 
 package Bio::Search::HSP::HMMERHSP;
 use strict;
@@ -83,35 +80,35 @@ use base qw(Bio::Search::HSP::GenericHSP);
  Returns : Bio::Search::HSP::HMMERHSP
  Args    :
 
-Plus Bio::Seach::HSP::GenericHSP methods
+Plus Bio::Search::HSP::GenericHSP methods
 
-           -algorithm => algorithm used (BLASTP, TBLASTX, FASTX, etc)
-           -evalue    => evalue
-           -pvalue    => pvalue
-           -bits      => bit value for HSP
-           -score     => score value for HSP (typically z-score but depends on
-					      analysis)
-           -hsp_length=> Length of the HSP (including gaps)
-           -identical => # of residues that that matched identically
-           -conserved => # of residues that matched conservatively 
-                           (only protein comparisions; 
-			    conserved == identical in nucleotide comparisons)
-           -hsp_gaps   => # of gaps in the HSP
-           -query_gaps => # of gaps in the query in the alignment
-           -hit_gaps   => # of gaps in the subject in the alignment    
-           -query_name  => HSP Query sequence name (if available)
-           -query_start => HSP Query start (in original query sequence coords)
-           -query_end   => HSP Query end (in original query sequence coords)
-           -hit_name    => HSP Hit sequence name (if available)
-           -hit_start   => HSP Hit start (in original hit sequence coords)
-           -hit_end     => HSP Hit end (in original hit sequence coords)
-           -hit_length  => total length of the hit sequence
-           -query_length=> total length of the query sequence
-           -query_seq   => query sequence portion of the HSP
-           -hit_seq     => hit sequence portion of the HSP
-           -homology_seq=> homology sequence for the HSP
-           -hit_frame   => hit frame (only if hit is translated protein)
-           -query_frame => query frame (only if query is translated protein)
+    -algorithm    => algorithm used (BLASTP, TBLASTX, FASTX, etc)
+    -evalue       => evalue
+    -pvalue       => pvalue
+    -bits         => bit value for HSP
+    -score        => score value for HSP (typically z-score but depends on
+					           analysis)
+    -hsp_length   => Length of the HSP (including gaps)
+    -identical    => # of residues that that matched identically
+    -conserved    => # of residues that matched conservatively 
+                     (only protein comparisons -
+                     conserved == identical in nucleotide comparisons)
+    -hsp_gaps     => # of gaps in the HSP
+    -query_gaps   => # of gaps in the query in the alignment
+    -hit_gaps     => # of gaps in the subject in the alignment    
+    -query_name   => HSP Query sequence name (if available)
+    -query_start  => HSP Query start (in original query sequence coords)
+    -query_end    => HSP Query end (in original query sequence coords)
+    -hit_name     => HSP Hit sequence name (if available)
+    -hit_start    => HSP Hit start (in original hit sequence coords)
+    -hit_end      => HSP Hit end (in original hit sequence coords)
+    -hit_length   => total length of the hit sequence
+    -query_length => total length of the query sequence
+    -query_seq    => query sequence portion of the HSP
+    -hit_seq      => hit sequence portion of the HSP
+    -homology_seq => homology sequence for the HSP
+    -hit_frame    => hit frame (only if hit is translated protein)
+    -query_frame  => query frame (only if query is translated protein)
 
 =cut
 
@@ -339,7 +336,8 @@ sub get_aln {
  Throws    : n/a.
  Comments  : 
 
-See Also   : L<Bio::Search::BlastUtils::collapse_nums()|Bio::Search::BlastUtils>, L<Bio::Search::Hit::HitI::seq_inds()|Bio::Search::Hit::HitI>
+See Also   : L<Bio::Search::BlastUtils::collapse_nums()|Bio::Search::BlastUtils>, 
+L<Bio::Search::Hit::HitI::seq_inds()|Bio::Search::Hit::HitI>
 
 =cut
 
@@ -395,5 +393,6 @@ These methods come from Bio::SeqFeature::SimilarityPair
 
 =cut
 
+sub bits { return 0; }
 
 1;

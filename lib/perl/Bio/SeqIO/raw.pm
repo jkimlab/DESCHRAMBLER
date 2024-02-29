@@ -2,7 +2,6 @@
 # PACKAGE : Bio::SeqIO::raw
 # AUTHOR  : Ewan Birney <birney@ebi.ac.uk>
 # CREATED : Feb 16 1999
-# REVISION: $Id: raw.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # Copyright (c) 1997-9 bioperl, Ewan Birney. All Rights Reserved.
 #           This module is free software; you can redistribute it and/or
@@ -67,7 +66,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.
 Bug reports can be submitted via the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHORS
 
@@ -89,11 +88,15 @@ Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::SeqIO::raw;
+$Bio::SeqIO::raw::VERSION = '1.7.8';
 use strict;
 
 use Bio::Seq::SeqFactory;
 
 use base qw(Bio::SeqIO);
+
+our %variant = ( 'multiple' => undef, # default
+                 'single'   => undef );
 
 sub _initialize {
     my($self,@args) = @_;
@@ -101,6 +104,7 @@ sub _initialize {
     my ($variant) = $self->_rearrange([qw(VARIANT)], @args);
     $variant ||= 'multiple';
     $self->variant($variant);
+    $self->{record_separator} = $variant eq 'single' ? undef : $/;
     if( ! defined $self->sequence_factory ) {
         $self->sequence_factory(Bio::Seq::SeqFactory->new
                     (-verbose => $self->verbose(),
@@ -174,7 +178,8 @@ sub write_qual {
     my @qual = ();
     foreach (@seq) {
         unless ($_->isa("Bio::Seq::Quality")){
-           warn("You cannot write raw qualities without supplying a Bio::Seq::Quality object! You passed a ", ref($_), "\n");
+           warn("You cannot write raw qualities without supplying a Bio::Seq::".
+                "Quality object! You passed a ".ref($_)."\n");
            next;
         }
         @qual = @{$_->qual};
@@ -203,18 +208,7 @@ sub write_qual {
 
 =cut
 
-sub variant {
-    my ($self, $var) = @_;
-    if (defined $var || !defined $self->{variant}) {
-        $var ||= 'multiple';
-        $var = lc $var;
-        $self->throw("Accepted raw format variants: 'single', 'multiple'") unless
-            $var eq 'single' || $var eq 'multiple';
-        $self->{record_separator} = $var eq 'single' ? undef : $/;
-        $self->{variant} = $var;
-    }
-    return $self->{variant};
-}
+# variant() method inherited from Bio::Root::IO
 
 # private method for testing record separator
 

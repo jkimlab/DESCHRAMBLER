@@ -1,4 +1,3 @@
-# $Id: bsml_sax.pm 16123 2009-09-17 12:57:27Z cjfields $
 # BioPerl module for Bio::SeqIO::bsml_sax
 #
 # Please direct questions and support issues to <bioperl-l@bioperl.org> 
@@ -68,7 +67,7 @@ with code and data examples if at all possible.
  the bugs and their resolution. Bug reports can be submitted via the
  web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -77,6 +76,7 @@ Email jason-at-bioperl-dot-org
 =cut
 
 package Bio::SeqIO::bsml_sax;
+$Bio::SeqIO::bsml_sax::VERSION = '1.7.8';
 use vars qw($Default_Source);
 use strict;
 

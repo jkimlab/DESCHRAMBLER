@@ -1,4 +1,3 @@
-# $Id: RichSeqI.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Seq::RichSeqI
 #
@@ -28,9 +27,10 @@ Bio::Seq::RichSeqI - interface for sequences from rich data sources, mostly data
 
 =head1 DESCRIPTION
 
-This interface extends the Bio::SeqI interface to give additional functionality
-to sequences with richer data sources, in particular from database sequences 
-(EMBL, GenBank and Swissprot).
+This interface extends the L<Bio::SeqI> interface to give additional
+functionality to sequences with richer data sources, in particular from database
+sequences (EMBL, GenBank and Swissprot). For a general implementation, please
+see the documentation for L<Bio::Seq::RichSeq>.
 
 =head1 FEEDBACK
 
@@ -61,7 +61,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Ewan Birney
 
@@ -69,7 +69,8 @@ Email birney@ebi.ac.uk
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods. Internal methods are usually preceded with a _
+The rest of the documentation details each of the object methods. Internal
+methods are usually preceded with a _
 
 =cut
 
@@ -78,6 +79,7 @@ The rest of the documentation details each of the object methods. Internal metho
 
 
 package Bio::Seq::RichSeqI;
+$Bio::Seq::RichSeqI::VERSION = '1.7.8';
 use strict;
 
 use base qw(Bio::SeqI);
@@ -112,7 +114,7 @@ sub get_secondary_accessions{
 
  Title   : division
  Usage   :
- Function: Get (and set, depending on the implementation) the divison for
+ Function: Get (and set, depending on the implementation) the division for
            a sequence.
 
            Examples from GenBank are PLN (plants), PRI (primates), etc.
@@ -207,7 +209,10 @@ sub get_dates{
  Example :
  Returns : a string
  Args    :
-
+ Note    : this differs from Bio::PrimarySeq version() in that this explicitly
+           refers to the sequence record version one would find in a typical
+           sequence file.  It is up to the implementation whether this is set
+           separately or falls back to the more generic Bio::Seq::version()
 
 =cut
 

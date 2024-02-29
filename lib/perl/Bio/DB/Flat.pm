@@ -1,5 +1,4 @@
 #
-# $Id: Flat.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::DB::Flat
 #
@@ -24,9 +23,9 @@ Bio::DB::Flat - Interface for indexed flat files
                            -write_flag => 1);
   $db->build_index('/usr/share/embl/primate.embl',
                    '/usr/share/embl/protists.embl');
-  $seq       = $db->get_Seq_by_id('BUM');
+  $seq       = $db->get_Seq_by_id('HSFOS');
   @sequences = $db->get_Seq_by_acc('DIV' => 'primate');
-  $raw       = $db->fetch_raw('BUM');
+  $raw       = $db->fetch_raw('HSFOS');
 
 =head1 DESCRIPTION
 
@@ -66,7 +65,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Lincoln Stein
 
@@ -82,7 +81,7 @@ methods are usually preceded with an "_" (underscore).
 
 # Let the code begin...
 package Bio::DB::Flat;
-
+$Bio::DB::Flat::VERSION = '1.7.8';
 use File::Spec;
 
 use base qw(Bio::Root::Root Bio::DB::RandomAccessI);
@@ -388,7 +387,7 @@ sub write_config {
   $self->write_flag or $self->throw("cannot write configuration file because write_flag is not set");
   my $path = $self->_config_path;
 
-  open (my $F,">$path") or $self->throw("open error on $path: $!");
+  open my $F, '>', $path or $self->throw("Could not write file '$path': $!");
 
   my $index_type = $self->indexing_scheme;
   print $F "index\t$index_type\n";
@@ -467,7 +466,7 @@ sub _read_config {
   my $path = $self->_config_path;
   return unless -e $path;
 
-  open (my $F,$path) or $self->throw("open error on $path: $!");
+  open my $F, '<', $path or $self->throw("Could not read file '$path': $!");
   my %config;
   while (<$F>) {
     chomp;

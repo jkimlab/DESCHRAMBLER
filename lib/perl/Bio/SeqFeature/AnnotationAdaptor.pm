@@ -1,8 +1,7 @@
-# $Id: AnnotationAdaptor.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::SeqFeature::AnnotationAdaptor
 #
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Hilmar Lapp <hlapp at gmx.net>
 #
@@ -18,7 +17,7 @@
 # Refer to the Perl Artistic License (see the license accompanying this
 # software package, or see http://www.perl.com/language/misc/Artistic.html)
 # for the terms under which you may use, modify, and redistribute this module.
-# 
+#
 # THIS PACKAGE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR IMPLIED
 # WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
 # MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
@@ -47,23 +46,23 @@ Bio::SeqFeature::AnnotationAdaptor - integrates SeqFeatureIs annotation
    $feat->annotation->add_Annotation("dbxref", $dblink);
 
    # to integrate tag/value annotation with AnnotationCollectionI
-   # annotation, use this adaptor, which also implements 
+   # annotation, use this adaptor, which also implements
    # Bio::AnnotationCollectionI
    my $anncoll = Bio::SeqFeature::AnnotationAdaptor->new(-feature => $feat);
 
-   # this will now return tag/value pairs as 
+   # this will now return tag/value pairs as
    # Bio::Annotation::SimpleValue objects
    my @anns = $anncoll->get_Annotations("mytag");
    # other added before annotation is available too
    my @dblinks = $anncoll->get_Annotations("dbxref");
 
-   # also supports transparent adding of tag/value pairs in 
+   # also supports transparent adding of tag/value pairs in
    # Bio::AnnotationI flavor
    my $tagval = Bio::Annotation::SimpleValue->new(-value => "some value",
                                                   -tagname => "some tag");
    $anncoll->add_Annotation($tagval);
    # this is now also available from the feature's tag/value system
-   my @vals = $feat->each_tag_value("some tag");
+   my @vals = $feat->get_tag_values("some tag");
 
 =head1 DESCRIPTION
 
@@ -108,15 +107,15 @@ the Bioperl mailing list.  Your participation is much appreciated.
   bioperl-l@bioperl.org                  - General discussion
   http://bioperl.org/wiki/Mailing_lists  - About the mailing lists
 
-=head2 Support 
+=head2 Support
 
 Please direct usage questions or support issues to the mailing list:
 
 I<bioperl-l@bioperl.org>
 
-rather than to the module maintainer directly. Many experienced and 
-reponsive experts will be able look at the problem and quickly 
-address it. Please include a thorough description of the problem 
+rather than to the module maintainer directly. Many experienced and
+reponsive experts will be able look at the problem and quickly
+address it. Please include a thorough description of the problem
 with code and data examples if at all possible.
 
 =head2 Reporting Bugs
@@ -125,7 +124,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Hilmar Lapp
 
@@ -143,6 +142,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::SeqFeature::AnnotationAdaptor;
+$Bio::SeqFeature::AnnotationAdaptor::VERSION = '1.7.8';
 use strict;
 
 # Object preamble - inherits from Bio::Root::Root
@@ -155,7 +155,7 @@ use base qw(Bio::Root::Root Bio::AnnotationCollectionI Bio::AnnotatableI);
 
  Title   : new
  Usage   : my $obj = Bio::SeqFeature::AnnotationAdaptor->new();
- Function: Builds a new Bio::SeqFeature::AnnotationAdaptor object 
+ Function: Builds a new Bio::SeqFeature::AnnotationAdaptor object
  Returns : an instance of Bio::SeqFeature::AnnotationAdaptor
  Args    : Named parameters
             -feature    the Bio::SeqFeatureI implementing object to adapt
@@ -193,7 +193,7 @@ sub new {
  Usage   : $obj->feature($newval)
  Function: Get/set the feature that this object adapts to an
            AnnotationCollectionI.
- Example : 
+ Example :
  Returns : value of feature (a Bio::SeqFeatureI compliant object)
  Args    : new value (a Bio::SeqFeatureI compliant object, optional)
 
@@ -218,7 +218,7 @@ sub feature{
 
            If requested before having been set, the value will default to the
            annotation object of the feature if it has one.
- Example : 
+ Example :
  Returns : value of annotation (a Bio::AnnotationCollectionI compliant object)
  Args    : new value (a Bio::AnnotationCollectionI compliant object, optional)
 
@@ -255,7 +255,7 @@ sub annotation{
 sub get_all_annotation_keys{
     my ($self) = @_;
     my @keys = ();
-    
+
     # get the tags from the feature object
     if ($self->feature()->can('get_all_tags')) {
         push(@keys, $self->feature()->get_all_tags());
@@ -323,7 +323,7 @@ sub get_Annotations{
 
  Title   : get_num_of_annotations
  Usage   : my $count = $collection->get_num_of_annotations()
- Function: Returns the count of all annotations stored in this collection 
+ Function: Returns the count of all annotations stored in this collection
  Returns : integer
  Args    : none
 
@@ -337,7 +337,7 @@ sub get_num_of_annotations{
   my $num_anns = 0;
 
   foreach ($self->feature()->all_tags()) {
-	$num_anns += scalar( $self->feature()->each_tag_value($_));
+	$num_anns += scalar( $self->feature()->get_tag_values($_));
   }
 
   # add from the annotation implementation if any
@@ -377,14 +377,14 @@ sub get_num_of_annotations{
  Returns : none
  Args    : annotation key ('disease', 'dblink', ...)
            object to store (must be Bio::AnnotationI compliant)
-           [optional] object archetype to map future storage of object 
+           [optional] object archetype to map future storage of object
                       of these types to
 
 =cut
 
 sub add_Annotation{
     my ($self,$key,$object,$archetype) = @_;
-   
+
     # if there's no key we use the tagname() as key
     if(ref($key) && $key->isa("Bio::AnnotationI") &&
        (! ($object && ref($object)))) {
@@ -395,15 +395,15 @@ sub add_Annotation{
 	$self->throw("Annotation object must have a tagname if key omitted")
 	    unless $key;
     }
-    
+
     if( !defined $object ) {
 	$self->throw("Must have at least key and object in add_Annotation");
     }
-    
+
     if( ! (ref($object) && $object->isa("Bio::AnnotationI")) ) {
-	$self->throw("object must be a Bio::AnnotationI compliant object, otherwise we wont add it!");
+	$self->throw("object must be a Bio::AnnotationI compliant object, otherwise we won't add it!");
     }
-    
+
     # ready to add -- if it's a SimpleValue, we add to the feature's tags,
     # otherwise we'll add to the annotation collection implementation
 
@@ -454,7 +454,7 @@ sub remove_Annotations{
     foreach my $key (@keys) {
 	# delete the tag if it is one
 	$self->feature->remove_tag($key) if $self->feature->has_tag($key);
-	# and delegate to the annotation implementation 
+	# and delegate to the annotation implementation
 	my $anncoll = $self->annotation();
 	if($anncoll && $anncoll->can('remove_Annotations')) {
 	    $anncoll->remove_Annotations($key);
@@ -482,9 +482,9 @@ sub remove_Annotations{
            Bio::Annotation::SimpleValue in terms of supported
            arguments at creation time, and the methods.
 
- Example : 
+ Example :
  Returns : A Bio::Factory::ObjectFactoryI compliant object
- Args    : new value (a Bio::Factory::ObjectFactoryI compliant object, 
+ Args    : new value (a Bio::Factory::ObjectFactoryI compliant object,
            optional)
 
 

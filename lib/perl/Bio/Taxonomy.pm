@@ -1,4 +1,3 @@
-# $Id: Taxonomy.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Taxonomy
 #
@@ -144,7 +143,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 CONTACT
 
@@ -390,7 +389,7 @@ sub add_node {
 
   Title   : binomial
   Usage   : my $val = $obj->binomial;
-  Function: returns the binomial name if this taxonomy reachs species level
+  Function: returns the binomial name if this taxonomy reaches species level
   Returns : the binomial name
             OR undef if taxonmy does not reach species level
   Args    : [No arguments]
@@ -411,7 +410,7 @@ sub binomial {
   Usage   : $node = $taxonomy->get_node('species');
   Function: get a Bio::Taxonomy::Node object according to rank name
   Returns : a Bio::Taxonomy::Node object or undef if null
-  Args    : a vaild rank name
+  Args    : a valid rank name
 
 =cut
 

@@ -1,8 +1,7 @@
-# $Id: Domain.pm 15635 2009-04-14 19:11:13Z cjfields $
 #
 # BioPerl module for Bio::Tools::HMMER::Domain
 #
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Ewan Birney <birney@sanger.ac.uk>
 #
@@ -14,7 +13,7 @@
 
 =head1 NAME
 
-Bio::Tools::HMMER::Domain - One particular domain hit from HMMER 
+Bio::Tools::HMMER::Domain - One particular domain hit from HMMER
 
 =head1 SYNOPSIS
 
@@ -54,7 +53,7 @@ use strict;
 
 use base qw(Bio::SeqFeature::FeaturePair);
 
-sub new { 
+sub new {
   my($class,@args) = @_;
   my $self = $class->SUPER::new(@args);
 
@@ -96,7 +95,7 @@ sub add_alignment_line {
  Function: reguritates the alignment lines as they were fed in.
            only useful realistically for printing.
  Example :
- Returns : 
+ Returns :
  Args    : None
 
 
@@ -113,10 +112,10 @@ sub each_alignment_line {
  Usage   : $domain->get_nse()
  Function: Provides a seqname/start-end format, useful
            for unique keys. nse stands for name-start-end
-           It is used alot in Pfam
+           It is used a lot in Pfam
  Example :
  Returns : A string
- Args    : Optional seperator 1 and seperator 2 (default / and -)
+ Args    : Optional separator 1 and separator 2 (default / and -)
 
 
 =cut
@@ -146,7 +145,7 @@ sub get_nse {
 #             should use $domain->start
 #   Function:
 #   Example :
-#   Returns : 
+#   Returns :
 #   Args    :
 
 #  =cut
@@ -154,7 +153,7 @@ sub get_nse {
 sub start_seq {
     my $self = shift;
     my $start = shift;
-    
+
     $self->warn("Using old domain->start_seq. Should use domain->start");
     return $self->start($start);
 }
@@ -166,7 +165,7 @@ sub start_seq {
 #             should use $domain->end
 #   Function:
 #   Example :
-#   Returns : 
+#   Returns :
 #   Args    :
 
 #  =cut
@@ -186,16 +185,16 @@ sub end_seq {
 #             for convience. Equivalent to $self->homol_SeqFeature->start
 #   Function:
 #   Example :
-#   Returns : 
+#   Returns :
 #   Args    :
 
 #  =cut
 
-sub start_hmm { 
-    my $self = shift; 
-    my $start = shift; 
+sub start_hmm {
+    my $self = shift;
+    my $start = shift;
     $self->warn("Using old domain->start_hmm. Should use domain->hstart");
-    return $self->hstart($start); 
+    return $self->hstart($start);
 }
 
 #  =head2 end_hmm
@@ -205,7 +204,7 @@ sub start_hmm {
 #             for convience. Equivalent to $self->homol_SeqFeature->start
 #   Function:
 #   Example :
-#   Returns : 
+#   Returns :
 #   Args    :
 
 #  =cut
@@ -215,7 +214,7 @@ sub end_hmm {
     my $end = shift;
 
     $self->warn("Using old domain->end_hmm. Should use domain->hend");
-    return $self->hend($end); 
+    return $self->hend($end);
 }
 
 =head2 hmmacc
@@ -225,7 +224,7 @@ sub end_hmm {
  Function: set get for HMM accession number. This is placed in the homol
            feature of the HMM
  Example :
- Returns : 
+ Returns :
  Args    :
 
 
@@ -247,7 +246,7 @@ sub hmmacc{
  Function: set get for HMM accession number. This is placed in the homol
            feature of the HMM
  Example :
- Returns : 
+ Returns :
  Args    :
 
 =cut
@@ -262,7 +261,7 @@ sub hmmname {
  Usage   :
  Function: backward compatibility. Same as score
  Example :
- Returns : 
+ Returns :
  Args    :
 
 =cut
@@ -277,7 +276,7 @@ sub bits{
  Usage   :
  Function: $domain->evalue($value);
  Example :
- Returns : 
+ Returns :
  Args    :
 
 =cut
@@ -292,7 +291,7 @@ sub evalue{
  Usage   :
  Function: $domain->seqbits($value);
  Example :
- Returns : 
+ Returns :
  Args    :
 
 =cut
@@ -304,10 +303,10 @@ sub seqbits {
 =head2 seq_range
 
  Title   : seq_range
- Usage   : 
+ Usage   :
  Function: Throws an exception to catch scripts which need to upgrade
  Example :
- Returns : 
+ Returns :
  Args    :
 
 =cut
@@ -324,7 +323,7 @@ sub seq_range{
  Usage   :
  Function: Throws an exception to catch scripts which need to upgrade
  Example :
- Returns : 
+ Returns :
  Args    :
 
 
@@ -338,6 +337,3 @@ sub hmm_range{
 
 1;  # says use was ok
 __END__
-
-
-

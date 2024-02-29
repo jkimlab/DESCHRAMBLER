@@ -1,4 +1,3 @@
-# $Id: RepeatMasker.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Tools::RepeatMasker
 #
@@ -56,7 +55,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Shawn Hoon
 
@@ -74,6 +73,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::Tools::RepeatMasker;
+$Bio::Tools::RepeatMasker::VERSION = '1.7.8';
 use strict;
 
 use Bio::SeqFeature::FeaturePair;
@@ -112,6 +112,7 @@ sub new {
 
 sub next_result {
     my ($self) = @_;
+    local $_;
     while (defined($_=$self->_readline()) ) {
 	if (/no repetitive sequences detected/) {
 	    $self->warn( "RepeatMasker didn't find any repetitive sequences\n");
@@ -133,7 +134,7 @@ sub next_result {
 		($hit_start, $hit_end) = @line[11, 12];
 		$strand = 1;
 	    } elsif ($strand eq 'C') {
-		($hit_start, $hit_end) = @line[12, 13];
+		($hit_end, $hit_start) = @line[12, 13];
 		$strand = -1;
 	    }
 	    my $rf = Bio::SeqFeature::Generic->new
@@ -144,7 +145,7 @@ sub next_result {
 		 -strand      => $strand,
 		 -source_tag  => 'RepeatMasker',
 		 -primary_tag => $repeat_class,
-		 -tag => { 'Target'=> [$repeat_name,$hit_start,$hit_end]},
+		 -tag => { 'Target'=> [$repeat_name, $hit_start, $hit_end]},
 		);
 
 	    my $rf2 = Bio::SeqFeature::Generic->new

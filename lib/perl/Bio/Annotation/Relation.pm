@@ -57,7 +57,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR  - Mira Han
 
@@ -74,6 +74,7 @@ The rest of the documentation details each of the object methods. Internal metho
 
 
 package Bio::Annotation::Relation;
+$Bio::Annotation::Relation::VERSION = '1.7.8';
 use strict;
 
 # Object preamble - inherits from Bio::Root::Root
@@ -256,6 +257,47 @@ sub to{
       $self->{'to'} = $to;
     }
     return $self->{'to'};
+}
+
+=head2 confidence
+
+ Title   : confidence
+ Usage   : $self->confidence($newval)
+ Function: Gives the confidence value.
+ Example :
+ Returns : value of confidence
+ Args    : newvalue (optional)
+
+
+=cut
+
+sub confidence{
+   my ($self,$value) = @_;
+   if( defined $value) {
+      $self->{'confidence'} = $value;
+    }
+    return $self->{'confidence'};
+
+}
+
+=head2 confidence_type
+
+ Title   : confidence_type
+ Usage   : $self->confidence_type($newtype)
+ Function: Gives the confidence type.
+ Example :
+ Returns : type of confidence
+ Args    : newtype (optional)
+
+
+=cut
+
+sub confidence_type{
+   my ($self,$type) = @_;
+   if( defined $type) {
+      $self->{'confidence_type'} = $type;
+    }
+    return $self->{'confidence_type'};
 }
 
 =head2 tag_term

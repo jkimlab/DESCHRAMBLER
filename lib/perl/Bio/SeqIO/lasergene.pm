@@ -2,7 +2,6 @@
 # PACKAGE : Bio::SeqIO::lasergene
 # AUTHOR  : Malcolm Cook <mec@stowers-institute.org>
 # CREATED : Feb 16 1999
-# REVISION: $Id: lasergene.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # _History_
 #
@@ -26,7 +25,7 @@ Do not use this module directly.  Use it via the L<Bio::SeqIO> class.
 
 This object can product Bio::Seq::RichSeq objects from Lasergene sequence files.
 
-IT DOES NOT PARSE ANY ATTIBUTE VALUE PAIRS IN THE HEADER OF THE LASERGENE FORMATTED FILE.
+IT DOES NOT PARSE ANY ATTRIBUTE VALUE PAIRS IN THE HEADER OF THE LASERGENE FORMATTED FILE.
 
 IT DOES NOT WRITE THESE FILES EITHER.
 
@@ -62,7 +61,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.bioperl.org
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHORS
 

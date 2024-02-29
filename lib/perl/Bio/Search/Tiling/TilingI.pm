@@ -1,4 +1,3 @@
-# $Id: TilingI.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Search::Tiling::TilingI
 #
@@ -20,7 +19,7 @@ Bio::Search::Tiling::TilingI - Abstract interface for an HSP tiling module
 
 Not used directly. Useful POD here for developers, however.
 
-The interface is desgined to make the following code conversion as
+The interface is designed to make the following code conversion as
 simple as possible:
 
 From:
@@ -79,7 +78,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Mark A. Jensen
 
@@ -95,6 +94,7 @@ Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::Search::Tiling::TilingI;
+$Bio::Search::Tiling::TilingI::VERSION = '1.7.8';
 use strict;
 use warnings;
 

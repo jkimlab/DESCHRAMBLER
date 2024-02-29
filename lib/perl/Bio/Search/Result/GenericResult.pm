@@ -1,4 +1,3 @@
-# $Id: GenericResult.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Search::Result::GenericResult
 #
@@ -114,7 +113,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich and Steve Chervitz
 
@@ -137,6 +136,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::Search::Result::GenericResult;
+$Bio::Search::Result::GenericResult::VERSION = '1.7.8';
 use strict;
 
 use Bio::Search::GenericStatistics;
@@ -167,6 +167,7 @@ use base qw(Bio::Root::Root Bio::Search::Result::ResultI);
            -algorithm         => program name (blastx)
            -algorithm_version   => version of the algorithm (2.1.2)
            -algorithm_reference => literature reference string for this algorithm
+           -rid               => value of the BLAST Request ID (eg. RID: ZABJ4EA7014)
            -hit_factory       => Bio::Factory::ObjectFactoryI capable of making
                                  Bio::Search::Hit::HitI objects
 
@@ -185,7 +186,7 @@ sub new {
   my ($qname,$qacc,$qdesc,$qlen, $qgi,
       $dbname,$dblet,$dbent,$params,   
       $stats, $hits, $algo, $algo_v,
-      $prog_ref, $algo_r, $hit_factory) = $self->_rearrange([qw(QUERY_NAME
+      $prog_ref, $algo_r, $rid, $hit_factory) = $self->_rearrange([qw(QUERY_NAME
                                                   QUERY_ACCESSION
                                                   QUERY_DESCRIPTION
                                                   QUERY_LENGTH
@@ -200,6 +201,7 @@ sub new {
                                                   ALGORITHM_VERSION
                                                   PROGRAM_REFERENCE
                                                   ALGORITHM_REFERENCE
+                                                  RID
                                                   HIT_FACTORY
                                                  )],@args);
 
@@ -207,6 +209,8 @@ sub new {
   defined $algo   && $self->algorithm($algo);
   defined $algo_v && $self->algorithm_version($algo_v);
   defined $algo_r && $self->algorithm_reference($algo_r);
+
+  defined $rid && $self->rid($rid);
 
   defined $qname && $self->query_name($qname);
   defined $qacc  && $self->query_accession($qacc);
@@ -743,7 +747,28 @@ sub algorithm_reference{
 
 sub program_reference { shift->algorithm_reference(@_); }
 
+=head2 rid
 
+ Title   : rid
+ Usage   : $obj->rid($newval)
+ Function:
+ Returns : value of the BLAST Request ID (eg. RID: ZABJ4EA7014)
+ Args    : newvalue (optional)
+ Comments: The default implementation in ResultI returns an empty string
+           rather than throwing a NotImplemented exception, since
+           the RID may not always be available and is not critical.
+           See: (1) https://www.ncbi.nlm.nih.gov/Class/MLACourse/Modules/BLAST/rid.html
+                (2) https://www.ncbi.nlm.nih.gov/staff/tao/URLAPI/new/node63.html
+=cut
+
+sub rid{
+    my ($self,$value) = @_;
+    if( defined $value) {
+	   $self->{'rid'} = $value;
+	}
+	return $self->{'rid'};
+}
+	
 =head2 no_hits_found
 
 See documentation in L<Bio::Search::Result::ResultI::no_hits_found()|Bio::Search::Result::ResultI>

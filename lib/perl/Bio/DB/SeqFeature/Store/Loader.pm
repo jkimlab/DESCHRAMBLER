@@ -1,6 +1,5 @@
 package Bio::DB::SeqFeature::Store::Loader;
 
-# $Id$
 
 =head1 NAME
 
@@ -53,7 +52,7 @@ pairs as described in this table:
  Name               Value
  ----               -----
 
- -store             A writeable Bio::DB::SeqFeature::Store database handle.
+ -store             A writable Bio::DB::SeqFeature::Store database handle.
 
  -seqfeature_class  The name of the type of Bio::SeqFeatureI object to create
                       and store in the database (Bio::DB::SeqFeature by default)
@@ -74,6 +73,9 @@ pairs as described in this table:
                        coordinates into a list of ($newref,[$newstart1,$newend1]...)
 
  -index_subfeatures Indicate true if subfeatures should be indexed. Default is true.
+
+ -summary_stats     Rebuild summary stats at the end of loading (not incremental,
+                     so takes a long time)
 
 When you call new(), a connection to a Bio::DB::SeqFeature::Store
 database should already have been established and the database
@@ -111,7 +113,7 @@ default.
 sub new {
   my $self = shift;
   my ($store,$seqfeature_class,$tmpdir,$verbose,$fast,
-      $seq_chunk_size,$coordinate_mapper,$index_subfeatures) = 
+      $seq_chunk_size,$coordinate_mapper,$index_subfeatures,$summary_stats,$no_close_fasta) = 
       rearrange(['STORE',
 		 ['SF_CLASS','SEQFEATURE_CLASS'],
 		 ['TMP','TMPDIR'],
@@ -120,7 +122,10 @@ sub new {
 		 'CHUNK_SIZE',
 		 'MAP_COORDS',
 		 'INDEX_SUBFEATURES',
+		 'SUMMARY_STATS',
+		 'NO_CLOSE_FASTA',
 		],@_);
+
 
   $seqfeature_class ||= $self->default_seqfeature_class;
   eval "require $seqfeature_class" unless $seqfeature_class->can('new');
@@ -144,18 +149,25 @@ END
   # try to bring in highres time() function
   eval "require Time::HiRes";
 
-  $tmpdir ||= File::Spec->tmpdir();
+  $tmpdir      ||= File::Spec->tmpdir();
 
-  my $tmp_store = Bio::DB::SeqFeature::Store->new(-adaptor  => 'berkeleydb',
-						  -temporary=> 1,
-						  -dsn      => tempdir(
-						       'BioDBSeqFeature_XXXXXXX',
-						       DIR=>$tmpdir,
-						       CLEANUP=>1
-						  ),
-						  -cache    => 1,
-						  -write    => 1)
-      unless $normalized;
+  my ($tmp_store,$temp_load);
+  unless ($normalized) {
+
+      # remember the temporary directory in order to delete it on exit
+      $temp_load = tempdir(
+	  'BioDBSeqFeature_XXXXXXX',
+	  DIR=>$tmpdir,
+	  CLEANUP=>1
+	  );
+
+      $tmp_store = Bio::DB::SeqFeature::Store->new(-adaptor  => 'berkeleydb',
+						      -temporary=> 1,
+						      -dsn      => $temp_load,
+						      -cache    => 1,
+						      -write    => 1)
+	  unless $normalized;
+  }
 
   $index_subfeatures = 1 unless defined $index_subfeatures;
 
@@ -168,10 +180,13 @@ END
 		verbose          => $verbose,
 		load_data        => {},
 		tmpdir           => $tmpdir,
+		temp_load        => $temp_load,
 		subfeatures_normalized => $normalized,
 		subfeatures_in_table   => $in_table,
 		coordinate_mapper      => $coordinate_mapper,
 		index_subfeatures      => $index_subfeatures,
+		summary_stats          => $summary_stats,
+		no_close_fasta         => $no_close_fasta,
 	       },ref($self) || $self;
 }
 
@@ -186,6 +201,14 @@ sub index_subfeatures {
     my $self = shift;
     my $d    = $self->{index_subfeatures};
     $self->{index_subfeatures} = shift if @_;
+    $d;
+}
+
+
+sub summary_stats {
+    my $self = shift;
+    my $d    = $self->{summary_stats};
+    $self->{summary_stats} = shift if @_;
     $d;
 }
 
@@ -222,6 +245,14 @@ sub load {
     $count += $self->load_fh($fh);
     $self->msg(sprintf "load time: %5.2fs\n",$self->time()-$start);
   }
+  
+  if ($self->summary_stats) {
+      $self->msg("Building summary statistics for coverage graphs...");
+      my $start = $self->time();
+      $self->build_summary;
+      $self->msg(sprintf "coverage graph build time: %5.2fs\n",$self->time()-$start);
+  }
+  $self->msg(sprintf "total load time: %5.2fs\n",$self->time()-$start);
   $count;
 }
 
@@ -253,7 +284,7 @@ sub verbose        { shift->{verbose}          }
 
 =head2 Internal Methods
 
-The following methods are used internally and may be overidden by
+The following methods are used internally and may be overridden by
 subclasses.
 
 =over 4
@@ -365,11 +396,25 @@ sub finish_load {
     $self->{load_data}{start_time} = $self->time();
     $self->store->finish_bulk_update;
   }
-  eval {$self->store->commit};
   $self->msg(sprintf "%5.2fs\n",$self->time()-$self->{load_data}{start_time});
+  eval {$self->store->commit};
 
   # don't delete load data so that caller can ask for the loaded IDs
   # $self->delete_load_data;
+}
+
+=item build_summary
+
+  $loader->build_summary
+
+Call this to rebuild the summary coverage statistics. This is done automatically
+if new() was passed a true value for -summary_stats at create time.
+
+=cut
+
+sub build_summary {
+    my $self = shift;
+    $self->store->build_summary_statistics;
 }
 
 =item do_load
@@ -675,6 +720,35 @@ sub unescape {
     return $todecode;
 }
 
+sub DESTROY {
+    my $self = shift;
+    # Close filehandles, so temporal files can be properly deleted
+    my $store = $self->store;
+    if (   $store->isa('Bio::DB::SeqFeature::Store::memory')
+	or $store->isa('Bio::DB::SeqFeature::Store::berkeleydb3')
+	) {
+      $store->private_fasta_file->close;
+
+      if ($store->{fasta_db} && !$self->{no_close_fasta}) {
+	while (my ($file, $fh) = each %{ $store->{fasta_db}->{fhcache} }) {
+	  $fh->close;
+	}
+	$store->{fasta_db}->_close_index($store->{fasta_db}->{offsets});
+      }
+    }
+    elsif ($store->isa('Bio::DB::SeqFeature::Store::DBI::SQLite')) {
+      if (%DBI::installed_drh) {
+	DBI->disconnect_all;
+	%DBI::installed_drh = ();
+      }
+      undef $store->{dbh};
+    }
+
+    if (my $ld = $self->{temp_load}) {
+	unlink $ld;
+    }
+}
+
 1;
 __END__
 
@@ -705,5 +779,3 @@ This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
-
-

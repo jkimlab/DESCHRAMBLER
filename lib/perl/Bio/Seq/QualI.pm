@@ -1,4 +1,3 @@
-# $Id: QualI.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Seq::QualI
 #
@@ -89,7 +88,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Chad Matsalla
 
@@ -110,6 +109,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::Seq::QualI;
+$Bio::Seq::QualI::VERSION = '1.7.8';
 use strict;
 use Carp;
 
@@ -212,7 +212,7 @@ sub display_id {
 	called the accession_number. For sequences from established 
 	databases, the implementors should try to use the correct 
 	accession number. Notice that primary_id() provides the unique id 
-	for the implemetation, allowing multiple objects to have the same
+	for the implementation, allowing multiple objects to have the same
 	accession number in a particular implementation. For sequences
 	with no accession number, this method should return "unknown".
  Returns : A string.
@@ -241,7 +241,7 @@ sub accession_number {
 	   $unique_implementation_key = $obj->primary_id($new_prim_id);
  Function: Returns the unique id for this object in this implementation.
 	This allows implementations to manage their own object ids in a
-	way the implementaiton can control clients can expect one id to
+	way the implementation can control clients can expect one id to
 	map to one object. For sequences with no accession number, this
 	method should return a stringified memory location.
  Returns : A string
@@ -332,8 +332,8 @@ are encouraged to override these methods
  Usage   : @rev = @{$qual->revcom()};
  Function: Produces a new Bio::Seq::QualI implementing object which
 	is reversed from the original quality array.
-	The id is the same id as the orginal sequence, and the accession number
-	is also indentical. If someone wants to track that this sequence has
+	The id is the same id as the original sequence, and the accession number
+	is also identical. If someone wants to track that this sequence has
 	been reversed, it needs to define its own extensions
 
 	To do an inplace edit of an object you can go:
@@ -544,37 +544,5 @@ sub _attempt_to_load_Seq{
    }
 
 }
-
-
-=head2 qualtype()
-
- Title   : qualtype()
- Usage   : if( $obj->qualtype eq 'phd' ) { /Do Something/ }
- Function: At this time, this function is not used for 
-	Bio::Seq::PrimaryQual objects. In fact, now it is a month later and
-	I just completed the Bio::Seq::SeqWithQuality object and this is
-	definitely deprecated.
- Returns : Nothing. (not implemented)
- Args    : none
- Status  : Virtual
-
-
-=cut
-
-sub qualtype {
-   my ($self,@args) = @_;
-   if( $self->can('throw') ) {
-	# $self->throw("Bio::Seq::QualI definition of qual - implementing class did not provide this method");
-       $self->throw("qualtypetype is not used with quality objects.");
-   } else {
-	# confess("Bio::Seq::QualI definition of qual - implementing class did not provide this method");
-	confess("qualtype is not used with quality objects.");
-   }
-
-
-}
-
-
-
 
 1;

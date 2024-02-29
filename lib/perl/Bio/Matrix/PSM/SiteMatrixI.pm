@@ -1,4 +1,3 @@
-# $Id: SiteMatrixI.pm 16123 2009-09-17 12:57:27Z cjfields $
 
 =head1 NAME
 
@@ -31,7 +30,7 @@ Throws an exception if: You mix as an input array and string (for example A
 matrix is given as array, C - as string). The position vector is (0,0,0,0). One
 of the probability vectors is shorter than the rest.
 
-Summary of the methods I use most frequently (details bellow):
+Summary of the methods I use most frequently (details below):
 
   iupac - return IUPAC compliant consensus as a string
   score - Returns the score as a real number
@@ -97,7 +96,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Stefan Kirov
 
@@ -111,7 +110,7 @@ Email skirov@utk.edu
 # Let the code begin...
 
 package Bio::Matrix::PSM::SiteMatrixI;
-
+$Bio::Matrix::PSM::SiteMatrixI::VERSION = '1.7.8';
 # use strict;
 use base qw(Bio::Root::RootI);
 
@@ -470,7 +469,7 @@ sub _uncompress_string {
  Usage   :
  Function:  A method to provide a compressed frequency vector. It uses one byte to
  			code the frequence for one of the probability vectors for one position.
-			Useful for relational database. Improvment of the previous 0..a coding.
+			Useful for relational database. Improvement of the previous 0..a coding.
  Throws  :
  Example :  my $strA=$self->get_compressed_freq('A');
  Returns :  String

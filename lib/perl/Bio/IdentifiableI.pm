@@ -1,4 +1,3 @@
-# $Id: IdentifiableI.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # This module is licensed under the same terms as Perl itself. You use,
 # modify, and redistribute it under the terms of the Perl Artistic License.
@@ -82,7 +81,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Ewan Birney
 
@@ -91,6 +90,7 @@ Email birney@ebi.ac.uk
 =cut
 
 package Bio::IdentifiableI;
+$Bio::IdentifiableI::VERSION = '1.7.8';
 use strict;
 
 

@@ -1,4 +1,3 @@
-# $Id: GenBank.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::DB::Query::GenBank.pm
 #
@@ -80,7 +79,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Lincoln Stein
 
@@ -99,11 +98,17 @@ preceded with a _
 package Bio::DB::Query::GenBank;
 use strict;
 use URI::Escape 'uri_unescape';
+use Bio::DB::NCBIHelper;
 
-use constant EPOST               => 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/epost.fcgi';
-use constant ESEARCH             => 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi';
-use constant DEFAULT_DB          => 'protein';
-use constant MAXENTRY            => 100;
+
+#use constant EPOST       => $Bio::DB::NCBIHelper::HOSTBASE . '/entrez/eutils/epost.fcgi';
+#use constant ESEARCH     => $Bio::DB::NCBIHelper::HOSTBASE . '/entrez/eutils/esearch.fcgi';
+# the reference to the our variable of the $Bio::DB::NCBIHelper::HOSTBASE doesn't seem to work in 
+# the constant definition in perl 5.10.1 or 5.16.3
+use constant EPOST       => '/entrez/eutils/epost.fcgi';
+use constant ESEARCH     => '/entrez/eutils/esearch.fcgi';
+use constant DEFAULT_DB  => 'protein';
+use constant MAXENTRY    => 100;
 
 use vars qw(@ATTRIBUTES);
 
@@ -173,7 +178,7 @@ receive when you generate a SeqIO stream from the query.
 
   An up to date list of database names supported by NCBI eUtils is
   always available at:
-  http://eutils.ncbi.nlm.nih.gov/entrez/eutils/einfo.fcgi?
+  https://eutils.ncbi.nlm.nih.gov/entrez/eutils/einfo.fcgi?
 
   However, note that not all of these databases return datatypes that
   are parsable by Bio::DB::GenBank
@@ -237,9 +242,9 @@ sub _request_parameters {
   my @params = map {eval("\$self->$_") ? ($_ => eval("\$self->$_")) : () } @ATTRIBUTES;
   push @params,('usehistory'=>'y','tool'=>'bioperl');
   $method = 'get';
-  $base   = ESEARCH;
+  
+  $base   = $Bio::DB::NCBIHelper::HOSTBASE.ESEARCH; # this seems to need to be dynamic
   push @params,('term'   => $self->query);
-
   # Providing 'retmax' limits queries to 500 sequences  ?? I don't think so LS
   push @params,('retmax' => $self->maxids || MAXENTRY);
 

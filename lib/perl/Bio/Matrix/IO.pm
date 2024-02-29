@@ -1,4 +1,3 @@
-# $Id: IO.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Matrix::IO
 #
@@ -20,7 +19,7 @@ Bio::Matrix::IO - A factory for Matrix parsing
 
   use Bio::Matrix::IO;
   my $parser = Bio::Matrix::IO->new(-format => 'scoring',
-                                   -file   => 'BLOSUMN50');
+                                    -file   => 'BLOSUMN50');
 
   my $matrix = $parser->next_matrix;
 
@@ -59,7 +58,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -77,6 +76,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::Matrix::IO;
+$Bio::Matrix::IO::VERSION = '1.7.8';
 use strict;
 
 
@@ -158,6 +158,19 @@ sub fh {
   tie $$s,$class,$self;
   return $s;
 }
+
+
+=head2 format
+
+ Title   : format
+ Usage   : $format = $obj->format()
+ Function: Get the matrix format
+ Returns : matrix format
+ Args    : none
+
+=cut
+
+# format() method inherited from Bio::Root::IO
 
 
 =head2 next_matrix
@@ -256,7 +269,7 @@ sub TIEHANDLE {
 
 sub READLINE {
   my $self = shift;
-  return $self->{'matrixio'}->next_tree() unless wantarray;
+  return $self->{'matrixio'}->next_tree() || undef unless wantarray;
   my (@list,$obj);
   push @list,$obj  while $obj = $self->{'treeio'}->next_tree();
   return @list;

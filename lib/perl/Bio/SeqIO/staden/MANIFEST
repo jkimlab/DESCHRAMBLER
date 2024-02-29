@@ -1,0 +1,15 @@
+CHANGES
+Makefile.PL
+MANIFEST			This list of files
+META.yml			Module meta-data (added by MakeMaker)
+read.pm
+read.xs
+README
+t/staden/data/readtest.abi
+t/staden/data/readtest.ctf
+t/staden/data/readtest.exp
+t/staden/data/readtest.pln
+t/staden/data/readtest.ztr
+t/staden/data/readtestabi.fa
+t/staden/data/readtestref.scf
+t/staden_read.t

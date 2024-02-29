@@ -42,7 +42,7 @@ individual residues of a pdb structure file.
 STRIDE is available here:
 http://webclu.bio.wzw.tum.de/stride/
 
-Methods are then available for extracting all of the infomation
+Methods are then available for extracting all of the information
 present within the output or convenient subsets of it.
 
 Although they are very similar in function, DSSP and STRIDE differ
@@ -60,7 +60,7 @@ The methods are roughly divided into 3 sections:
       etc.).  These methods do not require an argument. 
   2.  Residue specific features ( amino acid, secondary structure,
       solvent exposed surface area, etc. ).  These methods do require an
-      arguement.  The argument is supposed to uniquely identify a
+      argument.  The argument is supposed to uniquely identify a
       residue described within the structure.  It can be of any of the
       following forms:
       ('#A:B') or ( #, 'A', 'B' )
@@ -119,7 +119,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Ed Green
 

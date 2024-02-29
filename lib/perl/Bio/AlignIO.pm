@@ -1,4 +1,3 @@
-# $Id: AlignIO.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::AlignIO
 #
@@ -37,10 +36,10 @@ Bio::AlignIO - Handler for AlignIO Formats
 
     use Bio::AlignIO;
 
-    open MYIN,"testaln.fasta";
+    open MYIN, '<', 'testaln.fasta' or die "Could not read file 'testaln.fasta': $!\n";
     $in  = Bio::AlignIO->newFh(-fh     => \*MYIN,
                                -format => 'fasta');
-    open my $MYOUT, '>', 'testaln.pfam';
+    open my $MYOUT, '>', 'testaln.pfam' or die "Could not write file 'testaln.pfam': $!\n";
     $out = Bio::AlignIO->newFh(-fh     =>  $MYOUT,
                                -format => 'pfam');
 
@@ -255,7 +254,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Peter Schattner
 
@@ -275,7 +274,7 @@ methods. Internal methods are usually preceded with a _
 # 'Let the code begin...
 
 package Bio::AlignIO;
-
+$Bio::AlignIO::VERSION = '1.7.8';
 use strict;
 
 use Bio::Seq;
@@ -376,13 +375,29 @@ sub fh {
   return $s;
 }
 
+
+=head2 format
+
+ Title   : format
+ Usage   : $format = $stream->format()
+ Function: Get the alignment format
+ Returns : alignment format
+ Args    : none
+
+=cut
+
+# format() method inherited from Bio::Root::IO
+
+
 # _initialize is where the heavy stuff will happen when new is called
 
 sub _initialize {
   my($self,@args) = @_;
-  my ($flat) = $self->_rearrange([qw(DISPLAYNAME_FLAT)],
+  my ($flat,$alphabet,$width) = $self->_rearrange([qw(DISPLAYNAME_FLAT ALPHABET WIDTH)],
 				 @args);
   $self->force_displayname_flat($flat) if defined $flat;
+  $self->alphabet($alphabet);
+  $self->width($width) if defined $width;
   $self->_initialize_io(@args);
   1;
 }
@@ -492,7 +507,7 @@ sub TIEHANDLE {
 
 sub READLINE {
   my $self = shift;
-  return $self->{'alignio'}->next_aln() unless wantarray;
+  return $self->{'alignio'}->next_aln() || undef unless wantarray;
   my (@list,$obj);
   push @list,$obj  while $obj = $self->{'alignio'}->next_aln();
   return @list;
@@ -521,5 +536,28 @@ sub force_displayname_flat{
     return $self->{'_force_displayname_flat'} = shift if @_;
     return $self->{'_force_displayname_flat'} || 0;
 }
+
+=head2 alphabet
+
+ Title   : alphabet
+ Usage   : $obj->alphabet($newval)
+ Function: Get/Set alphabet for purpose of passing to Bio::LocatableSeq creation
+ Example : $obj->alphabet('dna');
+ Returns : value of alphabet (a scalar)
+ Args    : on set, new value (a scalar or undef, optional)
+
+
+=cut
+
+sub alphabet {
+    my $self = shift;
+    my $value = shift;
+    if ( defined $value ) {
+        $self->throw("Invalid alphabet $value") unless $value eq 'rna' || $value eq 'protein' || $value eq 'dna';
+        $self->{'_alphabet'} = $value;
+    }
+    return $self->{'_alphabet'};
+}
+
 
 1;

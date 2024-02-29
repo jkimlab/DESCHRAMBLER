@@ -1,4 +1,3 @@
-# $Id: Enzyme.pm 16123 2009-09-17 12:57:27Z cjfields $
 #------------------------------------------------------------------
 #
 # BioPerl module Bio::Restriction::Enzyme
@@ -233,7 +232,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -528,11 +527,13 @@ ACCTGC(4/8) is at 6+4 i.e. 10.
 =cut
 
 sub site {
-    my ($self, $site) = @_;
-    if ( $site ) {
+    my ( $self, $site ) = @_;
+    
+    if ($site) {
 
         $self->throw("Unrecognized characters in site: [$site]")
             if $site =~ /[^ATGCMRWSYKVHDBN\^]/i;
+
         # we may have to redefine this if there is a ^ in the sequence
 
         # first, check and see if we have a cut site in the sequence
@@ -540,22 +541,23 @@ sub site {
 
         $self->{'_site'} = $site;
 
-        my ($first, $second) = $site =~ /(.*)\^(.*)/;
+        my ( $first, $second ) = $site =~ /(.*)\^(.*)/;
         $site = "$1$2" if defined $first;
         $self->{'_site'} = $site;
 
-
         # now set the recognition site as a new Bio::PrimarySeq object
         # we need it before calling cut() and complementary_cut()
-        $self->{_seq} = Bio::PrimarySeq->new(-id=>$self->name,
-                                            -seq=>$site,
-                                            -verbose=>$self->verbose,
-                                            -alphabet=>'dna');
+        $self->{_seq} = Bio::PrimarySeq->new(
+            -id       => $self->name,
+            -seq      => $site,
+            -verbose  => $self->verbose,
+            -alphabet => 'dna'
+        );
 
-        if (defined $first) {
-            $self->cut(length $first);
-            $self->complementary_cut(length $second);
-	    $self->revcom_site();
+        if ( defined $first ) {
+            $self->cut( length $first );
+            $self->complementary_cut( length $second );
+            $self->revcom_site();
         }
     }
     return $self->{'_site'};
@@ -644,7 +646,7 @@ sub revcom_site {
 
 Note that the common notation ACCTGC(4/8) means that the forward
 strand cut is four nucleotides after the END of the recognition
-site. The forwad cut in the coordinates used here in Acc36I
+site. The forward cut in the coordinates used here in Acc36I
 ACCTGC(4/8) is at 6+4 i.e. 10.
 
 Note that REBASE uses notation where cuts within symmetic sites are

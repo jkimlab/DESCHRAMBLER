@@ -1,4 +1,3 @@
-# $Id: locuslink.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::SeqIO::locuslink
 #
@@ -81,7 +80,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via 
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Keith Ching
 
@@ -99,7 +98,7 @@ Internal methods are usually preceded with a _
 =cut
 
 package Bio::SeqIO::locuslink;
-
+$Bio::SeqIO::locuslink::VERSION = '1.7.8';
 use strict;
 
 use Bio::Seq::SeqFactory;

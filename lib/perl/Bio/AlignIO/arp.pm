@@ -1,4 +1,3 @@
-# $Id: arp.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::AlignIO::arp
 #
@@ -78,7 +77,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHORS
 
@@ -94,6 +93,7 @@ methods. Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::AlignIO::arp;
+$Bio::AlignIO::arp::VERSION = '1.7.8';
 use strict;
 use base qw(Bio::AlignIO);
 
@@ -133,7 +133,7 @@ sub next_aln {
                 $self->{state}->{in_curly_block} = 1;
                 next SCAN;
             }
-            $cur_data =~ s{["']}{}g;
+            $cur_data =~ s{[\"\']}{}g;
             $cur_data =~ s{\s*$}{};
             # per alignment annotation data (i.e. Sample Blocks) or
             # annotation data retained for each alignment?
@@ -209,9 +209,10 @@ sub _process_sequence {
     return unless defined $raw;
     $raw =~ s{(?:^\s+|\s+$)}{}g;
     my ($id, $samples, $seq) = split(' ', $raw);
-    my $ls = Bio::LocatableSeq->new(-seq => $seq,
-                                    -start => 1,
-                                    -id => $id);
+    my $ls = Bio::LocatableSeq->new('-seq'        => $seq,
+                                    '-start'      => 1,
+                                    '-display_id' => $id,
+				    '-alphabet'   => $self->alphabet);
     return($ls, $samples);
 }
 

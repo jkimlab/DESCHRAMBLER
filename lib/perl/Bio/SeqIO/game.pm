@@ -1,4 +1,3 @@
-# $Id: game.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::SeqIO::game
 #
@@ -67,7 +66,7 @@ of the bugs and their resolution.
 
 Bug reports can be submitted via the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Sheldon McKay
 
@@ -81,7 +80,7 @@ methods. Internal methods are usually preceded with a _
 =cut
 
 package Bio::SeqIO::game;
-
+$Bio::SeqIO::game::VERSION = '1.7.8';
 use Bio::SeqIO::game::gameHandler;
 use Bio::SeqIO::game::gameWriter;
 

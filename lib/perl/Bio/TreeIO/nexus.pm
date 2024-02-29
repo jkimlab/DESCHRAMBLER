@@ -1,4 +1,3 @@
-# $Id: nexus.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::TreeIO::nexus
 #
@@ -32,7 +31,7 @@ basically is just a remapping of trees.
 
 The nexus format allows node comments that are placed inside square
 brackets. Usually the comments (implemented as tags for nodes) are
-used to give a name for an internal node or record the bootstap value,
+used to give a name for an internal node or record the bootstrap value,
 but other uses are possible.
 
 The FigTree program by Andrew Rambaut adds various rendering
@@ -67,7 +66,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -83,6 +82,7 @@ Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::TreeIO::nexus;
+$Bio::TreeIO::nexus::VERSION = '1.7.8';
 use strict;
 
 use Bio::Event::EventGeneratorI;
@@ -295,6 +295,26 @@ sub _write_tree_Helper {
         $data[0] = "(" . $data[0];
         $data[-1] .= ")";
 
+        # FigTree comments start
+        my $comment_flag;
+        $comment_flag = 0
+            if ( $node->has_tag('color') or  $node->has_tag('label') );
+    
+        $data[-1] .= '[&!' if defined $comment_flag;
+    
+            if ( $node->has_tag('color')) {
+            my $color = $node->get_tag_values('color');
+                $data[-1] .= "color=$color";
+            $comment_flag++;
+            }
+            if ( $node->has_tag('label')) {
+            my $label = $node->get_tag_values('label');
+            $data[-1] .= ',' if $comment_flag;
+                $data[-1] .= 'label="'. $label. '"';
+            }
+        $data[-1] .= ']' if defined $comment_flag;
+        # FigTree comments end
+        
         # let's explicitly write out the bootstrap if we've got it
         my $b;
 
@@ -314,27 +334,6 @@ sub _write_tree_Helper {
             $b = $node2num->{$b} if ( $node2num->{$b} );    # translate node2num
             $data[-1] .= sprintf( "[%s]", $b ) if defined $b;
         }
-
-	# FigTree comments start
-	my $comment_flag;
-	$comment_flag = 0
-	    if ( $node->has_tag('color') or  $node->has_tag('label') );
-
-	$data[-1] .= '[&!' if defined $comment_flag;
-
-        if ( $node->has_tag('color')) {
-	    my $color = $node->get_tag_values('color');
-            $data[-1] .= "color=$color";
-	    $comment_flag++;
-        }
-        if ( $node->has_tag('label')) {
-	    my $label = $node->get_tag_values('label');
-	    $data[-1] .= ',' if $comment_flag;
-            $data[-1] .= 'label="'. $label. '"';
-        }
-	$data[-1] .= ']' if defined $comment_flag;
-	# FigTree comments end
-
 
     }
     else {			# leaf node

@@ -1,8 +1,7 @@
-# $Id: ParameterBaseI.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::ParameterBaseI
 #
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Chris Fields <cjfields at bioperl dot org>
 #
@@ -88,7 +87,7 @@ Implementing classes use the following ways to set parameters:
 2) Pass the parameters as a hash or array to set_parameters(), which sets the
 parameters listed in the hash but leaves all others as is.
 
-  $pobj->set_parameters(-retmax => 100, -retstart => 20); 
+  $pobj->set_parameters(-retmax => 100, -retstart => 20);
 
 3) Pass the parameters as a hash or array to reset_parameters(), which sets the
 parameters listed in the hash and resets everything else.
@@ -108,18 +107,18 @@ ParameterBaseI object so that any object with a Bio::ParameterBaseI can decide
 whether to submit a new request or return cached data. State changes are
 revealed by the returned values of the parameters_changed() method, which is a
 simple boolean set to TRUE when the object is first instantiated or parameters
-have changed. 
+have changed.
 
 When retrieving anything using the implementation-specific to_* methods (such as
 to_query, to_string, to_uri, to_request, etc), the ParameterBaseI object state
 is set to FALSE to indicate the data has been accessed and indicate reaccessing
 will retrieve the same value. The observing object can then independently decide
-whether to rerun the cached query or return a previously cached result. 
+whether to rerun the cached query or return a previously cached result.
 
 One can also use indiviual getter/setters to retrieve single parameter values as
 well as use parameter_hash() to retrieve all of the parameters in one go as a
 hash. To check which parameters are available use available_parameters().  Args
-passed to 
+passed to
 
 =head1 FEEDBACK
 
@@ -132,17 +131,17 @@ of the Bioperl mailing lists. Your participation
 is much appreciated.
 
   bioperl-l@lists.open-bio.org               - General discussion
-  http://www.bioperl.org/wiki/Mailing_lists  - About the mailing lists
+  http://bioperl.org/Support.html  - About the mailing lists
 
-=head2 Support 
+=head2 Support
 
 Please direct usage questions or support issues to the mailing list:
 
 I<bioperl-l@bioperl.org>
 
-rather than to the module maintainer directly. Many experienced and 
-reponsive experts will be able look at the problem and quickly 
-address it. Please include a thorough description of the problem 
+rather than to the module maintainer directly. Many experienced and
+reponsive experts will be able look at the problem and quickly
+address it. Please include a thorough description of the problem
 with code and data examples if at all possible.
 
 =head2 Reporting Bugs
@@ -151,7 +150,7 @@ Report bugs to the Bioperl bug tracking system to
 help us keep track the bugs and their resolution.
 Bug reports can be submitted via the web.
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -168,6 +167,7 @@ preceded with a _
 # Let the code begin...
 
 package Bio::ParameterBaseI;
+$Bio::ParameterBaseI::VERSION = '1.7.8';
 use strict;
 use warnings;
 
@@ -179,7 +179,7 @@ use base qw(Bio::Root::RootI);
  Usage   : $pobj->set_parameters(%params);
  Function: sets the parameters listed in the hash or array
  Returns : None
- Args    : [optional] hash or array of parameter/values.  
+ Args    : [optional] hash or array of parameter/values.
 
 =cut
 

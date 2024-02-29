@@ -56,7 +56,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted viax the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Mira Han
 
@@ -74,6 +74,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::TreeIO::phyloxml;
+$Bio::TreeIO::phyloxml::VERSION = '1.7.8';
 use strict;
 
 # Object preamble - inherits from Bio::Root::Root
@@ -111,7 +112,7 @@ sub _initialize
   elsif ($self->mode eq 'w') {
     # print default lines
     $self->_print('<?xml version="1.0" encoding="UTF-8"?>',"\n");
-    $self->_print('<phyloxml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.phyloxml.org http://www.phyloxml.org/1.00/phyloxml.xsd" xmlns="http://www.phyloxml.org">', "\n");
+    $self->_print('<phyloxml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.phyloxml.org" xsi:schemaLocation="http://www.phyloxml.org http://www.phyloxml.org/1.10/phyloxml.xsd">');
   }
 
   $self->treetype($args{-treetype});
@@ -178,10 +179,99 @@ sub next_tree
   return $tree;
 }
 
+=head2 add_attribute
+
+ Title   : add_phyloXML_annotation
+ Usage   : my $node = $treeio->add_phyloXML_annotation(-obj=>$node, -attr=>"id_source = \"A\"")
+ Function: add attributes to an object 
+ Returns : the node that we added annotations to
+ Args    : -obj   => object that will have the Annotation. (Bio::Tree::AnnotatableNode)
+           -attr  => string in the form "A = B", where A is the attribute name and B is the attribute value
+
+=cut
+
+sub add_attribute
+{
+  my ($self, @args) = @_;
+  my ($obj, $attr) = $self->_rearrange([qw(OBJ ATTR)], @args);
+
+  if ($attr) { 
+    $attr = '<dummy '.$attr.'/>';
+  }
+  
+  my $oldreader = $self->{'_reader'};   # save reader
+  $self->{'_reader'} = XML::LibXML::Reader->new( 
+                string => $attr,
+                no_blanks => 1
+                );      
+  my $reader = $self->{'_reader'};
+  $self->{'_currentannotation'} = []; # holds annotationcollection 
+  $self->{'_currenttext'} = '';
+  #$self->{'_id_link'} = {};
+
+  # pretend we saw a <clade> element 
+  $self->{'_lastitem'}->{'dummy'}++;
+  push @{$self->{'_lastitem'}->{'current'}}, { 'dummy'=>{}};  # current holds current element and empty hash for its attributes
+
+  # push object to annotate
+  push @{$self->{'_currentitems'}}, $obj;
+
+  # read attributes of element
+  while ($reader->read) 
+  {
+    #$self->processXMLNode;
+    $self->processAttribute($self->current_attr);
+  }
+
+  # if there is id_source add sequence to _id_link
+  if (exists $self->current_attr->{'id_source'}) { 
+    my $idsrc = $self->current_attr->{'id_source'}; 
+    $self->{'_id_link'}->{$idsrc} = $obj;
+  }
+
+  # check idref
+  my $idref = '';
+  if (exists $self->current_attr->{'id_ref'}) { 
+    $idref = $self->current_attr->{'id_ref'}; 
+  }
+
+  my $srcbyidref = '';
+  $srcbyidref = $self->{'_id_link'}->{$idref};
+
+  # exception when id_ref is defined but id_src is not, or vice versa.
+  if ($idref xor $srcbyidref) {
+    $self->throw("id_ref and id_src incompatible: $idref, $srcbyidref");
+  }
+
+  # if attribute exists then add Annotation::Collection with tag '_attr'
+  my $newac = $obj->annotation;
+  if ( scalar keys %{$self->current_attr} ) {
+    my $newattr = Bio::Annotation::Collection->new();
+    foreach my $tag (keys %{$self->current_attr}) {
+      my $sv = Bio::Annotation::SimpleValue->new(
+          -value => $self->current_attr->{$tag}
+          );
+      $newattr->add_Annotation($tag, $sv);
+    }
+    $newac->add_Annotation('_attr', $newattr);
+  }
+
+  # pop from temporary list
+  pop @{$self->{'_currentitems'}};
+  $self->{'_lastitem'}->{ $reader->name }-- if $reader->name;
+  pop @{$self->{'_lastitem'}->{'current'}};
+
+  $self->{'_reader'} = $oldreader;  # restore reader
+  return $obj;
+
+}
+
 =head2 add_phyloXML_annotation
 
  Title   : add_phyloXML_annotation
  Usage   : my $node = $treeio->add_phyloXML_annotation(-obj=>$node, -xml=>$xmlstring)
+           my $tree = $treeio->add_phyloXML_annotation('-obj'=>$tree, '-xml'=>'<sequence_relation id_ref_0="A" id_ref_1="B" type="orthology"/>')
+
  Function: add annotations to a node in the phyloXML format string
  Returns : the node that we added annotations to
  Args    : -obj   => object that will have the Annotation. (Bio::Tree::AnnotatableNode)
@@ -192,18 +282,20 @@ sub next_tree
 sub add_phyloXML_annotation
 {
   my ($self, @args) = @_;
-  my ($obj, $xml_string, $attr) = $self->_rearrange([qw(OBJ XML ATTR)], @args);
+  my ($obj, $xml_string) = $self->_rearrange([qw(OBJ XML)], @args);
   
   $xml_string = '<phyloxml>'.$xml_string.'</phyloxml>';
   $self->debug( $xml_string );
+
+  my $oldreader = $self->{'_reader'};   # save reader
   $self->{'_reader'} = XML::LibXML::Reader->new( 
                 string => $xml_string,
                 no_blanks => 1
                 );
   my $reader = $self->{'_reader'};
-  $self->{'_currentannotation'} = []; # holds annotationcollection 
-  $self->{'_currenttext'} = '';
-  $self->{'_id_link'} = {};
+  #$self->{'_currentannotation'} = []; # holds annotationcollection 
+  #$self->{'_currenttext'} = '';
+  #$self->{'_id_link'} = {};
 
   # pretend we saw a <clade> element 
   $self->{'_lastitem'}->{'clade'}++;
@@ -223,6 +315,7 @@ sub add_phyloXML_annotation
   $self->{'_lastitem'}->{ $reader->name }-- if $reader->name;
   pop @{$self->{'_lastitem'}->{'current'}};
   
+  $self->{'_reader'} = $oldreader;  # restore reader
   return $obj;
 }
 
@@ -251,6 +344,19 @@ sub write_tree
         $attr_str .= " ".$tag."=\"".$_."\"";
       }
     }
+    # check if rooted
+    my ($b_rooted) = $tree->get_tag_values('rooted');
+    if ($b_rooted) {
+      $attr_str .= " rooted=\"true\"";
+    }
+    else {
+      if($tree->is_binary($tree->get_root_node)) {
+        $attr_str .= " rooted=\"true\"";
+      }
+      else {
+        $attr_str .= " rooted=\"false\"";
+      }
+    }
     $self->_print($attr_str); 
     $self->_print(">");
     if ($root->isa('Bio::Tree::AnnotatableNode')) {
@@ -269,7 +375,6 @@ sub write_tree
       $self->_print($str);
     }
     $self->_print("</phylogeny>");
-    $self->_print("\n");
   }
   $self->flush if $self->_flush_on_write && defined $self->_fh;
   return;
@@ -366,8 +471,9 @@ sub _write_tree_Helper_generic
   foreach my $tag (@tags) {
     my @values = $node->get_tag_values($tag);
     foreach my $val (@values) {
-      $str .= "<property applies_to=\"clade\" ref=\"$tag:$val\"> ";
-      $str .= " </property>";
+      $str .= "<property datatype=\"xsd:string\" ref=\"tag:$tag\" applies_to=\"clade\">";
+      $str .=$val;
+      $str .= "</property>";
     }
   }
 
@@ -377,12 +483,12 @@ sub _write_tree_Helper_generic
     $str .= $node->id;
     $str .= "</name>";
   }
-  elsif ($node->branch_length) {
+  if ($node->branch_length) {
     $str .= "<branch_length>";
     $str .= $node->branch_length;
     $str .= "</branch_length>";
   }
-  elsif ($node->bootstrap) {
+  if ($node->bootstrap) {
     $str .= "<confidence type = \"bootstrap\">";
     $str .= $node->bootstrap;
     $str .= "</confidence>";
@@ -423,12 +529,29 @@ sub _relation_to_string {
   my ($id_ref_1) = $rel->to->annotation->get_nested_Annotations( 
                                       '-keys' => ['id_source'],
                                       '-recursive' => 1); 
+
+  my $confidence = $rel->confidence();
+  my $confidence_type = $rel->confidence_type(); 
   $str .= "<";
   $str .= $rel->tagname;
   $str .= " id_ref_0=\"".$id_ref_0->value."\"";
   $str .= " id_ref_1=\"".$id_ref_1->value."\"";
   $str .= " type=\"".$rel->type."\"";
-  $str .= "/>";
+  if ($confidence) {
+    $str .= " ><confidence";
+    if ($confidence_type) {
+      $str .= " type=\"".$confidence_type."\"";
+    }
+    $str .= ">";
+    $str .= $confidence;
+    $str .= "</confidence>";
+    $str .= "</";
+    $str .= $rel->tagname;
+    $str .= ">";
+  }
+  else {
+    $str .= "/>";
+  }
   return $str;
 }
 
@@ -765,21 +888,6 @@ sub element_relation
 {
   my ($self) = @_;
   $self->processAttribute($self->current_attr);
-}
-
-=head2 end_element_relation
-
- Title   : end_element_relation
- Usage   : $treeio->end_element_relation
- Function: ends the parsing of clade relation & sequence relation
- Returns : none 
- Args    : none
-
-=cut
-
-sub end_element_relation
-{
-  my ($self) = @_;
   my $relationtype = $self->current_attr->{'type'};
   my $id_ref_0 = $self->current_attr->{'id_ref_0'};
   my $id_ref_1 = $self->current_attr->{'id_ref_1'};
@@ -787,7 +895,7 @@ sub end_element_relation
   my @srcbyidref = ();
   $srcbyidref[0] = $self->{'_id_link'}->{$id_ref_0};
   $srcbyidref[1] = $self->{'_id_link'}->{$id_ref_1};
-
+  
   # exception when id_ref is defined but id_src is not, or vice versa.
   if ( ($id_ref_0 xor $srcbyidref[0])||($id_ref_1 xor $srcbyidref[1]) ) {
     $self->throw("id_ref and id_src incompatible: $id_ref_0, $id_ref_1, ", $srcbyidref[0], $srcbyidref[1]);
@@ -809,7 +917,23 @@ sub end_element_relation
                     '-tagname' => $self->current_element
                     );
   $ac1->add_Annotation($self->current_element, $newann);
-  
+  push (@{$self->{'_currentannotation'}}, $newann);
+}
+
+=head2 end_element_relation
+
+ Title   : end_element_relation
+ Usage   : $treeio->end_element_relation
+ Function: ends the parsing of clade relation & sequence relation
+ Returns : none 
+ Args    : none
+
+=cut
+
+sub end_element_relation
+{
+  my ($self) = @_;
+  my $ac = pop (@{$self->{'_currentannotation'}});
 }
 
 
@@ -864,6 +988,10 @@ sub element_default
       $ac->add_Annotation($current, $newann);
       # push to current annotation
       push (@{$self->{'_currentannotation'}}, $newann);
+  }
+  # we are within sequence_relation or clade_relation
+  elsif ($prev eq 'clade_relation' || $prev eq 'sequence_relation') {
+    # do nothing?
   }
   # we are already within an annotation
   else {
@@ -920,17 +1048,20 @@ sub end_element_default
   }
   # we are within sequence_relation or clade_relation
   elsif ($prev eq 'clade_relation' || $prev eq 'sequence_relation') {
+    my $ann_relation = $self->{'_currentannotation'}->[-1];
     # we are here only with <confidence>
     if ($current eq 'confidence') {
-      # need to take care of confidence
-      # not implemented yet..
+      if (exists $self->current_attr->{'type'}) {
+        $ann_relation->confidence_type($self->current_attr->{'type'});
+      }
+      $ann_relation->confidence($self->{'_currenttext'});
     }
     else {
       $self->throw($current, " is not allowed within <*_relation>");
     }
   }
   # we are annotating a Node
-  if (( $srcbyidref && $srcbyidref->isa($self->nodetype)) || ((!$srcbyidref) && $prev eq 'clade'))  
+  elsif (( $srcbyidref && $srcbyidref->isa($self->nodetype)) || ((!$srcbyidref) && $prev eq 'clade'))  
   {
     # pop from current annotation
     my $ac = pop (@{$self->{'_currentannotation'}});
@@ -1294,7 +1425,7 @@ sub print_attr
     $str .= ' ';
     $str .= $attr->tagname;
     $str .= '=';
-    $str .= $attr->value;
+    $str .= '"'.$attr->value.'"';
   }
   return $str;
 } 
@@ -1377,4 +1508,3 @@ sub print_seq_annotation
 }
 
 1;
-

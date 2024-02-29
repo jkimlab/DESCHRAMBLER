@@ -1,4 +1,3 @@
-# $Id: EnzymeCollection.pm 16123 2009-09-17 12:57:27Z cjfields $
 #-------------------------------------------------------------------------------
 #
 # BioPerl module Bio::Restriction::EnzymeCollection
@@ -123,7 +122,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -158,7 +157,6 @@ use strict;
 
 use Bio::Restriction::Enzyme;
 use Bio::Restriction::IO;
-use UNIVERSAL qw(isa);
 
 use Data::Dumper;
 

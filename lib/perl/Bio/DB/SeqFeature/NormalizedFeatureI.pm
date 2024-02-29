@@ -1,6 +1,5 @@
 package Bio::DB::SeqFeature::NormalizedFeatureI;
 
-# $Id: NormalizedFeatureI.pm 9895 2006-05-18 20:11:34Z lstein $
 
 =head1 NAME
 

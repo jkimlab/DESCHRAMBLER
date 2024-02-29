@@ -1,6 +1,5 @@
 # BioPerl module for Bio::Matrix::PhylipDist
 #
-# $Id: PhylipDist.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # Please direct questions and support issues to <bioperl-l@bioperl.org> 
 #
@@ -83,7 +82,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Shawn Hoon
 
@@ -104,6 +103,7 @@ methods. Internal methods are usually preceded with a "_".
 # Let the code begin...
 
 package Bio::Matrix::PhylipDist;
+$Bio::Matrix::PhylipDist::VERSION = '1.7.8';
 use strict;
 
 

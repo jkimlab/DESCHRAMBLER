@@ -1,8 +1,7 @@
-# $Id: GenericWebAgent.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::DB::GenericWebAgent
 #
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Chris Fields <cjfields at bioperl dot org>
 #
@@ -22,7 +21,7 @@ access and response retrieval.
 =head1 SYNOPSIS
 
   # DO NOT USE DIRECTLY
-  
+
   See Bio::DB::EUtilities for an example implementation
 
 =head1 DESCRIPTION
@@ -35,7 +34,7 @@ the user agent (Bio::ParameterBaseI), and a BioPerl class parser that processes
 response content received by the user agent. The Bio::ParameterBaseI object
 should be state-aware, e.g. know when changes occur to parameters, so that
 identical requests are not repeatedly sent to the server (this base class takes
-this into consideration).  
+this into consideration).
 
 =head1 FEEDBACK
 
@@ -48,17 +47,17 @@ of the Bioperl mailing lists. Your participation
 is much appreciated.
 
   bioperl-l@lists.open-bio.org               - General discussion
-  http://www.bioperl.org/wiki/Mailing_lists  - About the mailing lists
+  http://bioperl.org/Support.html  - About the mailing lists
 
-=head2 Support 
+=head2 Support
 
 Please direct usage questions or support issues to the mailing list:
 
 I<bioperl-l@bioperl.org>
 
-rather than to the module maintainer directly. Many experienced and 
-reponsive experts will be able look at the problem and quickly 
-address it. Please include a thorough description of the problem 
+rather than to the module maintainer directly. Many experienced and
+reponsive experts will be able look at the problem and quickly
+address it. Please include a thorough description of the problem
 with code and data examples if at all possible.
 
 =head2 Reporting Bugs
@@ -67,7 +66,7 @@ Report bugs to the Bioperl bug tracking system to
 help us keep track the bugs and their resolution.
 Bug reports can be submitted via the web.
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -84,6 +83,7 @@ preceded with a _
 # Let the code begin...
 
 package Bio::DB::GenericWebAgent;
+$Bio::DB::GenericWebAgent::VERSION = '1.7.8';
 use strict;
 use warnings;
 use base qw(Bio::Root::Root);
@@ -107,7 +107,7 @@ BEGIN {
  Title   : new
  Usage   : Bio::DB::GenericWebAgent->new(@args);
  Function: Create new Bio::DB::GenericWebAgent instance.
- Returns : 
+ Returns :
  Args    : None specific to this base class.  Inheriting classes will
            likely set specific parameters in their constructor;
            Bio::DB::GenericWebAgent is primarily a test bed.
@@ -174,7 +174,7 @@ sub ua {
  Returns : HTTP::Response object or data if callback is used
  Args    : (optional)
 
-           -cache_response - flag to cache HTTP::Response object; 
+           -cache_response - flag to cache HTTP::Response object;
                              Default is 1 (TRUE, caching ON)
 
            These are passed on to LWP::UserAgent::request() if stipulated
@@ -194,7 +194,7 @@ sub get_Response {
     my ($cache, $file, $cb, $size) = $self->_rearrange([qw(CACHE_RESPONSE FILE CB READ_SIZE_HINT)],@args);
     $self->throw("Can't have both callback and file") if $file && $cb;
     # make -file accept more perl-like write-append type data.
-    $file =~ s{^>}{} if $file; 
+    $file =~ s{^>}{} if $file;
     my @opts = grep {defined $_} ($file || $cb, $size);
     $cache = (defined $cache && $cache == 0) ? 0 : 1;
     my $pobj = $self->parameter_base;
@@ -225,7 +225,7 @@ sub get_Response {
             $cb && ref($cb) eq 'CODE' && $cb->($self->{_response_cache}->content);
         }
         return $self->{_response_cache};
-    }    
+    }
 }
 
 =head2 get_Parser

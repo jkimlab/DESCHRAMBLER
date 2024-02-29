@@ -1,5 +1,3 @@
-# $Id: chaos.pm 16123 2009-09-17 12:57:27Z cjfields $
-# $Date: 2009-09-17 07:57:27 -0500 (Thu, 17 Sep 2009) $
 #
 # BioPerl module for Bio::SeqIO::chaos
 #
@@ -42,7 +40,7 @@ this module.
 
 =head2 USING STAG OBJECTS
 
-B<non-standard bioperl stuff you dont necessarily need to know follows>
+B<non-standard bioperl stuff you don't necessarily need to know follows>
 
 This module (in write mode) is an B<event producer> - it generates XML
 events via the L<Data::Stag> module. If you only care about the final
@@ -113,7 +111,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.
 Bug reports can be submitted via the web:
 
-  http://bugzilla.bioperl.org
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Chris Mungall
 
@@ -179,7 +177,7 @@ sub _initialize {
                                         [export_perl5lib=>$ENV{PERL5LIB}],
                                         [export_program=>$0],
                                         [export_module=>'Bio::SeqIO::chaos'],
-                                        [export_module_cvs_id=>'$Id: chaos.pm 16123 2009-09-17 12:57:27Z cjfields $'],
+                                        [export_module_cvs_id=>'$Id$'],
                                        ]);
 
     return;
@@ -211,7 +209,7 @@ sub default_handler_class {
  Returns : value of context_namespace (a scalar)
  Args    : on set, new value (a scalar or undef, optional)
 
-IDs will be preceeded with the context namespace
+IDs will be preceded with the context namespace
 
 =cut
 
@@ -369,7 +367,7 @@ sub write_seq {
     } qw(desc keywords division molecule is_circular);
     $prop{dates} = join("; ", $seq->get_dates) if $seq->can("get_dates");
 
-    local($^W) = 0;   # supressing warnings about uninitialized fields.
+    local($^W) = 0;   # suppressing warnings about uninitialized fields.
 
     # Reference lines
     my $count = 1;

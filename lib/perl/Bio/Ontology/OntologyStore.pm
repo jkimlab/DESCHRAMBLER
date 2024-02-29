@@ -1,4 +1,3 @@
-# $Id: OntologyStore.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Ontology::OntologyStore
 #
@@ -29,7 +28,7 @@ Bio::Ontology::OntologyStore - A repository of ontologies
   my $cell_ontology = $io->next_ontology;
 
   #this is a singleton that caches the fact that you've created
-  #a 'Cell Ontology' intance...
+  #a 'Cell Ontology' instance...
   my $store = Bio::Ontology::OntologyStore->get_instance();
 
   #...and it can hand you back a copy of it at any time.
@@ -84,7 +83,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Hilmar Lapp
 
@@ -103,6 +102,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::Ontology::OntologyStore;
+$Bio::Ontology::OntologyStore::VERSION = '1.7.8';
 use strict;
 
 # Object preamble - inherits from Bio::Root::Root

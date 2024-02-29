@@ -1,4 +1,3 @@
-# $Id: SearchDist.pm 16123 2009-09-17 12:57:27Z cjfields $
 
 #
 # BioPerl module for Bio::SearchDist
@@ -49,7 +48,7 @@ The fitting procedure is better described in Sean Eddy's own code
 file in Compile/SW). Bascially it fits a EVD via a maximum likelhood
 method with pruning of the top end of the distribution so that real
 positives are discarded in the fitting procedure. This comes from
-an orginally idea of Richard Mott's and the likelhood fitting
+an originally idea of Richard Mott's and the likelhood fitting
 is from a book by Lawless [should ref here].
 
 
@@ -97,7 +96,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 APPENDIX
 

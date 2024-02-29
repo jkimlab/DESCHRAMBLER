@@ -1,4 +1,3 @@
-# $Id: Entry.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # bioperl module for Bio::Structure::Entry
 #
@@ -56,7 +55,7 @@ with code and data examples if at all possible.
 Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Kris Boulez
 
@@ -213,7 +212,7 @@ sub add_model {
 				}
 				push @{$self->{'model'}}, $m;
 				# create a stringified version of our ref
-				# not used untill we get symbolic ref working
+				# not used until we get symbolic ref working
 				#my $str_ref = "$self";
 				#$m->_grandparent($str_ref);
 			}
@@ -708,7 +707,7 @@ sub master {
  Usage   : $seqobj = $structure->seqres("A");
  Function: Gets a sequence object containing the sequence from the SEQRES record.
  	        if a chain-ID is given, the sequence for this chain is given, if none
-	        is provided the first chain is choosen
+	        is provided the first chain is chosen
  Returns : A Bio::PrimarySeq
  Args    : The chain-ID of the chain you want the sequence from
 
@@ -799,7 +798,7 @@ sub parent {
 		$self->throw("parent: you need to supply an argument to get the parent from\n");
 	}
 
-	# for now we pass on to _parent, untill we get the symbolic ref thing working.
+	# for now we pass on to _parent, until we get the symbolic ref thing working.
 	$self->_parent($obj);
 }
 

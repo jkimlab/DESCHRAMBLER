@@ -1,4 +1,3 @@
-# $Id: base.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Restriction::IO::base
 #
@@ -55,7 +54,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -123,7 +122,7 @@ sub _initialize {
         $self->throw("Format $format not retrievable using 'current'") if (!exists $FILE_FORMAT{$format});
         my $io = $self->new(-url => 'ftp://ftp.neb.com/pub/rebase/VERSION');
         chomp (my $version = $io->_readline);
-        push @args, (-url => "ftp://ftp.neb.com/pub/rebase/$FILE_FORMAT{$format}.$version");
+        push @args, (-url => "ftp://ftp.neb.com/pub/rebase/$FILE_FORMAT{$format}.$version", -retries => 1);
     }
 
     $self->_companies;
@@ -268,8 +267,8 @@ sub _cuts_from_site {
 
  Title   : _meth
  Usage   : ($pos, $meth) = $self->_meth('2(5)');
- Function: Separates methylation postion and coce from a string.
-           Adjusts the postion depending on enzyme site length
+ Function: Separates methylation position and coce from a string.
+           Adjusts the position depending on enzyme site length
            and symmetry 
  Returns : array of position and methylation code
  Args    : 1. reference to Enzyme object
@@ -403,7 +402,7 @@ sub _make_multisites {
 
 The examples we have of multiply cutting enzymes cut only four
 times. This protected method deals only with a string of two
-integers separated with a slash, e.g. '12/7'. The numbers represent the postions
+integers separated with a slash, e.g. '12/7'. The numbers represent the positions
 BEFORE the start of the recognition site, i.e. negative positions.
 
 =cut

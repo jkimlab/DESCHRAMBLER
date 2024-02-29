@@ -1,12 +1,11 @@
-# $Id: BaseSAXHandler.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for BaseSAXHandler
 #
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Juguang Xiao, juguang@tll.org.sg
 #
-# Copyright Juguang Xiao 
+# Copyright Juguang Xiao
 #
 # You may distribute this module under the same terms as perl itself
 
@@ -14,7 +13,7 @@
 
 =head1 NAME
 
-Bio::OntologyIO::Handlers::BaseSAXHandler base class for SAX Handlers
+Bio::OntologyIO::Handlers::BaseSAXHandler - base class for SAX Handlers
 
 =head1 SYNOPSIS
 
@@ -22,8 +21,8 @@ See description.
 
 =head1 DESCRIPTION
 
-This module is an abstract module, serving as the base of any SAX Handler 
-implementation. It tries to offer the framework that SAX handlers generally 
+This module is an abstract module, serving as the base of any SAX Handler
+implementation. It tries to offer the framework that SAX handlers generally
 need, such as tag_stack, char_store, etc.
 
 In the implementation handler, you can take advantage of this based module by
@@ -81,15 +80,15 @@ Your participation is much appreciated.
   bioperl-l@bioperl.org                  - General discussion
   http://bioperl.org/wiki/Mailing_lists  - About the mailing lists
 
-=head2 Support 
+=head2 Support
 
 Please direct usage questions or support issues to the mailing list:
 
 I<bioperl-l@bioperl.org>
 
-rather than to the module maintainer directly. Many experienced and 
-reponsive experts will be able look at the problem and quickly 
-address it. Please include a thorough description of the problem 
+rather than to the module maintainer directly. Many experienced and
+reponsive experts will be able look at the problem and quickly
+address it. Please include a thorough description of the problem
 with code and data examples if at all possible.
 
 =head2 Reporting Bugs
@@ -98,7 +97,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -107,11 +106,12 @@ Juguang Xiao, juguang@tll.org.sg
 =head2 APPENDIX
 
 The rest of the documentation details each of the object methods.
-Interal methods are usually preceded with a _
+Internal methods are usually preceded with a _
 
 =cut
 
 package Bio::OntologyIO::Handlers::BaseSAXHandler;
+$Bio::OntologyIO::Handlers::BaseSAXHandler::VERSION = '1.7.8';
 use strict;
 use base qw(Bio::Root::Root);
 
@@ -136,8 +136,8 @@ sub _initialize {
   Title   : _tag_stack
   Usage   : @tags = $self->_tag_stack;
   Function: Get an array of tags that have been accessed but not enclosed.
-  Return  : 
-  Args    :    
+  Return  :
+  Args    :
 
 =cut
 
@@ -169,7 +169,7 @@ sub _pop_tag {
   Usage   : $top = $self->_top_tag;
   Function: get the top tag in the tag stack.
   Return  : a tag name
-  Args    : [none]   
+  Args    : [none]
 
 =cut
 

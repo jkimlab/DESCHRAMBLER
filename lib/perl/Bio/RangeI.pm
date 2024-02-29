@@ -1,4 +1,3 @@
-# $Id: RangeI.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::RangeI
 #
@@ -67,7 +66,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.bioperl.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Heikki Lehvaslaiho
 
@@ -88,7 +87,7 @@ methods. Internal methods are usually preceded with a _
 =cut
 
 package Bio::RangeI;
-
+$Bio::RangeI::VERSION = '1.7.8';
 use strict;
 use Carp;
 use integer;
@@ -303,15 +302,17 @@ which new ranges could be built.
 =head2 intersection
 
  Title   : intersection
- Usage   : ($start, $stop, $strand) = $r1->intersection($r2); OR
-           ($start, $stop, $strand) = Bio::Range->intersection(\@ranges); OR
+ Usage   : ($start, $end, $strand) = $r1->intersection($r2); OR
+           ($start, $end, $strand) = Bio::Range->intersection(\@ranges); OR
            my $containing_range = $r1->intersection($r2); OR
            my $containing_range = Bio::Range->intersection(\@ranges);
  Function: gives the range that is contained by all ranges
- Returns : undef if they do not overlap, or
-           the range that they do overlap (in the form of an object
-            like the calling one, OR a three element array)
- Args    : arg #1 = [REQUIRED] a range to compare this one to,
+ Returns : undef if they do not overlap or if @ranges has only a
+           single range, else returns the range that they do
+           overlap. In scalar contex, the return value is an object of
+           the same class as the calling one. In array context the
+           return value is a three element array.
+ Args    : arg #1 = [REQUIRED] a Bio::RangeI to compare this one to,
                     or an array ref of ranges
            arg #2 = optional strand-testing arg ('strong', 'weak', 'ignore')
 
@@ -330,7 +331,9 @@ sub intersection {
 		push(@ranges, $self);
 	}
     ref($given) eq 'ARRAY' ? push(@ranges, @{$given}) : push(@ranges, $given);
-    $self->throw("Need at least 2 ranges") unless @ranges >= 2;
+    #$self->throw("Need at least 2 ranges") unless @ranges >= 2;
+    # Rather than the above, I think the following is more consistent
+    return undef unless @ranges >= 2;
 
     my $intersect;
     while (@ranges > 0) {
@@ -384,14 +387,16 @@ sub intersection {
 =head2 union
 
    Title   : union
-    Usage   : ($start, $stop, $strand) = $r1->union($r2);
-            : ($start, $stop, $strand) = Bio::Range->union(@ranges);
+    Usage   : ($start, $end, $strand) = $r1->union($r2);
+            : ($start, $end, $strand) = Bio::Range->union(@ranges);
               my $newrange = Bio::Range->union(@ranges);
     Function: finds the minimal Range that contains all of the Ranges
     Args    : a Range or list of Range objects
-    Returns : the range containing all of the range
-              (in the form of an object like the calling one, OR
-              a three element array)
+
+    Returns : the range containing all of the range. In scalar contex,
+              the return value is an object of the same class as the
+              calling one. In array context the return value is a
+              three element array.
 
 =cut
 
@@ -623,34 +628,52 @@ deprecated; use $self instead");
     $range->throw("Input a Bio::RangeI object") unless
 $range->isa('Bio::RangeI');
 
-    if (!$self->overlaps($range)) {
-        return;
+    my @sub_locations; 
+    if ($self->location->isa('Bio::Location::SplitLocationI') ) {
+       @sub_locations = $self->location->sub_Location;
+    } else {
+       @sub_locations = $self;
     }
 
-    ##Subtracts everything
-    if ($range->contains($self)) {
-        return;   
+    my @outranges;
+    foreach my $sl (@sub_locations) {
+       if (!$sl->overlaps($range)) {
+          push(@outranges, 
+             $self->new('-start' =>$sl->start,
+                        '-end'   =>$sl->end, 
+                        '-strand'=>$sl->strand,
+          ));
+          next;
+       }
+   
+       ##Subtracts everything
+       if ($range->contains($sl)) {
+          next;   
+       }
+   
+       my ($start, $end, $strand) = $sl->intersection($range, $so);
+       ##Subtract intersection from $self range
+   
+       if ($sl->start < $start) {
+          push(@outranges, 
+             $self->new('-start' =>$sl->start,
+                        '-end'   =>$start - 1,
+                        '-strand'=>$sl->strand,
+          ));   
+       }
+       if ($sl->end > $end) {
+          push(@outranges, 
+             $self->new('-start' =>$end + 1,
+                        '-end'   =>$sl->end,
+                        '-strand'=>$sl->strand,
+          ));   
+       }
     }
 
-    my ($start, $end, $strand) = $self->intersection($range, $so);
-    ##Subtract intersection from $self range
-
-    my @outranges = ();
-    if ($self->start < $start) {
-        push(@outranges, 
-		 $self->new('-start'=>$self->start,
-			    '-end'=>$start - 1,
-			    '-strand'=>$self->strand,
-			   ));   
+    if (@outranges) {
+       return \@outranges;
     }
-    if ($self->end > $end) {
-        push(@outranges, 
-		 $self->new('-start'=>$end + 1,
-			    '-end'=>$self->end,
-			    '-strand'=>$self->strand,
-			   ));   
-    }
-    return \@outranges;
+    return;
 }
 
 1;

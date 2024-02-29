@@ -1,4 +1,3 @@
-# $Id: Consed.pm 16123 2009-09-17 12:57:27Z cjfields $
 # Bio::Tools::Alignment::Consed
 #
 # Please direct questions and support issues to <bioperl-l@bioperl.org> 
@@ -39,7 +38,7 @@ L<Bio::Tools::Alignment::Consed> provides methods and objects to deal
 with the output from the Consed software suite. Specifically,
 takes an C<.ace> file and provides objects for the results.
 
-A word about doublets: This module was written to accomodate a large
+A word about doublets: This module was written to accommodate a large
 EST sequencing operation. In this case, EST's were sequenced from the
 3' and from the 5' end of the EST. The objective was to find a
 consensus sequence for these two reads.  Thus, a contig of two is what
@@ -92,7 +91,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Chad Matsalla
 
@@ -108,7 +107,7 @@ methods. Internal methods are usually preceded with a _
 #' 
 
 package Bio::Tools::Alignment::Consed;
-
+$Bio::Tools::Alignment::Consed::VERSION = '1.7.8';
 use strict;
 
 use FileHandle;
@@ -149,7 +148,8 @@ sub new {
     # this is special to UNIX and should probably use catfile : DONE!
 #    if (!($self->{'filename'} =~ m{/})) { 
 #	$self->{'filename'} = "./".$self->{'filename'}; 
-#    } 
+#    }
+#    $self->{'filename'} =~ s#\\#\/#g if $^O =~ m/mswin/i;
 #    $self->{'filename'} =~ m/(.*\/)(.*)ace.*$/;
 #    $self->{'path'} = $1;
 
@@ -179,7 +179,7 @@ sub new {
 	      2 - noisier
 	      3 - annoyingly noisy
 
-This method for setting verbosity has largely been superseeded by a
+This method for setting verbosity has largely been superseded by a
 sub-by-sub way, where for every sub you can provide a (-verbose)
 switch. I am doing converting this bit-by-bit so do not be surprised
 if some subs do not honour this.
@@ -237,18 +237,27 @@ sub count_sequences_with_grep {
     # Tom Christiansen's 'tcgrep'
     # http://www.cpan.org/modules/by-authors/id/TOMC/scripts/tcgrep.gz
 
-    open(my $FILE, $self->{'filename'}) or do { $self->warn("cannot open file ".$self->{'filename'}. " for grepping"); return}; 
+    open my $FILE, '<', $self->{'filename'} or do {
+        $self->warn("Could not read file '$self->{'filename'}' for grepping: $!");
+        return
+    };
     my $counter =0;
     while(<$FILE>) { $counter++ if(/^AF/); }
-
     close $FILE;
-    opendir(my $SINGLETS,$self->{'path'});
+
+    opendir my $SINGLETS, $self->{'path'};
     foreach my $f ( readdir($SINGLETS) ) {
-	next unless ($f =~ /\.singlets$/); 
-	open(my $FILE, File::Spec->catfile($self->{'path'},$f)) or do{ $self->warn("cannot open file ".File::Spec->catfile($self->{'path'},$f)); next };
-	while(<$FILE>) { $counter++ if(/^>/) }
-	close $FILE;
+        next unless ($f =~ /\.singlets$/);
+
+        my $singlet_file = File::Spec->catfile($self->{'path'}, $f);
+        open my $S_FILE, '<', $singlet_file or do {
+            $self->warn("Could not read file '$singlet_file': $!");
+            next
+        };
+        while(<$S_FILE>) { $counter++ if(/^>/) }
+        close $S_FILE;
     }
+    closedir $SINGLETS;
     return $counter;
 }
 
@@ -384,10 +393,10 @@ sub freeze_hash {
         my %contigs = %{$self->{'contigs'}};
         my $frozen = freeze(%contigs);
         umask 0001;
-        open (my $FREEZE,">$filename") or do {
+        open my $FREEZE, '>', $filename or do {
             $self->warn( "Bio::Tools::Alignment::Consed could not ".
                          "freeze the contig hash because the file ".
-                         "($filename) could not be opened: $!\n");
+                         "($filename) could not be opened: $!");
             return 1;
         };
         print $FREEZE $frozen;
@@ -978,6 +987,7 @@ sub set_singlets {
     $self->debug("Bio::Tools::Alignment::Consed Adding singlets to the contig hash...\n"); 
     my $full_filename = $self->{'filename'};
     $self->debug("Bio::Tools::Alignment::Consed::set_singlets: \$full_filename is $full_filename\n");
+    $full_filename =~ s#\\#\/#g if $^O =~ m/mswin/i;
     $full_filename =~ m/(.*\/)(.*ace.*)$/; 			       
     my ($base_path,$filename) = ($1,$2);
     $self->debug("Bio::Tools::Alignment::Consed::set_singlets: singlets filename is $filename and \$base_path is $base_path\n");
@@ -1106,6 +1116,7 @@ sub set_quality_by_name {
 sub set_singlet_quality {
     my $self = shift;
     my $full_filename = $self->{'filename'};
+    $full_filename =~ s#\\#\/#g if $^O =~ m/mswin/i;
     $full_filename =~ m/(.*\/)(.*)ace.*$/;
     my ($base_path,$filename) = ($1,"$2"."qual");
     my $singletsfile = $base_path.$filename;
@@ -1157,6 +1168,7 @@ sub set_contig_quality {
     my $full_filename = $self->{'filename'};
     # Run_SRC3700_2000-08-01_73+74.fasta.screen.contigs.qual
     # from Consed.pm
+    $full_filename =~ s#\\#\/#g if $^O =~ m/mswin/i;
     $full_filename =~ m/(.*\/)(.*)ace.*$/;
     my ($base_path,$filename) = ($1,"$2"."contigs.qual");
     my $singletsfile = $base_path.$filename;
@@ -1329,9 +1341,9 @@ sub write_stats {
     my ($statsfilecontents) = $statistics_raw =~ s/.*\ \:\ //g;
     umask 0001;
     my $fh = Bio::Root::IO->new(-file=>"$stats_filename");
-    # open(STATSFILE,">$stats_filename") or print("Could not open the statsfile: $!\n");
+    # open my $STATSFILE, '>', $stats_filename or print "Could not write the statsfile: $!\n");
     $fh->_print("$statsfilecontents");
-    # close STATSFILE;
+    # close $STATSFILE;
     $fh->close();
 }
 
@@ -1509,7 +1521,7 @@ sub get_doublets {
 
 sub dump_hash {
     my $self = shift;
-    my $dumper = new Dumpvalue;
+    my $dumper = Dumpvalue->new();
     $self->debug( "Bio::Tools::Alignment::Consed::dump_hash - ".
                   "The following is the contents of the contig hash...\n");
     $dumper->dumpValue($self->{'contigs'});
@@ -1599,7 +1611,7 @@ were certain "features" in the acefile that required a bit more
 detailed work be done to get the qualities for certain parts of the
 consensus sequence. In order to make _sure_ that this was done
 properly I wrote things to do all steps and then I used dump_hash()
-and checked each one to ensure expected bahavior. I have never changed
+and checked each one to ensure expected behavior. I have never changed
 this, so there you are.
 
 =cut
@@ -1697,7 +1709,7 @@ Recursion is kewl, but this sub should likely be _reverse_recurse.
 
 
 sub reverse_recurse($$) {
-    my ($r_source,my $r_destination) = @_;
+    my ($r_source,$r_destination) = @_;
     if (!@$r_source) {
         return $r_destination;
     }
@@ -1847,4 +1859,3 @@ sub show_missing_sequence() {
 
 
 1;
-

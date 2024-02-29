@@ -1,4 +1,3 @@
-# $Id: Term.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Ontology::Term
 #
@@ -76,7 +75,7 @@ with code and data examples if at all possible.
 Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -103,7 +102,11 @@ methods.
 # Let the code begin...
 
 package Bio::Ontology::Term;
+$Bio::Ontology::Term::VERSION = '1.7.8';
 use strict;
+
+use Carp;
+
 use Bio::Ontology::Ontology;
 use Bio::Ontology::OntologyStore;
 use Bio::Annotation::DBLink;
@@ -148,30 +151,11 @@ sub new {
     my( $class,@args ) = @_;
 
     my $self = $class->SUPER::new( @args );
-    my ( $identifier,
-        $name,
-        $definition,
-        $category,
-        $ont,
-        $version,
-        $is_obsolete,
-        $comment,
-        $dblinks,
-        $dbxrefs,
-        $references)
+    my ( $identifier, $name, $definition, $category, $ont, $version,
+        $is_obsolete, $comment, $dblinks, $dbxrefs, $references)
         = $self->_rearrange( [
-        qw(IDENTIFIER
-        NAME
-        DEFINITION
-        CATEGORY
-        ONTOLOGY
-        VERSION
-        IS_OBSOLETE
-        COMMENT
-        DBLINKS
-        DBXREFS
-        REFERENCES
-       ) ], @args );
+        qw(IDENTIFIER NAME DEFINITION CATEGORY ONTOLOGY VERSION IS_OBSOLETE
+        COMMENT DBLINKS DBXREFS REFERENCES) ], @args );
 
     $self->init();
 
@@ -184,7 +168,7 @@ sub new {
     defined($is_obsolete)  && $self->is_obsolete( $is_obsolete );
     defined($comment)      && $self->comment( $comment  );
     defined($dbxrefs)      && $self->add_dbxref(-dbxrefs => $dbxrefs);
-    # deprecated methods, allow to pass on to get the dep. notification
+    # deprecated methods, allow one to pass on to get the dep. notification
     ref($dblinks)          && $self->add_dblink(@$dblinks);
     ref($references)       && $self->add_reference(@$references);
 
@@ -447,11 +431,11 @@ sub remove_synonyms {
 
 sub get_dblinks {
     my ($self, $context) = @_;
-    $self->deprecated("Use of get_dblinks is deprecated.  Note that prior use\n".
-                      "of this method could return either simple scalar values\n".
-                      "or Bio::Annotation::DBLink instances; only \n".
-                      "Bio::Annotation::DBLink is now supported.\n ".
-                      "Use get_dbxrefs() instead");
+    Carp::carp("Use of get_dblinks is deprecated.  Note that prior use\n".
+               "of this method could return either simple scalar values\n".
+               "or Bio::Annotation::DBLink instances; only \n".
+               "Bio::Annotation::DBLink is now supported.\n ".
+               "Use get_dbxrefs() instead");
     $self->get_dbxrefs($context);
 } # get_dblinks
 
@@ -498,7 +482,7 @@ sub get_dbxrefs {
 
 sub get_dblink_context {
     my $self=shift;
-    $self->deprecated("Use of get_dblink_context() is deprecated; use get_dbxref_context() instead");
+    Carp::carp("Use of get_dblink_context() is deprecated; use get_dbxref_context() instead");
     return $self->get_dbxref_context(@_);
 }
 
@@ -534,8 +518,8 @@ sub get_dbxref_context {
 
 sub add_dblink {
     my $self = shift;
-    $self->deprecated("Use of simple strings and add_dblink() is deprecated; use\n".
-                      "Bio::Annotation::DBLink instances and add_dbxref() instead");
+    Carp::carp("Use of simple strings and add_dblink() is deprecated; use\n".
+               "Bio::Annotation::DBLink instances and add_dbxref() instead");
     # here we're assuming the data is in a simple DB:ID format
     my @dbxrefs;
     for my $string (@_) {
@@ -578,9 +562,12 @@ sub add_dbxref {
         {
             $self->warn("DBLink exists in the dblink of $context");
         }
-        push @{$self->{_dblinks}->{$context}}, $dbxref;    
+        push @{$self->{_dblinks}->{$context}}, $dbxref;
     }
 } # add_dbxref
+
+# alias, for consistency
+*add_dbxrefs = \&add_dbxref;
 
 =head2 has_dblink
 
@@ -597,7 +584,7 @@ sub add_dbxref {
 
 sub has_dblink {
     my ( $self, $value ) = @_;
-    $self->deprecated("use of has_dblink() is deprecated; use has_dbxref() instead");
+    Carp::carp("use of has_dblink() is deprecated; use has_dbxref() instead");
     return $self->has_dbxref($value);
 }
 
@@ -646,8 +633,8 @@ sub has_dbxref {
 
 sub add_dblink_context {
     my ($self, $value, $context) = @_;
-    $self->deprecated("Use of simple strings and add_dblink_context() is deprecated; use\n
-                      Bio::Annotation::DBLink instances and add_dbxref() instead");
+    Carp::carp("Use of simple strings and add_dblink_context() is deprecated; use\n
+               Bio::Annotation::DBLink instances and add_dbxref() instead");
     return $self->add_dbxref([$value],$context);
 }
 
@@ -667,7 +654,7 @@ sub add_dblink_context {
 
 sub remove_dblinks {
     my ($self, $context) = @_;
-    $self->deprecated("use of remove_dblinks() is deprecated; use remove_dbxrefs() instead");
+    Carp::carp("use of remove_dblinks() is deprecated; use remove_dbxrefs() instead");
     return $self->remove_dbxrefs(@_);
 } # remove_dblinks
 
@@ -955,7 +942,7 @@ sub description {
 
 =head1  Deprecated methods
 
-Used for looking up the methods that supercedes them.
+Used for looking up the methods that supersedes them.
 
 =cut
 

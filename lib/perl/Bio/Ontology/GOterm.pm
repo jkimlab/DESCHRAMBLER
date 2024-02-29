@@ -1,4 +1,3 @@
-# $Id: GOterm.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Ontology::GOterm
 #
@@ -78,7 +77,7 @@ with code and data examples if at all possible.
 Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -105,6 +104,7 @@ methods.
 # Let the code begin...
 
 package Bio::Ontology::GOterm;
+$Bio::Ontology::GOterm::VERSION = '1.7.8';
 use strict;
 
 use constant GOID_DEFAULT => "GO:0000000";

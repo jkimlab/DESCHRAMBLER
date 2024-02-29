@@ -1,5 +1,4 @@
 #---------------------------------------------------------
-# $Id: psiblast.pm 16123 2009-09-17 12:57:27Z cjfields $
 
 =head1 NAME
 
@@ -42,7 +41,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - James Thompson
 
@@ -55,6 +54,7 @@ Email tex@biosysadmin.com
 
 # Let the code begin...
 package Bio::Matrix::PSM::IO::psiblast;
+$Bio::Matrix::PSM::IO::psiblast::VERSION = '1.7.8';
 use Bio::Matrix::PSM::Psm;
 use Bio::Matrix::PSM::ProtMatrix;
 use strict;

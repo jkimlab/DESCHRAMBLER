@@ -1,4 +1,3 @@
-# $Id: abi.pm 16123 2009-09-17 12:57:27Z cjfields $
 # BioPerl module for Bio::SeqIO::abi
 #
 # Please direct questions and support issues to <bioperl-l@bioperl.org> 
@@ -24,7 +23,7 @@ Do not use this module directly.  Use it via the Bio::SeqIO class.
 This object can transform Bio::Seq objects to and from abi trace
 files.  To optionally read the trace graph data (which can be used
 to draw chromatographs, for instance), set the optional
-'-read_graph_data' flag or the read_graph_data method to a value
+'-get_trace_data' flag or the get_trace_data method to a value
 evaluating to TRUE.
 
 =head1 FEEDBACK
@@ -55,7 +54,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.
 Bug reports can be submitted via the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHORS - Aaron Mackey
 
@@ -182,7 +181,7 @@ sub write_seq {
 
 sub get_trace_data {
 	my ($self, $val) = @_;
-	$self->{_get_trace_data} = $val ? 1 : 0;
+	$self->{_get_trace_data} = $val ? 1 : 0 if (defined $val);
 	$self->{_get_trace_data};
 }
 

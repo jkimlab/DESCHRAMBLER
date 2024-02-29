@@ -1,8 +1,7 @@
-# $Id: AlignFactory.pm 15635 2009-04-14 19:11:13Z cjfields $
 #
 # BioPerl module for Bio::Tools::AlignFactory
 #
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Ewan Birney <birney@sanger.ac.uk>
 #
@@ -18,7 +17,7 @@ Bio::Tools::AlignFactory - Base object for alignment factories
 
 =head1 SYNOPSIS
 
-You wont be using this as an object, but using a dervied class
+You won't be using this as an object, but using a dervied class
 like Bio::Tools::pSW
 
 =head1 DESCRIPTION
@@ -27,7 +26,7 @@ Holds common Alignment Factory attributes in place
 
 =head1 CONTACT
 
-http://bio.perl.org/ or birney@sanger.ac.uk 
+http://bio.perl.org/ or birney@sanger.ac.uk
 
 =head1 APPENDIX
 
@@ -59,9 +58,9 @@ sub new {
   my $self = $class->SUPER::new(@args);
   $self->_initialize(@args);
   # set up defaults
-  
+
   $self->{'kbyte'} = 20000;
-  $self->{'report'} = 0;  
+  $self->{'report'} = 0;
   return $self;
 }
 
@@ -70,20 +69,20 @@ sub new {
 
  Title     : kbyte()
  Usage     : set/gets the amount of memory able to be used
- Function  : 
+ Function  :
            : $factory->kbyte(200);
            :
- Returns   : 
+ Returns   :
  Argument  : memory in kilobytes
 
 =cut
 
 sub kbyte {
     my ($self,$value) = @_;
-    
+
     if( defined $value ) {
 	$self->{'kbyte'} = $value;
-    } 
+    }
     return $self->{'kbyte'};
 }
 
@@ -92,7 +91,7 @@ sub kbyte {
 
  Title     : report()
  Usage     : set/gets the report boolean to issue reports or not
- Function  : 
+ Function  :
            : $factory->report(1); # reporting goes on
            :
  Returns   : n/a
@@ -102,14 +101,14 @@ sub kbyte {
 
 sub report {
     my ($self,$value) = @_;
-    
+
 
     if( defined $value ) {
 	if( $value != 1 && $value != 0 ) {
 	    $self->throw("Attempting to modify AlignFactory Report with no boolean value!");
 	}
 	$self->{'report'} = $value;
-    } 
+    }
 
     return $self->{'report'};
 }
@@ -120,7 +119,7 @@ sub report {
  Usage   : Only used by subclasses.
  Function:
  Example :
- Returns : 
+ Returns :
  Args    :
 
 

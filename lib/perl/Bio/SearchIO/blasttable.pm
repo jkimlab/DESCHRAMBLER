@@ -1,4 +1,3 @@
-# $Id: blasttable.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::SearchIO::blasttable
 #
@@ -59,7 +58,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -76,6 +75,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::SearchIO::blasttable;
+$Bio::SearchIO::blasttable::VERSION = '1.7.8';
 use vars qw(%MAPPING %MODEMAP $DEFAULT_WRITER_CLASS $DefaultProgramName);
 use strict;
 use Bio::Search::Result::ResultFactory;
@@ -83,7 +83,7 @@ use Bio::Search::Hit::HitFactory;
 use Bio::Search::HSP::HSPFactory;
 
 $DefaultProgramName = 'BLASTN';
-$DEFAULT_WRITER_CLASS = 'Bio::Search::Writer::HitTableWriter';
+$DEFAULT_WRITER_CLASS = 'Bio::SearchIO::Writer::HitTableWriter';
 
 # mapping of terms to Bioperl hash keys
 %MODEMAP = (
@@ -220,6 +220,16 @@ sub next_result{
 	      $gapsm=$qgaps+$sgaps;
 	  }
 
+       if (@fields == 12 || @fields == 13) {
+          # need to determine total gaps in the alignment for NCBI output
+          # since NCBI reports number of gapopens and NOT total gaps
+          my $qlen      = abs($qstart - $qend) + 1;
+          my $querygaps = $hsp_len - $qlen;
+          my $hlen      = abs($hstart - $hend) + 1;
+          my $hitgaps   = $hsp_len - $hlen;
+          $gapsm = $querygaps + $hitgaps;
+       }
+
        # Remember Jim's code is 0 based
        if( defined $lastquery && 
 	   $lastquery ne $qname ) {
@@ -261,6 +271,11 @@ sub next_result{
 			   'Data' => $evalue});
        }
        my $identical = $hsp_len - $mismatches - $gapsm;
+       # If $positives value is absent, try to recover it from $percent_pos,
+       # this is better than letting the program to assume "conserved == identical"
+       if (not defined $positives and defined $percent_pos) {
+	   $positives = sprintf "%d", ($percent_pos * $hsp_len / 100);
+       }
        $self->start_element({'Name' => 'Hsp'});
        $self->element({'Name' => 'Hsp_evalue',			   
 		       'Data' => $evalue});       

@@ -1,4 +1,3 @@
-# $Id: IDHandler.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # bioperl module for Bio::SeqFeature::Tools::IDHandler
 #
@@ -55,7 +54,7 @@ report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Chris Mungall
 
@@ -72,6 +71,7 @@ methods. Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::SeqFeature::Tools::IDHandler;
+$Bio::SeqFeature::Tools::IDHandler::VERSION = '1.7.8';
 use strict;
 
 # Object preamble - inherits from Bio::Root::Root
@@ -240,7 +240,7 @@ sequence containing this feature; and that
 is a "unique constraint" over features
 
 The ID is persistent, so long as none of these values change - if they
-do, it is considered a seperate entity
+do, it is considered a separate entity
 
 =cut
 
@@ -252,7 +252,7 @@ sub generate_unique_persistent_id{
    if (!$sf->isa("Bio::SeqFeatureI")) {
        $sf->throw("not a Bio::SeqFeatureI");
    }
-   my $seq_id = $sf->seq_id || $sf->throw("seq_id must be set");
+   my $seq_id = $sf->seq_id || $sf->throw("seq_id must be set: ".$sf->display_name);
    #my $seq_id = $sf->seq_id || 'unknown_seq';
    if ($sf->has_tag('transcript_id')) {
        ($id) = $sf->get_tag_values('transcript_id');
@@ -261,11 +261,11 @@ sub generate_unique_persistent_id{
        ($id) = $sf->get_tag_values('protein_id');
    }
    else {
-       my $source = $sf->source_tag || $sf->throw("source tag must be set");
+       my $source = $sf->source_tag || $sf->throw("source tag must be set: ".$sf->display_name);
        #my $source = $sf->source_tag || 'unknown_source';
-       my $start = $sf->start || $sf->throw("start must be set");
+       my $start = $sf->start || $sf->throw("start must be set or is zero: ".$sf->display_name);
        my $end = $sf->end || $sf->throw("end must be set");
-       my $type = $sf->primary_tag || $sf->throw("primary_tag must be set");
+       my $type = $sf->primary_tag || $sf->throw("primary_tag/type must be set: ".$sf->display_name);
 
        $id = "$source:$type:$seq_id:$start:$end";
    }

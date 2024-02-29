@@ -1,4 +1,3 @@
-# $Id: CytoMarker.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Map::CytoMarker
 #
@@ -23,7 +22,7 @@ Bio::Map::CytoMarker - An object representing a marker.
 
 =head1 DESCRIPTION
 
-This object handles markers with a positon in a cytogenetic map known.
+This object handles markers with a position in a cytogenetic map known.
 This marker will have a name and a position.
 
 =head1 FEEDBACK
@@ -54,7 +53,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Heikki Lehvaslaiho 
 

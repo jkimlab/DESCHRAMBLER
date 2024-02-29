@@ -1,4 +1,3 @@
-# $Id: Meta.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Seq::Meta
 #
@@ -168,7 +167,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Heikki Lehvaslaiho
 
@@ -192,6 +191,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::Seq::Meta;
+$Bio::Seq::Meta::VERSION = '1.7.8';
 use vars qw($DEFAULT_NAME $GAP $META_GAP);
 use strict;
 
@@ -586,6 +586,7 @@ sub force_flush {
             $self->{force_flush} = 0;
         }
     }
+
     return $self->{force_flush};
 }
 
@@ -634,7 +635,6 @@ sub _do_flush {
 
 =cut
 
-
 sub is_flush {
 
     my ($self, $name) = shift;
@@ -648,7 +648,7 @@ sub is_flush {
         $sticky .= "$name " if $self->length != $self->named_meta_length($name);
     } else {
         foreach my $m ($self->meta_names) {
-            $sticky .= "$m " if $self->length != $self->named_meta_length($m);
+            $sticky .= "$m " if ($self->named_meta_length($m) > 0) && ($self->length != $self->named_meta_length($m));
         }
     }
 

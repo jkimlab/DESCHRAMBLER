@@ -1,4 +1,3 @@
-# $Id: TypeManager.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Annotation::TypeManager
 #
@@ -61,7 +60,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.
 Bug reports can be submitted via the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Ewan Birney
 
@@ -78,6 +77,7 @@ The rest of the documentation details each of the object methods. Internal metho
 
 
 package Bio::Annotation::TypeManager;
+$Bio::Annotation::TypeManager::VERSION = '1.7.8';
 use strict;
 
 # Object preamble - inherits from Bio::Root::Root

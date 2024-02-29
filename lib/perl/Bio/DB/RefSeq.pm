@@ -1,5 +1,4 @@
 #
-# $Id: RefSeq.pm 16168 2009-09-25 21:07:32Z cjfields $
 #
 # BioPerl module for Bio::DB::EMBL
 #
@@ -42,7 +41,7 @@ Bio::DB::RefSeq - Database object interface for RefSeq retrieval
   # or ... best when downloading very large files, prevents
   # keeping all of the file in memory
 
-  # also don't want features, just sequence so let's save bandwith
+  # also don't want features, just sequence so let's save bandwidth
   # and request Fasta sequence
   $db = Bio::DB::RefSeq->new(-retrievaltype => 'tempfile' ,
  			       -format => 'fasta');
@@ -56,7 +55,7 @@ Bio::DB::RefSeq - Database object interface for RefSeq retrieval
 Allows the dynamic retrieval of sequence objects L<Bio::Seq> from the
 RefSeq database using the dbfetch script at EBI:
 
-http://www.ebi.ac.uk/cgi-bin/dbfetch
+http://www.ebi.ac.uk/Tools/dbfetch/dbfetch
 
 In order to make changes transparent we have host type (currently only
 ebi) and location (defaults to ebi) separated out.  This allows later
@@ -66,7 +65,7 @@ The functionality of this module is inherited from L<Bio::DB::DBFetch>
 which implements L<Bio::DB::WebDBSeqI>.
 
 This module retrieves entries from EBI although it
-retrives database entries produced at NCBI. When read into bioperl
+retrieves database entries produced at NCBI. When read into bioperl
 objects, the parser for GenBank format it used. RefSeq is a
 NONSTANDARD GenBank file so be ready for surprises.
 
@@ -98,7 +97,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Heikki Lehvaslaiho
 
@@ -125,7 +124,7 @@ BEGIN {
     # you can add your own here theoretically.
     %HOSTS = (
 	       'dbfetch' => {
-		   baseurl => 'http://%s/cgi-bin/dbfetch?db=refseq&style=raw',
+		   baseurl => 'http://%s/Tools/dbfetch/dbfetch?db=refseq&style=raw',
 		   hosts   => {
 		       'ebi'  => 'www.ebi.ac.uk'
 		       }

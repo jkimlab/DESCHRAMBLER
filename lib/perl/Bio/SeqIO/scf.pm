@@ -1,4 +1,3 @@
-# $Id: scf.pm 16168 2009-09-25 21:07:32Z cjfields $
 #
 # Copyright (c) 1997-2001 bioperl, Chad Matsalla. All Rights Reserved.
 #           This module is free software; you can redistribute it and/or
@@ -53,7 +52,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR Chad Matsalla
 
@@ -77,6 +76,7 @@ methods. Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::SeqIO::scf;
+$Bio::SeqIO::scf::VERSION = '1.7.8';
 use vars qw($DEFAULT_QUALITY);
 use strict;
 use Bio::Seq::SeqFactory;
@@ -84,7 +84,7 @@ use Bio::Seq::SequenceTrace;
 use Bio::Annotation::Comment;
 use Dumpvalue;
 
-my $dumper = new Dumpvalue();
+my $dumper = Dumpvalue->new();
 $dumper->veryCompact(1);
 
 BEGIN {
@@ -479,9 +479,9 @@ sub _parse_v2_traces {
      my $array = 0;
      for (my $offset2 = 0; $offset2< scalar(@read); $offset2+=4) {
               push @{$traces->{'a'}},$read[$offset2];
-              push @{$traces->{'t'}},$read[$offset2+1];
+              push @{$traces->{'c'}},$read[$offset2+1];
               push @{$traces->{'g'}},$read[$offset2+3];
-              push @{$traces->{'c'}},$read[$offset2+2];
+              push @{$traces->{'t'}},$read[$offset2+2];
     }
     return $traces;
 }

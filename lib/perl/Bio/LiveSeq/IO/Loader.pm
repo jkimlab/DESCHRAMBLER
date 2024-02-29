@@ -1,4 +1,3 @@
-# $Id: Loader.pm 15635 2009-04-14 19:11:13Z cjfields $
 #
 # bioperl module for Bio::LiveSeq::IO::Loader
 #
@@ -64,8 +63,8 @@ use Bio::Tools::CodonTable;
   Returns : array of references to objects of class Translation
   Errorcode 0
   Args    : optional boolean flag to avoid the retrieval of SwissProt
-            informations for all Transcripts containing SwissProt x-reference
-            default is 1 (to retrieve those informations and create AARange
+            information for all Transcripts containing SwissProt x-reference
+            default is 1 (to retrieve those information and create AARange
             LiveSeq objects)
   Note    : this method can get really slow for big entries. The lightweight
             gene2liveseq method is recommended
@@ -136,7 +135,7 @@ sub entry2liveseq {
             integer (optional) "flanking": amount of flanking bases to be kept
             boolean (optional) "getswissprotinfo": if set to "0" it will avoid
              trying to fetch information from a crossreference to a SwissProt
-             entry, avoding the process of creation of AARange objects
+             entry, avoiding the process of creation of AARange objects
              It is "1" (on) by default
 
             Alternative to a gene_name, a position can be given: an
@@ -494,7 +493,7 @@ sub transexonscreation {
 
   Title   : printswissprot
   Usage   : $loader->printswissprot($hashref);
-  Function: prints out all informations loaded from a database entry into the
+  Function: prints out all information loaded from a database entry into the
             loader. Mainly used for testing purposes.
   Args    : a hashref containing the SWISSPROT entry datas
   Note    : the hashref can be obtained with a call to the method
@@ -504,7 +503,7 @@ sub transexonscreation {
 =cut
 
 # argument: hashref containing the SWISSPROT entry datas
-# prints out that hash, showing the informations loaded
+# prints out that hash, showing the information loaded
 sub printswissprot {
   my ($self,$entry)=@_;
   unless ($entry) {
@@ -539,14 +538,14 @@ sub printswissprot {
 
   Title   : printembl
   Usage   : $loader->printembl();
-  Function: prints out all informations loaded from a database entry into the
+  Function: prints out all information loaded from a database entry into the
             loader. Mainly used for testing purposes.
   Args    : none
 
 =cut
 
 # argument: hashref containing the EMBL entry datas
-# prints out that hash, showing the informations loaded
+# prints out that hash, showing the information loaded
 sub printembl {
   my ($self,$entry)=@_;
   unless ($entry) {
@@ -874,12 +873,14 @@ sub _checkfeatureproximity {
 
 sub _get_alignment {
   my ($self,$seq1,$seq2)=@_;
+
+  my $null = ($^O =~ m/mswin/i) ? 'NUL' : '/dev/null';
   my $fastafile1="/tmp/tmpfastafile1";
   my $fastafile2="/tmp/tmpfastafile2";
   my $grepcut='egrep -v "[[:digit:]]|^ *$|sequences" | cut -c8-'; # grep/cut
-  my $alignprogram="/usr/local/etc/bioinfo/fasta2/align -s /usr/local/etc/bioinfo/fasta2/idnaa.mat $fastafile1 $fastafile2 2>/dev/null | $grepcut"; # ALIGN
-  open my $TMPFASTAFILE1,">$fastafile1" || croak "Cannot write into $fastafile1 for aa alignment";
-  open my $TMPFASTAFILE2,">$fastafile2" || croak "Cannot write into $fastafile1 for aa alignment";
+  my $alignprogram="/usr/local/etc/bioinfo/fasta2/align -s /usr/local/etc/bioinfo/fasta2/idnaa.mat $fastafile1 $fastafile2 2>$null | $grepcut"; # ALIGN
+  open my $TMPFASTAFILE1, '>', $fastafile1 or croak "Could not write file '$fastafile1' for aa alignment: $!";
+  open my $TMPFASTAFILE2, '>', $fastafile2 or croak "Could not write file '$fastafile2' for aa alignment: $!";
   print $TMPFASTAFILE1 ">firstseq\n$seq1\n";
   print $TMPFASTAFILE2 ">secondseq\n$seq2\n";
   close $TMPFASTAFILE1;

@@ -1,4 +1,3 @@
-# $Id: PositionProxy.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::SeqFeature::PositionProxy
 #
@@ -22,8 +21,6 @@ Bio::SeqFeature::PositionProxy - handle features when truncation/revcom sequence
                                                  -parent => $basefeature);
 
    $seq->add_SeqFeature($feat);
-
-
 
 =head1 DESCRIPTION
 
@@ -60,7 +57,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Ewan Birney
 
@@ -68,7 +65,7 @@ Ewan Birney E<lt>birney@sanger.ac.ukE<gt>
 
 =head1 DEVELOPERS
 
-This class has been written with an eye out of inheritence. The fields
+This class has been written with an eye out of inheritance. The fields
 the actual object hash are:
 
    _gsf_tag_hash  = reference to a hash for the tags
@@ -89,6 +86,7 @@ methods. Internal methods are usually preceded with a _
 
 
 package Bio::SeqFeature::PositionProxy;
+$Bio::SeqFeature::PositionProxy::VERSION = '1.7.8';
 use strict;
 
 use Bio::Tools::GFF;
@@ -124,10 +122,9 @@ sub new {
  Title   : location
  Usage   : my $location = $seqfeature->location()
  Function: returns a location object suitable for identifying location 
-	   of feature on sequence or parent feature  
+           of feature on sequence or parent feature  
  Returns : Bio::LocationI object
  Args    : none
-
 
 =cut
 
@@ -136,8 +133,8 @@ sub location {
 
     if (defined($value)) {
         unless (ref($value) and $value->isa('Bio::LocationI')) {
-	    $self->throw("object $value pretends to be a location but ".
-			 "does not implement Bio::LocationI");
+            $self->throw("object $value pretends to be a location but ".
+                "does not implement Bio::LocationI");
         }
         $self->{'_location'} = $value;
     }
@@ -157,7 +154,6 @@ sub location {
  Returns : Bio::SeqFeatureI object
  Args    : none
 
-
 =cut
 
 sub parent {
@@ -165,8 +161,8 @@ sub parent {
 
     if (defined($value)) {
         unless (ref($value) and $value->isa('Bio::SeqFeatureI')) {
-	    $self->throw("object $value pretends to be a location but ".
-			 "does not implement Bio::SeqFeatureI");
+            $self->throw("object $value pretends to be a location but ".
+                "does not implement Bio::SeqFeatureI");
         }
         $self->{'_parent'} = $value;
     }
@@ -185,13 +181,13 @@ sub parent {
  Returns : integer
  Args    : none
 
-
 =cut
 
 sub start {
    my ($self,$value) = @_;
    return $self->location->start($value);
 }
+
 
 =head2 end
 
@@ -202,13 +198,13 @@ sub start {
  Returns : integer
  Args    : none
 
-
 =cut
 
 sub end {
    my ($self,$value) = @_;
    return $self->location->end($value);
 }
+
 
 =head2 length
 
@@ -219,13 +215,13 @@ sub end {
  Returns :
  Args    :
 
-
 =cut
 
 sub length {
    my ($self) = @_;
    return $self->end - $self->start() + 1;
 }
+
 
 =head2 strand
 
@@ -235,7 +231,6 @@ sub length {
  Function: get/set on strand information, being 1,-1 or 0
  Returns : -1,1 or 0
  Args    : none
-
 
 =cut
 
@@ -256,7 +251,6 @@ sub strand {
  Returns : TRUE on success
  Args    :
 
-
 =cut
 
 sub attach_seq {
@@ -272,11 +266,12 @@ sub attach_seq {
 
    foreach my $sf ( $self->sub_SeqFeature() ) {
        if ( $sf->can("attach_seq") ) {
-	   $sf->attach_seq($seq);
+           $sf->attach_seq($seq);
        }
    }
    return 1;
 }
+
 
 =head2 seq
 
@@ -286,7 +281,6 @@ sub attach_seq {
  Example :
  Returns : sub seq on attached sequence bounded by start & end
  Args    : none
-
 
 =cut
 
@@ -314,6 +308,7 @@ sub seq {
    return $seq;
 }
 
+
 =head2 entire_seq
 
  Title   : entire_seq
@@ -322,7 +317,6 @@ sub seq {
  Example :
  Returns :
  Args    :
-
 
 =cut
 
@@ -349,23 +343,20 @@ sub entire_seq {
  Returns : value of seqname
  Args    : newvalue (optional)
 
-
 =cut
 
 sub seqname {
     my ($obj,$value) = @_;
     if ( defined $value ) {
-	$obj->{'_gsf_seqname'} = $value;
+        $obj->{'_gsf_seqname'} = $value;
     }
     return $obj->{'_gsf_seqname'};
 }
 
 
-
 =head2 Proxies
 
 These functions chain back to the parent for all non sequence related stuff.
-
 
 =cut
 
@@ -378,14 +369,14 @@ These functions chain back to the parent for all non sequence related stuff.
  Returns : a string 
  Args    : none
 
-
 =cut
 
-sub primary_tag{
+sub primary_tag {
    my ($self,@args) = @_;
 
    return $self->parent->primary_tag();
 }
+
 
 =head2 source_tag
 
@@ -396,10 +387,9 @@ sub primary_tag{
  Returns : a string 
  Args    : none
 
-
 =cut
 
-sub source_tag{
+sub source_tag {
    my ($self) = @_;
 
    return $self->parent->source_tag();
@@ -414,44 +404,47 @@ sub source_tag{
  Returns : TRUE if the specified tag exists, and FALSE otherwise
  Args    :
 
-
 =cut
 
-sub has_tag{
+sub has_tag {
    my ($self,$tag) = @_;
 
    return $self->parent->has_tag($tag);
 }
 
-=head2 each_tag_value
 
- Title   : each_tag_value
- Usage   : @values = $self->each_tag_value('some_tag')
+=head2 get_tag_values
+
+ Title   : get_tag_values
+ Usage   : @values = $self->get_tag_values('some_tag')
  Function: 
  Returns : An array comprising the values of the specified tag.
  Args    :
 
-
 =cut
 
-sub each_tag_value {
+*each_tag_value = \&get_tag_values;
+
+sub get_tag_values {
    my ($self,$tag) = @_;
 
-   return $self->parent->each_tag_value($tag);
+   return $self->parent->get_tag_values($tag);
 }
 
-=head2 all_tags
 
- Title   : all_tags
- Usage   : @tags = $feat->all_tags()
+=head2 get_all_tags
+
+ Title   : get_all_tags
+ Usage   : @tags = $feat->get_all_tags()
  Function: gives all tags for this feature
  Returns : an array of strings
  Args    : none
 
-
 =cut
 
-sub all_tags{
+*all_tags = \&get_all_tags;
+
+sub get_all_tags {
    my ($self) = @_;
 
    return $self->parent->all_tags();

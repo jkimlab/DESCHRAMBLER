@@ -1,4 +1,3 @@
-# $Id: Coil.pm 16123 2009-09-17 12:57:27Z cjfields $
 # Parser module for Coil Bio::Tools::Coil
 #
 # Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Protein::Coil
@@ -58,7 +57,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -78,6 +77,7 @@ web:
 =cut
 
 package Bio::Tools::Coil;
+$Bio::Tools::Coil::VERSION = '1.7.8';
 use strict;
 
 use Bio::SeqFeature::FeaturePair;

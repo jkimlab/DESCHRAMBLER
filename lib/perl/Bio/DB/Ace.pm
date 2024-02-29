@@ -1,9 +1,8 @@
 
-# $Id: Ace.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::DB::Ace
 #
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Ewan Birney <birney@ebi.ac.uk>
 #
@@ -21,7 +20,7 @@ Bio::DB::Ace - Database object interface to ACeDB servers
 
     $db = Bio::DB::Ace->new( -server => 'myace.server.com', port => '120000');
 
-    $seq = $db->get_Seq_by_id('MUSIGHBA1'); # Unique ID
+    $seq = $db->get_Seq_by_id('J00522'); # Unique ID
 
     # or ...
 
@@ -63,15 +62,15 @@ Your participation is much appreciated.
   bioperl-l@bioperl.org                  - General discussion
   http://bioperl.org/wiki/Mailing_lists  - About the mailing lists
 
-=head2 Support 
+=head2 Support
 
 Please direct usage questions or support issues to the mailing list:
 
 I<bioperl-l@bioperl.org>
 
-rather than to the module maintainer directly. Many experienced and 
-reponsive experts will be able look at the problem and quickly 
-address it. Please include a thorough description of the problem 
+rather than to the module maintainer directly. Many experienced and
+reponsive experts will be able look at the problem and quickly
+address it. Please include a thorough description of the problem
 with code and data examples if at all possible.
 
 =head2 Reporting Bugs
@@ -80,7 +79,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Ewan Birney
 
@@ -183,7 +182,7 @@ sub get_Seq_by_id {
 sub get_Seq_by_acc {
 
   my $self = shift;
-  my $acc = shift or $self->throw("Must supply an accesion number!\n");
+  my $acc = shift or $self->throw("Must supply an accession number!\n");
 
   return $self->get_Seq_by_id($acc);
 }
@@ -209,9 +208,3 @@ sub _aceobj {
 }
 
 1;
-
-
-
-
-
-

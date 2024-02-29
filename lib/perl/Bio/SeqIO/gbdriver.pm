@@ -1,4 +1,3 @@
-# $Id: gbdriver.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::SeqIO::gbdriver
 #
@@ -120,7 +119,7 @@ with code and data examples if at all possible.
 Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution. Bug reports can be submitted via the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Bioperl Project
 
@@ -152,6 +151,7 @@ methods. Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::SeqIO::gbdriver;
+$Bio::SeqIO::gbdriver::VERSION = '1.7.8';
 use strict;
 use warnings;
 use Data::Dumper;
@@ -165,10 +165,12 @@ use base qw(Bio::SeqIO);
 my %FTQUAL_NO_QUOTE = map {$_ => 1} qw(
     anticodon           citation
     codon               codon_start
-    cons_splice         direction
+    compare             cons_splice
+    direction           estimated_length
     evidence            label
     mod_base            number
     rpt_type            rpt_unit
+    rpt_unit_range      tag_peptide
     transl_except       transl_table
     usedin
     );
@@ -397,7 +399,7 @@ sub write_seq {
 
  Title   : seqhandler
  Usage   : $stream->seqhandler($handler)
- Function: Get/Set teh Bio::Seq::HandlerBaseI object
+ Function: Get/Set the Bio::Seq::HandlerBaseI object
  Returns : Bio::Seq::HandlerBaseI 
  Args    : Bio::Seq::HandlerBaseI 
 

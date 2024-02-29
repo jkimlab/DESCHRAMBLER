@@ -1,4 +1,3 @@
-# $Id: Relative.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Map::Relative
 #
@@ -82,7 +81,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Sendu Bala
 
@@ -184,7 +183,7 @@ sub absolute_conversion {
         $self->throw("Relative to a Mappable, but this Mappable has no positions on the supplied Position's map") unless $value;
     }
     if (ref($value)) {
-        # psuedo-recurse
+        # pseudo-recurse
         my $rel = $value->relative;
         $value = $rel->absolute_conversion($value);
     }

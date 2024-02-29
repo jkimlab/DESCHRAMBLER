@@ -1,4 +1,3 @@
-# $Id: HTMLResultWriter.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::SearchIO::Writer::HTMLResultWriter
 #
@@ -86,7 +85,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -105,6 +104,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::SearchIO::Writer::HTMLResultWriter;
+$Bio::SearchIO::Writer::HTMLResultWriter::VERSION = '1.7.8';
 use strict;
 use vars qw(%RemoteURLDefault
             $MaxDescLen $DATE $AlignmentLineWidth $Revision);
@@ -112,11 +112,11 @@ use vars qw(%RemoteURLDefault
 # Object preamble - inherits from Bio::Root::RootI
 
 BEGIN {
-    $Revision = '$Id: HTMLResultWriter.pm 16123 2009-09-17 12:57:27Z cjfields $';
+    $Revision = '$Id$';
     $DATE = localtime(time);
     %RemoteURLDefault = ( 
-      'PROTEIN' => 'http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=protein&cmd=search&term=%s',			  
-      'NUCLEOTIDE' => 'http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=nucleotide&cmd=search&term=%s'
+      'PROTEIN' => 'https://www.ncbi.nlm.nih.gov/protein?term=%s',			  
+      'NUCLEOTIDE' => 'https://www.ncbi.nlm.nih.gov/nucleotide?term=%s'
     );
     $MaxDescLen = 60;
     $AlignmentLineWidth = 60;
@@ -439,7 +439,7 @@ sub to_string {
 			if( defined $v->{'start'} ) { 
 			    $start = $v->{'start'};
 			    # since strand can be + or - use the direction
-			    # to signify which whether to add or substract from end
+			    # to signify which whether to add or subtract from end
 			    my $d = $v->{'direction'} * ( $AlignmentLineWidth - $plen )*
 				$baselens{$v->{'name'}};
 			    if( length($piece) < $AlignmentLineWidth ) {

@@ -1,8 +1,7 @@
-# $Id: AnalysisI.pm 16147 2009-09-22 01:26:32Z cjfields $
 #
 # BioPerl module for Bio::AnalysisI
 #
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Martin Senger <martin.senger@gmail.com>
 # For copyright and disclaimer see below.
@@ -39,15 +38,15 @@ the Bioperl mailing list.  Your participation is much appreciated.
   bioperl-l@bioperl.org                  - General discussion
   http://bioperl.org/wiki/Mailing_lists  - About the mailing lists
 
-=head2 Support 
+=head2 Support
 
 Please direct usage questions or support issues to the mailing list:
 
 I<bioperl-l@bioperl.org>
 
-rather than to the module maintainer directly. Many experienced and 
-reponsive experts will be able look at the problem and quickly 
-address it. Please include a thorough description of the problem 
+rather than to the module maintainer directly. Many experienced and
+reponsive experts will be able look at the problem and quickly
+address it. Please include a thorough description of the problem
 with code and data examples if at all possible.
 
 =head2 Reporting Bugs
@@ -56,7 +55,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -92,6 +91,7 @@ message. You need to call them on a C<Bio::Tools::Run::Analysis> object instead.
 # Let the code begin...
 
 package Bio::AnalysisI;
+$Bio::AnalysisI::VERSION = '1.7.8';
 use strict;
 
 use base qw(Bio::Root::RootI);
@@ -417,7 +417,7 @@ sub wait_for { shift->throw_not_implemented(); }
 # -----------------------------------------------------------------------------
 
 package Bio::AnalysisI::JobI;
-
+$Bio::AnalysisI::JobI::VERSION = '1.7.8';
 =head1 Module Bio::AnalysisI::JobI
 
 An interface to the public methods provided by C<Bio::Tools::Run::Analysis::Job>
@@ -666,10 +666,10 @@ sub elapsed { shift->throw_not_implemented(); }
 =head2 times
 
  Usage   : $job->times ('formatted')
- Returns : a hash refrence with all time characteristics
+ Returns : a hash reference with all time characteristics
  Args    : optional
 
-It is a convenient method returning a hash reference with the folowing
+It is a convenient method returning a hash reference with the following
 keys:
 
    created
@@ -677,7 +677,7 @@ keys:
    ended
    elapsed
 
-See C<create> for remarks on time formating.
+See C<create> for remarks on time formatting.
 
 An example - both for unformatted and formatted times:
 

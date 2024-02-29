@@ -1,4 +1,16 @@
-# $Id: SimpleAlign.pm 16123 2009-09-17 12:57:27Z cjfields $
+package Bio::SimpleAlign;
+$Bio::SimpleAlign::VERSION = '1.7.8';
+use strict;
+use warnings;
+
+use Carp;
+
+use Bio::LocatableSeq;  # uses Seq's as list
+use Bio::Seq;
+use Bio::SeqFeature::Generic;
+
+use parent qw(Bio::Root::Root Bio::Align::AlignI Bio::AnnotatableI Bio::FeatureHolderI);
+
 # BioPerl module for SimpleAlign
 #
 # Please direct questions and support issues to <bioperl-l@bioperl.org> 
@@ -113,7 +125,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -146,51 +158,16 @@ methods. Internal methods are usually preceded with a _
 
 =cut
 
-# 'Let the code begin...
+## This data should probably be in a more centralized module...
+## it is taken from Clustalw documentation.
+## These are all the positively scoring groups that occur in the
+## Gonnet Pam250 matrix. The strong and weak groups are
+## defined as strong score >0.5 and weak score =<0.5 respectively.
+our %CONSERVATION_GROUPS = (
+  'strong' => [qw(STA NEQK NHQK NDEQ QHRK MILV MILF HY FYW )],
+  'weak'   => [qw(CSA ATV SAG STNK STPA SGND SNDEQK NDEQHK NEQHRK FVLIM HFY)],
+);
 
-package Bio::SimpleAlign;
-use vars qw(%CONSERVATION_GROUPS);
-use strict;
-
-use Bio::LocatableSeq;  # uses Seq's as list
-
-use Bio::Seq;
-use Bio::SeqFeature::Generic;
-
-BEGIN {
-    # This data should probably be in a more centralized module...
-    # it is taken from Clustalw documentation.
-    # These are all the positively scoring groups that occur in the
-    # Gonnet Pam250 matrix. The strong and weak groups are
-    # defined as strong score >0.5 and weak score =<0.5 respectively.
-
-    %CONSERVATION_GROUPS = (
-            'strong' => [ qw(
-						 STA
-						 NEQK
-						 NHQK
-						 NDEQ
-						 QHRK
-						 MILV
-						 MILF
-						 HY
-						 FYW )],
-				'weak' => [ qw(
-                      CSA
-					       ATV
-					       SAG
-					       STNK
-					       STPA
-					       SGND
-					       SNDEQK
-					       NDEQHK
-					       NEQHRK
-					       FVLIM
-					       HFY )],);
-}
-
-use base qw(Bio::Root::Root Bio::Align::AlignI Bio::AnnotatableI 
-	    Bio::FeatureHolderI);
 
 =head2 new
 
@@ -290,7 +267,7 @@ See L<Bio::LocatableSeq> for more information
 
 sub addSeq {
     my $self = shift;
-    $self->deprecated("addSeq - deprecated method. Use add_seq() instead.");
+    Carp::carp("addSeq - deprecated method. Use add_seq() instead.");
     $self->add_seq(@_);
 }
 
@@ -367,22 +344,20 @@ sub add_seq {
 
 sub removeSeq {
     my $self = shift;
-    $self->deprecated("removeSeq - deprecated method. Use remove_seq() instead.");
+    Carp::carp("removeSeq - deprecated method. Use remove_seq() instead.");
     $self->remove_seq(@_);
 }
 
 sub remove_seq {
     my $self = shift;
     my $seq = shift;
-    my ($name,$id,$start,$end);
+    my ($name,$id);
 
     $self->throw("Need Bio::Locatable seq argument ")
 	unless ref $seq && $seq->isa( 'Bio::LocatableSeq');
 
     $id = $seq->id();
-    $start = $seq->start();
-    $end  = $seq->end();
-    $name = sprintf("%s/%d-%d",$id,$start,$end);
+    $name = $seq->get_nse;
 
     if( !exists $self->{'_seq'}->{$name} ) {
 	$self->throw("Sequence $name does not exist in the alignment to remove!");
@@ -543,7 +518,7 @@ sub sort_by_list {
     }
 
     my $ct=1;
-    open(my $listfh, '<', $list) || $self->throw("can't open file for reading: $list");
+    open my $listfh, '<', $list or $self->throw("Could not read file '$list': $!");
     while (<$listfh>) {
       chomp;
       my $name=$_;
@@ -683,8 +658,8 @@ sub uniq_seq {
 # convert middle "?" back into "N" ("?" throws errors by SimpleAlign):
 	$str2 =~ s/\?/N/g if $str2 =~ /^[atcg\-\?]+$/i;
 	my $gap='-';
-	my $end=length($str2);
-	$end -= length($1) while $str2 =~ m/($gap+)/g;
+	my $end= CORE::length($str2);
+	$end -= CORE::length($1) while $str2 =~ m/($gap+)/g;
 	my $new = Bio::LocatableSeq->new(-id   =>"ST".$order{$str},
 					 -seq  =>$str2,
 					 -start=>1,
@@ -753,7 +728,7 @@ Methods returning one or more sequences objects.
 
 sub eachSeq {
     my $self = shift;
-    $self->deprecated("eachSeq - deprecated method. Use each_seq() instead.");
+    Carp::carp("eachSeq - deprecated method. Use each_seq() instead.");
     $self->each_seq();
 }
 
@@ -824,7 +799,7 @@ sub _alpha_startend {
 
 sub eachSeqWithId {
     my $self = shift;
-    $self->deprecated("eachSeqWithId - deprecated method. Use each_seq_with_id() instead.");
+    Carp::carp("eachSeqWithId - deprecated method. Use each_seq_with_id() instead.");
     $self->each_seq_with_id(@_);
 }
 
@@ -849,7 +824,7 @@ sub each_seq_with_id {
  Usage     : $seq = $aln->get_seq_by_pos(3) # third sequence from the alignment
  Function  : Gets a sequence based on its position in the alignment.
              Numbering starts from 1.  Sequence positions larger than
-             num_sequences() will thow an error.
+             num_sequences() will throw an error.
  Returns   : a Bio::LocatableSeq object
  Args      : positive integer for the sequence position
 
@@ -950,7 +925,7 @@ sub seq_with_features{
 	 push @es, pos($consensus_string);
    }
 
-   push @es, length($consensus_string) if $consensus_string =~ /[^?]$/;
+   push @es, CORE::length($consensus_string) if $consensus_string =~ /[^?]$/;
 
    my $seq = Bio::Seq->new();
 
@@ -987,7 +962,7 @@ current MSA.
  Usage     : $aln2 = $aln->select(1, 3) # three first sequences
  Function  : Creates a new alignment from a continuous subset of
              sequences.  Numbering starts from 1.  Sequence positions
-             larger than num_sequences() will thow an error.
+             larger than num_sequences() will throw an error.
  Returns   : a Bio::SimpleAlign object
  Args      : positive integer for the first sequence
              positive integer for the last sequence to include (optional)
@@ -1067,6 +1042,29 @@ sub select_noncont {
 	return $aln;
 }
 
+=head2 select_noncont_by_name
+
+ Title     : select_noncont_by_name
+ Usage     : my $aln2 = $aln->select_noncont_by_name('A123', 'B456');
+ Function  : Creates a new alignment from a subset of sequences which are
+             selected by name (sequence ID).
+ Returns   : a Bio::SimpleAlign object
+ Args      : array of names (i.e., identifiers) for the sequences.
+
+=cut
+
+sub select_noncont_by_name {
+    my ($self, @names) = @_;
+    
+    my $aln = $self->new;
+    foreach my $name (@names) {
+        $aln->add_seq($self->get_seq_by_id($name));
+    }
+    $aln->id($self->id);
+
+    return $aln;
+}
+
 =head2 slice
 
  Title     : slice
@@ -1120,11 +1118,17 @@ sub slice {
 	    my $slice_seq = $seq->subseq($start, $seq_end);
 	    $new_seq->seq( $slice_seq );
 
-	    $slice_seq =~ s/\W//g;
+        # Allowed extra characters in string
+        my $allowed_chars = '';
+        if (exists $self->{_mask_char}) {
+            $allowed_chars = $self->{_mask_char};
+            $allowed_chars = quotemeta $allowed_chars;
+        }
+        $slice_seq =~ s/[^\w$allowed_chars]//g;
 
-	    if ($start > 1) {
+        if ($start > 1) {
             my $pre_start_seq = $seq->subseq(1, $start - 1);
-            $pre_start_seq =~ s/\W//g;
+            $pre_start_seq =~ s/[^\w$allowed_chars]//g;
             if (!defined($seq->strand)) {
                 $new_seq->start( $seq->start + CORE::length($pre_start_seq) );
             } elsif ($seq->strand < 0){
@@ -1133,7 +1137,11 @@ sub slice {
                 $new_seq->start( $seq->start + CORE::length($pre_start_seq)  );
             }
 	    } else {
-            $new_seq->start( $seq->start);
+            if ((defined $seq->strand)&&($seq->strand < 0)){
+                $new_seq->start( $seq->end - CORE::length($slice_seq) + 1);
+            } else {
+               $new_seq->start( $seq->start);
+            }
 	    }
         if ($new_seq->isa('Bio::Seq::MetaI')) {
             for my $meta_name ($seq->meta_names) {
@@ -1230,7 +1238,7 @@ sub remove_gaps {
     # Do the matching to get the segments to remove
     while ($gap_line =~ m/[$del_char]/g) {
         my $start = pos($gap_line)-1;
-        $gap_line=~/\G[$del_char]+/gc;
+        $gap_line =~ m/\G[$del_char]+/gc;
         my $end = pos($gap_line)-1;
 
         #have to offset the start and end for subsequent removes
@@ -1267,7 +1275,7 @@ sub _remove_col {
             $sequence = $seq->seq unless $sequence;
             my $orig = $sequence;
             my $head =  $start > 0 ? substr($sequence, 0, $start) : '';
-            my $tail = ($end + 1) >= length($sequence) ? '' : substr($sequence, $end + 1);
+            my $tail = ($end + 1) >= CORE::length($sequence) ? '' : substr($sequence, $end + 1);
             $sequence = $head.$tail;
             # start
             unless (defined $new_seq->start) {
@@ -1284,9 +1292,9 @@ sub _remove_col {
                 }
             }
             # end
-            if (($end + 1) >= length($orig)) {
+            if (($end + 1) >= CORE::length($orig)) {
                 my $end_adjust = () = substr($orig, $start) =~ /$gap/g;
-                $new_seq->end($seq->end - (length($orig) - $start) + $end_adjust);
+                $new_seq->end($seq->end - (CORE::length($orig) - $start) + $end_adjust);
             }
             else {
                 $new_seq->end($seq->end);
@@ -1431,14 +1439,13 @@ sub splice_by_seq_pos{
  Title     : map_chars
  Usage     : $ali->map_chars('\.','-')
  Function  : Does a s/$arg1/$arg2/ on the sequences. Useful for gap
-             characters
+             characters.
 
-             Notice that the from (arg1) is interpretted as a regex,
-             so be careful about quoting meta characters (eg
-             $ali->map_chars('.','-') wont do what you want)
- Returns   :
- Argument  : 'from' rexexp
-             'to' string
+             Note that the first argument is interpreted as a regexp
+             so be careful and escape any wild card characters (e.g.
+             do $ali->map_chars('\.','-') to replace periods with dashes.
+ Returns   : 1 on success
+ Argument  : A regexp and a string
 
 =cut
 
@@ -1446,15 +1453,15 @@ sub map_chars {
     my $self = shift;
     my $from = shift;
     my $to   = shift;
-    my ($seq,$temp);
+    my ( $seq, $temp );
 
-    $self->throw("Need exactly two arguments")
-	unless defined $from and defined $to;
+    $self->throw("Need two arguments: a regexp and a string")
+      unless defined $from and defined $to;
 
     foreach $seq ( $self->each_seq() ) {
-	$temp = $seq->seq();
-	$temp =~ s/$from/$to/g;
-	$seq->seq($temp);
+        $temp = $seq->seq();
+        $temp =~ s/$from/$to/g;
+        $seq->seq($temp);
     }
     return 1;
 }
@@ -1465,7 +1472,7 @@ sub map_chars {
  Title     : uppercase()
  Usage     : $ali->uppercase()
  Function  : Sets all the sequences to uppercase
- Returns   :
+ Returns   : 1 on success
  Argument  :
 
 =cut
@@ -1667,12 +1674,12 @@ sub gap_line {
     my %gap_hsh; # column gaps vector
     foreach my $seq ( $self->each_seq ) {
 		my $i = 0;
-    	map {$gap_hsh{$_->[0]} = undef} grep {$_->[1] eq $gapchar}
+    	map {$gap_hsh{$_->[0]} = undef} grep {$_->[1] =~ m/[$gapchar]/}
 		  map {[$i++, $_]} split(//, uc ($seq->seq));
     }
     my $gap_line;
     foreach my $pos ( 0..$self->length-1 ) {
-	  $gap_line .= (exists $gap_hsh{$pos}) ? $gapchar:'.';
+	  $gap_line .= (exists $gap_hsh{$pos}) ? $self->gap_char:'.';
     }
     return $gap_line;
 }
@@ -1695,14 +1702,14 @@ sub all_gap_line {
     my @seqs = $self->each_seq;
     foreach my $seq ( @seqs ) {
 	my $i = 0;
-    	map {$gap_hsh{$_->[0]}++} grep {$_->[1] eq $gapchar}
+    	map {$gap_hsh{$_->[0]}++} grep {$_->[1] =~ m/[$gapchar]/}
 	map {[$i++, $_]} split(//, uc ($seq->seq));
     }
     my $gap_line;
     foreach my $pos ( 0..$self->length-1 ) {
 	if (exists $gap_hsh{$pos} && $gap_hsh{$pos} == scalar @seqs) {
             # gaps column
-	    $gap_line .= $gapchar;
+	    $gap_line .= $self->gap_char;
 	} else {
 	    $gap_line .= '.';
 	}
@@ -1714,29 +1721,29 @@ sub all_gap_line {
 
  Title    : gap_col_matrix()
  Usage    : my $cols = $align->gap_col_matrix()
- Function : Generates an array of hashes where
-            each entry in the array is a hash reference
-            with keys of all the sequence names and
-            and value of 1 or 0 if the sequence has a gap at that column
- Args     : (optional) gap line characters ($aln->gap_char or '-' by default)
+ Function : Generates an array where each element in the array is a 
+            hash reference with a key of the sequence name and a
+            value of 1 if the sequence has a gap at that column
+ Returns  : Reference to an array
+ Args     : Optional: gap line character ($aln->gap_char or '-' by default)
 
 =cut
 
 sub gap_col_matrix {
-    my ($self,$gapchar) = @_;
+    my ( $self, $gapchar ) = @_;
     $gapchar = $gapchar || $self->gap_char;
-    my %gap_hsh; # column gaps vector
+    my %gap_hsh;    # column gaps vector
     my @cols;
     foreach my $seq ( $self->each_seq ) {
-	my $i = 0;
-	my $str = $seq->seq;
-	my $len = $seq->length;
-	my $ch;
-	my $id = $seq->display_id;
-	while( $i < $len ) {
-	    $ch = substr($str, $i, 1);
-	    $cols[$i++]->{$id} = ($ch eq $gapchar);
-	}
+        my $i   = 0;
+        my $str = $seq->seq;
+        my $len = $seq->length;
+        my $ch;
+        my $id = $seq->display_id;
+        while ( $i < $len ) {
+            $ch = substr( $str, $i, 1 );
+            $cols[ $i++ ]->{$id} = ( $ch =~ m/[$gapchar]/ );
+        }
     }
     return \@cols;
 }
@@ -1753,39 +1760,41 @@ sub gap_col_matrix {
              characters in sequences, so this is mostly for output
              only. NEXUS format (Bio::AlignIO::nexus) can handle
              it.
- Returns   : 1
+ Returns   : 1 on success
  Argument  : a match character, optional, defaults to '.'
 
 =cut
 
 sub match {
-    my ($self, $match) = @_;
+    my ( $self, $match ) = @_;
 
     $match ||= '.';
     my ($matching_char) = $match;
-    $matching_char = "\\$match" if $match =~ /[\^.$|()\[\]]/ ;  #';
-    $self->map_chars($matching_char, '-');
+    $matching_char = "\\$match" if $match =~ /[\^.$|()\[\]]/;    #';
+    $self->map_chars( $matching_char, '-' );
 
     my @seqs = $self->each_seq();
     return 1 unless scalar @seqs > 1;
 
-    my $refseq = shift @seqs ;
-    my @refseq = split //, $refseq->seq;
+    my $refseq  = shift @seqs;
+    my @refseq  = split //, $refseq->seq;
     my $gapchar = $self->gap_char;
 
-    foreach my $seq ( @seqs ) {
-	my @varseq = split //, $seq->seq();
-	for ( my $i=0; $i < scalar @varseq; $i++) {
-	    $varseq[$i] = $match if defined $refseq[$i] &&
-		( $refseq[$i] =~ /[A-Za-z\*]/ ||
-		  $refseq[$i] =~ /$gapchar/ )
-		      && $refseq[$i] eq $varseq[$i];
-	}
-	$seq->seq(join '', @varseq);
+    foreach my $seq (@seqs) {
+        my @varseq = split //, $seq->seq();
+        for ( my $i = 0; $i < scalar @varseq; $i++ ) {
+            $varseq[$i] = $match
+                if defined $refseq[$i]
+                && ( $refseq[$i] =~ /[A-Za-z\*]/
+                || $refseq[$i] =~ /$gapchar/ )
+                && $refseq[$i] eq $varseq[$i];
+        }
+        $seq->seq( join '', @varseq );
     }
     $self->match_char($match);
     return 1;
 }
+
 
 
 =head2 unmatch
@@ -1793,7 +1802,7 @@ sub match {
  Title     : unmatch()
  Usage     : $ali->unmatch()
  Function  : Undoes the effect of method match. Unsets match_char.
- Returns   : 1
+ Returns   : 1 on success
  Argument  : a match character, optional, defaults to '.'
 
 See L<match> and L<match_char>
@@ -1801,29 +1810,31 @@ See L<match> and L<match_char>
 =cut
 
 sub unmatch {
-    my ($self, $match) = @_;
+    my ( $self, $match ) = @_;
 
     $match ||= '.';
 
     my @seqs = $self->each_seq();
     return 1 unless scalar @seqs > 1;
 
-    my $refseq = shift @seqs ;
-    my @refseq = split //, $refseq->seq;
+    my $refseq  = shift @seqs;
+    my @refseq  = split //, $refseq->seq;
     my $gapchar = $self->gap_char;
-    foreach my $seq ( @seqs ) {
-	my @varseq = split //, $seq->seq();
-	for ( my $i=0; $i < scalar @varseq; $i++) {
-	    $varseq[$i] = $refseq[$i] if defined $refseq[$i] &&
-		( $refseq[$i] =~ /[A-Za-z\*]/ ||
-		  $refseq[$i] =~ /$gapchar/ ) &&
-		      $varseq[$i] eq $match;
-	}
-	$seq->seq(join '', @varseq);
+    foreach my $seq (@seqs) {
+        my @varseq = split //, $seq->seq();
+        for ( my $i = 0; $i < scalar @varseq; $i++ ) {
+            $varseq[$i] = $refseq[$i]
+                if defined $refseq[$i]
+                && ( $refseq[$i] =~ /[A-Za-z\*]/
+                || $refseq[$i] =~ /$gapchar/ )
+                && $varseq[$i] eq $match;
+        }
+        $seq->seq( join '', @varseq );
     }
     $self->match_char('');
     return 1;
 }
+
 
 =head1 MSA attributes
 
@@ -1844,10 +1855,10 @@ methods. Unset them by setting to an empty string ('').
 =cut
 
 sub id {
-    my ($self, $name) = @_;
+    my ( $self, $name ) = @_;
 
-    if (defined( $name )) {
-	$self->{'_id'} = $name;
+    if ( defined($name) ) {
+        $self->{'_id'} = $name;
     }
 
     return $self->{'_id'};
@@ -1864,10 +1875,10 @@ sub id {
 =cut
 
 sub accession {
-    my ($self, $acc) = @_;
+    my ( $self, $acc ) = @_;
 
-    if (defined( $acc )) {
-	$self->{'_accession'} = $acc;
+    if ( defined($acc) ) {
+        $self->{'_accession'} = $acc;
     }
 
     return $self->{'_accession'};
@@ -1884,10 +1895,10 @@ sub accession {
 =cut
 
 sub description {
-    my ($self, $name) = @_;
+    my ( $self, $name ) = @_;
 
-    if (defined( $name )) {
-	$self->{'_description'} = $name;
+    if ( defined($name) ) {
+        $self->{'_description'} = $name;
     }
 
     return $self->{'_description'};
@@ -1906,15 +1917,17 @@ sub description {
 =cut
 
 sub missing_char {
-    my ($self, $char) = @_;
+    my ( $self, $char ) = @_;
 
-    if (defined $char ) {
-	$self->throw("Single missing character, not [$char]!") if CORE::length($char) > 1;
-	$self->{'_missing_char'} = $char;
+    if ( defined $char ) {
+        $self->throw("Single missing character, not [$char]!")
+            if CORE::length($char) > 1;
+        $self->{'_missing_char'} = $char;
     }
 
     return $self->{'_missing_char'};
 }
+
 
 =head2 match_char
 
@@ -1927,11 +1940,12 @@ sub missing_char {
 =cut
 
 sub match_char {
-    my ($self, $char) = @_;
+    my ( $self, $char ) = @_;
 
-    if (defined $char ) {
-	$self->throw("Single match character, not [$char]!") if CORE::length($char) > 1;
-	$self->{'_match_char'} = $char;
+    if ( defined $char ) {
+        $self->throw("Single match character, not [$char]!")
+            if CORE::length($char) > 1;
+        $self->{'_match_char'} = $char;
     }
 
     return $self->{'_match_char'};
@@ -1948,15 +1962,17 @@ sub match_char {
 =cut
 
 sub gap_char {
-    my ($self, $char) = @_;
+    my ( $self, $char ) = @_;
 
-    if (defined $char || ! defined $self->{'_gap_char'} ) {
-	$char= '-' unless defined $char;
-	$self->throw("Single gap character, not [$char]!") if CORE::length($char) > 1;
-	$self->{'_gap_char'} = $char;
+    if ( defined $char || !defined $self->{'_gap_char'} ) {
+        $char = '-' unless defined $char;
+        $self->throw("Single gap character, not [$char]!")
+            if CORE::length($char) > 1;
+        $self->{'_gap_char'} = $char;
     }
     return $self->{'_gap_char'};
 }
+
 
 =head2 symbol_chars
 
@@ -2013,7 +2029,7 @@ sub score {
  Usage     : $str = $ali->consensus_string($threshold_percent)
  Function  : Makes a strict consensus
  Returns   : Consensus string
- Argument  : Optional treshold ranging from 0 to 100.
+ Argument  : Optional threshold ranging from 0 to 100.
              The consensus residue has to appear at least threshold %
              of the sequences at a given location, otherwise a '?'
              character will be placed at that location.
@@ -2022,16 +2038,40 @@ sub score {
 =cut
 
 sub consensus_string {
-    my $self = shift;
+    my $self      = shift;
     my $threshold = shift;
 
     my $out = "";
     my $len = $self->length - 1;
 
     foreach ( 0 .. $len ) {
-	$out .= $self->_consensus_aa($_,$threshold);
+        $out .= $self->_consensus_aa( $_, $threshold );
     }
     return $out;
+}
+
+
+=head2 consensus_conservation
+
+ Title     : consensus_conservation
+ Usage     : @conservation = $ali->consensus_conservation();
+ Function  : Conservation (as a percent) of each position of alignment
+ Returns   : Array of percentages [0-100]. Gap columns are 0% conserved.
+ Argument  : 
+ 
+=cut
+
+sub consensus_conservation {
+    my $self = shift;
+    my @cons;
+    my $num_sequences = $self->num_sequences;
+    foreach my $point (0..$self->length-1) {
+        my %hash = $self->_consensus_counts($point);
+        # max frequency of a non-gap letter
+        my $max = (sort {$b<=>$a} values %hash )[0];
+        push @cons, 100 * $max / $num_sequences;
+    }
+    return @cons; 
 }
 
 sub _consensus_aa {
@@ -2040,13 +2080,7 @@ sub _consensus_aa {
     my $threshold_percent = shift || -1 ;
     my ($seq,%hash,$count,$letter,$key);
     my $gapchar = $self->gap_char;
-    foreach $seq ( $self->each_seq() ) {
-	$letter = substr($seq->seq,$point,1);
-	$self->throw("--$point-----------") if $letter eq '';
-	($letter eq $gapchar || $letter =~ /\./) && next;
-	# print "Looking at $letter\n";
-	$hash{$letter}++;
-    }
+    %hash = $self->_consensus_counts($point);
     my $number_of_sequences = $self->num_sequences();
     my $threshold = $number_of_sequences * $threshold_percent / 100. ;
     $count = -1;
@@ -2060,6 +2094,21 @@ sub _consensus_aa {
 	}
     }
     return $letter;
+}
+
+# Frequency of each letter in one column
+sub _consensus_counts {
+    my $self = shift;
+    my $point = shift;
+    my %hash;
+    my $gapchar = $self->gap_char;
+    foreach my $seq ( $self->each_seq() ) {
+        my $letter = substr($seq->seq,$point,1);
+        $self->throw("--$point-----------") if $letter eq '';
+        ($letter eq $gapchar || $letter =~ /\./) && next;
+        $hash{$letter}++;
+    }
+    return %hash;
 }
 
 
@@ -2083,17 +2132,18 @@ sub _consensus_aa {
 
 sub consensus_iupac {
     my $self = shift;
-    my $out = "";
-    my $len = $self->length-1;
+    my $out  = "";
+    my $len  = $self->length - 1;
 
     # only DNA and RNA sequences are valid
     foreach my $seq ( $self->each_seq() ) {
-	$self->throw("Seq [". $seq->get_nse. "] is a protein")
-	    if $seq->alphabet eq 'protein';
+        $self->throw( "Seq [" . $seq->get_nse . "] is a protein" )
+            if $seq->alphabet eq 'protein';
     }
+
     # loop over the alignment columns
     foreach my $count ( 0 .. $len ) {
-	$out .= $self->_consensus_iupac($count);
+        $out .= $self->_consensus_iupac($count);
     }
     return $out;
 }
@@ -2223,26 +2273,27 @@ sub consensus_meta {
 =cut
 
 sub is_flush {
-    my ($self,$report) = @_;
+    my ( $self, $report ) = @_;
     my $seq;
     my $length = (-1);
     my $temp;
 
     foreach $seq ( $self->each_seq() ) {
-	if( $length == (-1) ) {
-	    $length = CORE::length($seq->seq());
-	    next;
-	}
+        if ( $length == (-1) ) {
+            $length = CORE::length( $seq->seq() );
+            next;
+        }
 
-	$temp = CORE::length($seq->seq());
-	if( $temp != $length ) {
-	    $self->warn("expecting $length not $temp from ".
-			$seq->display_id) if( $report );
-	    $self->debug("expecting $length not $temp from ".
-			 $seq->display_id);
-	    $self->debug($seq->seq(). "\n");
-	    return 0;
-	}
+        $temp = CORE::length( $seq->seq() );
+        if ( $temp != $length ) {
+            $self->warn(
+                "expecting $length not $temp from " . $seq->display_id )
+                if ($report);
+            $self->debug(
+                "expecting $length not $temp from " . $seq->display_id );
+            $self->debug( $seq->seq() . "\n" );
+            return 0;
+        }
     }
 
     return 1;
@@ -2262,7 +2313,7 @@ sub is_flush {
 
 sub length_aln {
     my $self = shift;
-    $self->deprecated("length_aln - deprecated method. Use length() instead.");
+    Carp::carp("length_aln - deprecated method. Use length() instead.");
     $self->length(@_);
 }
 
@@ -2296,29 +2347,29 @@ sub length {
 
 sub maxname_length {
     my $self = shift;
-    $self->deprecated("maxname_length - deprecated method.".
-		      " Use maxdisplayname_length() instead.");
+    Carp::carp("maxname_length - deprecated method."
+               . " Use maxdisplayname_length() instead.");
     $self->maxdisplayname_length();
 }
 
 sub maxnse_length {
     my $self = shift;
-    $self->deprecated("maxnse_length - deprecated method.".
-		      " Use maxnse_length() instead.");
+    Carp::carp("maxnse_length - deprecated method."
+               . " Use maxnse_length() instead.");
     $self->maxdisplayname_length();
 }
 
 sub maxdisplayname_length {
-    my $self = shift;
+    my $self    = shift;
     my $maxname = (-1);
-    my ($seq,$len);
+    my ( $seq, $len );
 
     foreach $seq ( $self->each_seq() ) {
-	$len = CORE::length $self->displayname($seq->get_nse());
+        $len = CORE::length $self->displayname( $seq->get_nse() );
 
-	if( $len > $maxname ) {
-	    $maxname = $len;
-	}
+        if ( $len > $maxname ) {
+            $maxname = $len;
+        }
     }
 
     return $maxname;
@@ -2378,13 +2429,13 @@ sub max_metaname_length {
 =cut
 
 sub num_residues {
-    my $self = shift;
+    my $self  = shift;
     my $count = 0;
 
-    foreach my $seq ($self->each_seq) {
-	my $str = $seq->seq();
+    foreach my $seq ( $self->each_seq ) {
+        my $str = $seq->seq();
 
-	$count += ($str =~ s/[A-Za-z]//g);
+        $count += ( $str =~ s/[A-Za-z]//g );
     }
 
     return $count;
@@ -2405,7 +2456,6 @@ sub num_sequences {
     my $self = shift;
     return scalar($self->each_seq);
 }
-
 
 =head2 average_percentage_identity
 
@@ -2504,73 +2554,66 @@ sequence in the alignment. Method modification code by Hongyu Zhang.
 sub overall_percentage_identity{
    my ($self, $length_measure) = @_;
 
-   my @alphabet = ('A','B','C','D','E','F','G','H','I','J','K','L','M',
-                   'N','O','P','Q','R','S','T','U','V','W','X','Y','Z');
+   my %alphabet = map {$_ => undef} qw (A C G T U B D E F H I J K L M N O P Q R S V W X Y Z);
 
-   my ($len, $total, @seqs, @countHashes);
-
-   my %enum = map {$_ => 1} qw (align short long);
+   my %enum = map {$_ => undef} qw (align short long);
 
    $self->throw("Unknown argument [$length_measure]") 
-       if $length_measure and not $enum{$length_measure};
+       if $length_measure and not exists $enum{$length_measure};
    $length_measure ||= 'align';
 
    if (! $self->is_flush()) {
        $self->throw("All sequences in the alignment must be the same length");
    }
 
-   @seqs = $self->each_seq();
-   $len = $self->length();
+   # Count the residues seen at each position
+   my $len;
+   my $total = 0; # number of positions with identical residues
+   my @countHashes;
+   my @seqs = $self->each_seq;
+   my $nof_seqs = scalar @seqs;
+   my $aln_len = $self->length();
+   for my $seq (@seqs)  {
+       my $seqstr = $seq->seq;
 
-   # load the each hash with correct keys for existence checks
-   for( my $index=0; $index < $len; $index++) {
-       foreach my $letter (@alphabet) {
-	   $countHashes[$index]->{$letter} = 0;
-       }
-   }
-   foreach my $seq (@seqs)  {
-       my @seqChars = split //, $seq->seq();
-       for( my $column=0; $column < @seqChars; $column++ ) {
-	   my $char = uc($seqChars[$column]);
-	   if (exists $countHashes[$column]->{$char}) {
-	       $countHashes[$column]->{$char}++;
-	   }
-       }
-   }
+       # Count residues for given sequence
+       for my $column (0 .. $aln_len-1) {
+           my $char = uc( substr($seqstr, $column, 1) );
+           if ( exists $alphabet{$char} ) {
 
-   $total = 0;
-   for(my $column =0; $column < $len; $column++) {
-       my %hash = %{$countHashes[$column]};
-       foreach ( values %hash ) {
-	   next if( $_ == 0 );
-	   $total++ if( $_ == scalar @seqs );
-	   last;
-       }
-   }
+               # This is a valid char
+               if ( defined $countHashes[$column]->{$char} ) {
+                 $countHashes[$column]->{$char}++;
+               } else {
+                 $countHashes[$column]->{$char} = 1;
+               }
 
-   if ($length_measure eq 'short') {
-       ## find the shortest length
-       $len = 0;
-       foreach my $seq ($self->each_seq) {
-           my $count = $seq->seq =~ tr/[A-Za-z]//;
-           if ($len) {
-               $len = $count if $count < $len;
-           } else {
-               $len = $count;
+               if ( $countHashes[$column]->{$char} == $nof_seqs ) {
+                   # All sequences have this same residue
+                   $total++;
+               }
+
            }
        }
-   }
-   elsif ($length_measure eq 'long') {
-       ## find the longest length
-       $len = 0;
-       foreach my $seq ($self->each_seq) {
-           my $count = $seq->seq =~ tr/[A-Za-z]//;
-           if ($len) {
-               $len = $count if $count > $len;
-           } else {
-               $len = $count;
+
+       # Sequence length
+       if ($length_measure eq 'short' || $length_measure eq 'long') {
+           my $seq_len = $seqstr =~ tr/[A-Za-z]//;
+           if ($length_measure eq 'short') {
+               if ( (not defined $len) || ($seq_len < $len) ) {
+                   $len = $seq_len;
+               }
+           } elsif ($length_measure eq 'long') {
+               if ( (not defined $len) || ($seq_len > $len) ) {
+                   $len = $seq_len;
+               }
            }
        }
+
+   }
+
+   if ($length_measure eq 'align') {
+       $len = $aln_len;
    }
 
    return ($total / $len ) * 100.0;
@@ -2624,22 +2667,21 @@ L<Bio::LocatableSeq::location_from_column>:
 =cut
 
 sub column_from_residue_number {
-    my ($self, $name, $resnumber) = @_;
+    my ( $self, $name, $resnumber ) = @_;
 
-    $self->throw("No sequence with name [$name]") unless $self->{'_start_end_lists'}->{$name};
+    $self->throw("No sequence with name [$name]")
+        unless $self->{'_start_end_lists'}->{$name};
     $self->throw("Second argument residue number missing") unless $resnumber;
 
-    foreach my $seq ($self->each_seq_with_id($name)) {
-	my $col;
-	eval {
-	    $col = $seq->column_from_residue_number($resnumber);
-	};
-	next if $@;
-	return $col;
+    foreach my $seq ( $self->each_seq_with_id($name) ) {
+        my $col;
+        eval { $col = $seq->column_from_residue_number($resnumber); };
+        next if $@;
+        return $col;
     }
 
-    $self->throw("Could not find a sequence segment in $name ".
-		 "containing residue number $resnumber");
+    $self->throw( "Could not find a sequence segment in $name "
+            . "containing residue number $resnumber" );
 
 }
 
@@ -2660,34 +2702,36 @@ ways.
 
 =cut
 
+sub displayname {
+    my ( $self, $name, $disname ) = @_;
+
+    $self->throw("No sequence with name [$name]")
+        unless defined $self->{'_seq'}->{$name};
+
+    if ( $disname and $name ) {
+        $self->{'_dis_name'}->{$name} = $disname;
+        return $disname;
+    }
+    elsif ( defined $self->{'_dis_name'}->{$name} ) {
+        return $self->{'_dis_name'}->{$name};
+    }
+    else {
+        return $name;
+    }
+}
+
 sub get_displayname {
     my $self = shift;
-    $self->deprecated("get_displayname - deprecated method. Use displayname() instead.");
+    Carp::carp("get_displayname - deprecated method. Use displayname() instead.");
     $self->displayname(@_);
 }
 
 sub set_displayname {
     my $self = shift;
-    $self->deprecated("set_displayname - deprecated method. Use displayname() instead.");
+    Carp::carp("set_displayname - deprecated method. Use displayname() instead.");
     $self->displayname(@_);
 }
 
-sub displayname {
-    my ($self, $name, $disname) = @_;
-
-    $self->throw("No sequence with name [$name]")
-        unless defined $self->{'_seq'}->{$name};
-
-    if(  $disname and  $name) {
-	$self->{'_dis_name'}->{$name} = $disname;
-	return $disname;
-    }
-    elsif( defined $self->{'_dis_name'}->{$name} ) {
-	return  $self->{'_dis_name'}->{$name};
-    } else {
-	return $name;
-    }
-}
 
 =head2 set_displayname_count
 
@@ -2730,7 +2774,7 @@ sub set_displayname_count {
  Title     : set_displayname_flat
  Usage     : $ali->set_displayname_flat()
  Function  : Makes all the sequences be displayed as just their name,
-             not name/start-end
+             not name/start-end (NSE)
  Returns   : 1
  Argument  :
 
@@ -2738,20 +2782,21 @@ sub set_displayname_count {
 
 sub set_displayname_flat {
     my $self = shift;
-    my ($nse,$seq);
+    my ( $nse, $seq );
 
     foreach $seq ( $self->each_seq() ) {
-	$nse = $seq->get_nse();
-	$self->displayname($nse,$seq->id());
+        $nse = $seq->get_nse();
+        $self->displayname( $nse, $seq->id() );
     }
     return 1;
 }
+
 
 =head2 set_displayname_normal
 
  Title     : set_displayname_normal
  Usage     : $ali->set_displayname_normal()
- Function  : Makes all the sequences be displayed as name/start-end
+ Function  : Makes all the sequences be displayed as name/start-end (NSE)
  Returns   : 1, on success
  Argument  :
 
@@ -2759,11 +2804,11 @@ sub set_displayname_flat {
 
 sub set_displayname_normal {
     my $self = shift;
-    my ($nse,$seq);
+    my ( $nse, $seq );
 
     foreach $seq ( $self->each_seq() ) {
-	$nse = $seq->get_nse();
-	$self->displayname($nse,$nse);
+        $nse = $seq->get_nse();
+        $self->displayname( $nse, $nse );
     }
     return 1;
 }
@@ -2777,16 +2822,16 @@ sub set_displayname_normal {
  Returns : value of source
  Args    : newvalue (optional)
 
-
 =cut
 
-sub source{
-   my ($self,$value) = @_;
-   if( defined $value) {
-      $self->{'_source'} = $value;
+sub source {
+    my ( $self, $value ) = @_;
+    if ( defined $value ) {
+        $self->{'_source'} = $value;
     }
     return $self->{'_source'};
 }
+
 
 =head2 set_displayname_safe
 
@@ -2805,25 +2850,28 @@ sub source{
 sub set_displayname_safe {
     my $self = shift;
     my $idlength = shift || 10;
-    my ($seq, %phylip_name);
-    my $ct=0;
-    my $new=Bio::SimpleAlign->new();
+    my ( $seq, %phylip_name );
+    my $ct  = 0;
+    my $new = Bio::SimpleAlign->new();
     foreach $seq ( $self->each_seq() ) {
-	$ct++;
-	my $pname="S". sprintf "%0" . ($idlength-1) . "s", $ct;
-	$phylip_name{$pname}=$seq->id();
-	my $new_seq= Bio::LocatableSeq->new(-id       => $pname,
-					    -seq      => $seq->seq(),
-					    -alphabet => $seq->alphabet,
-					    -start    => $seq->{_start},
-					    -end      => $seq->{_end}
-					    );
-	$new->add_seq($new_seq);
+        $ct++;
+        my $pname = "S" . sprintf "%0" . ( $idlength - 1 ) . "s", $ct;
+        $phylip_name{$pname} = $seq->id();
+        my $new_seq = Bio::LocatableSeq->new(
+            -id       => $pname,
+            -seq      => $seq->seq(),
+            -alphabet => $seq->alphabet,
+            -start    => $seq->{_start},
+            -end      => $seq->{_end}
+        );
+        $new->add_seq($new_seq);
     }
 
-    $self->debug("$ct seq names changed. Restore names by using restore_displayname.");
-    return ($new, \%phylip_name);
+    $self->debug(
+        "$ct seq names changed. Restore names by using restore_displayname.");
+    return ( $new, \%phylip_name );
 }
+
 
 =head2 restore_displayname
 
@@ -2843,7 +2891,7 @@ sub restore_displayname {
     my $new=Bio::SimpleAlign->new();
     foreach my $seq ( $self->each_seq() ) {
       $self->throw("No sequence with name") unless defined $name{$seq->id()};
-      my $new_seq= Bio::LocatableSeq->new(-id       => $name{$seq->id()},
+      my $new_seq= Bio::LocatableSeq->new(-id => $name{$seq->id()},
 					  -seq      => $seq->seq(),
 					  -alphabet => $seq->alphabet,
 					  -start    => $seq->{_start},
@@ -2860,7 +2908,7 @@ sub restore_displayname {
  Usage     : $ali->sort_by_start
  Function  : Changes the order of the alignment to the start position of each
              subalignment    
- Returns   :
+ Returns   : 1 on success
  Argument  :
 
 =cut
@@ -2881,8 +2929,7 @@ sub sort_by_start {
     1;
 }
 
-sub _startend
-{
+sub _startend {
     my ($aname,$arange) = split (/[\/]/,$a);
     my ($bname,$brange) = split (/[\/]/,$b);
     my ($astart,$aend) = split(/\-/,$arange);
@@ -2985,42 +3032,52 @@ would get from NEXUS represented data.
 =cut
 
 sub get_SeqFeatures {
-    my $self = shift;
+    my $self      = shift;
     my $filter_cb = shift;
-    $self->throw("Arg (filter callback) must be a coderef") unless 
-	!defined($filter_cb) or ref($filter_cb) eq 'CODE';
-    if( !defined $self->{'_as_feat'} ) {
-	$self->{'_as_feat'} = [];
+    $self->throw("Arg (filter callback) must be a coderef")
+        unless !defined($filter_cb)
+        or ref($filter_cb) eq 'CODE';
+    if ( !defined $self->{'_as_feat'} ) {
+        $self->{'_as_feat'} = [];
     }
     if ($filter_cb) {
-	return grep { $filter_cb->($_) } @{$self->{'_as_feat'}};
+        return grep { $filter_cb->($_) } @{ $self->{'_as_feat'} };
     }
-    return @{$self->{'_as_feat'}};
+    return @{ $self->{'_as_feat'} };
 }
+
 
 =head2 add_SeqFeature
 
  Usage   : $aln->add_SeqFeature($subfeat);
- Function: adds a SeqFeature into the SeqFeature array.
+ Function: Adds a SeqFeature into the SeqFeature array. The 'EXPAND' qualifier
+           (see L<Bio::FeatureHolderI>) is supported, but has no effect.
  Example :
- Returns : true on success
+ Returns : 1 on success
  Args    : a Bio::SeqFeatureI object
- Note    : This implementation is not compliant
-           with Bio::FeatureHolderI
 
 =cut
 
 sub add_SeqFeature {
-   my ($self,@feat) = @_;
+   my ($self, @feat) = @_;
 
    $self->{'_as_feat'} = [] unless $self->{'_as_feat'};
 
-   foreach my $feat ( @feat ) {
+   if (scalar @feat > 1) {
+      Carp::carp('Providing an array of features to Bio::SimpleAlign'
+                 . 'add_SeqFeature() is deprecated and will be removed in a'
+                 . ' future version.  Add a single feature at a time instead.');
+   }
+
+   for my $feat ( @feat ) {
+
+       next if $feat eq 'EXPAND'; # Need to support it for FeatureHolderI compliance
+
        if( !$feat->isa("Bio::SeqFeatureI") ) {
-           $self->throw("$feat is not a SeqFeatureI and that's what we expect...");
+           $self->throw("Expected a Bio::SeqFeatureI object, but got a $feat.");
        }
 
-       push(@{$self->{'_as_feat'}},$feat);
+       push @{$self->{'_as_feat'}}, $feat;
    }
    return 1;
 }
@@ -3112,46 +3169,6 @@ sub annotation {
 
 =head1 Deprecated methods
 
-=cut
-
-=head2 no_residues
-
- Title     : no_residues
- Usage     : $no = $ali->no_residues
- Function  : number of residues in total in the alignment
- Returns   : integer
- Argument  :
- Note      : deprecated in favor of num_residues() 
-
-=cut
-
-sub no_residues {
-	my $self = shift;
-	$self->deprecated(-warn_version => 1.0069,
-					  -throw_version => 1.0075,
-                      -message => 'Use of method no_residues() is deprecated, use num_residues() instead');
-    $self->num_residues(@_);
-}
-
-=head2 no_sequences
-
- Title     : no_sequences
- Usage     : $depth = $ali->no_sequences
- Function  : number of sequence in the sequence alignment
- Returns   : integer
- Argument  :
- Note      : deprecated in favor of num_sequences()
-
-=cut
-
-sub no_sequences {
-	my $self = shift;
-	$self->deprecated(-warn_version => 1.0069,
-					  -throw_version => 1.0075,
-                      -message => 'Use of method no_sequences() is deprecated, use num_sequences() instead');
-    $self->num_sequences(@_);
-}
-
 =head2 mask_columns
 
  Title     : mask_columns
@@ -3209,9 +3226,9 @@ sub mask_columns {
         $new_seq->seq($new_dna_string);
         $aln->add_seq($new_seq);
     }
+    # Preserve chosen mask character, it may be need later (like in 'slice')
+    $aln->{_mask_char} = $mask_char;
     return $aln;
 }
-
-
 
 1;

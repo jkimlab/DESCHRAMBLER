@@ -1,4 +1,3 @@
-# $Id: Individual.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::PopGen::Individual
 #
@@ -56,7 +55,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -114,7 +113,7 @@ sub new {
       if( ref($genotypes) =~ /array/i ) {
 	  $self->add_Genotype(@$genotypes);
       } else { 
-	  $self->warn("Must provide a valid array reference to set the genotypes value in the contructor");
+	  $self->warn("Must provide a valid array reference to set the genotypes value in the constructor");
       }
   }
   return $self;
@@ -258,7 +257,7 @@ sub get_Genotypes{
        unshift @args, '-marker' if( @args == 1 );  # deal with single args
        
        my ($name) = $self->_rearrange([qw(MARKER)], @args);
-       if( ! $name ) {
+       if( ! defined($name) ) {
 	   $self->warn("Only know how to process the -marker field currently");
 	   return();
        }

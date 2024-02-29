@@ -1,4 +1,3 @@
-# $Id: HitTableWriter.pm 16123 2009-09-17 12:57:27Z cjfields $
 
 =head1 NAME
 
@@ -155,7 +154,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR 
 
@@ -185,7 +184,7 @@ L<Bio::SearchIO::Writer::ResultTableWriter>
 =cut
 
 package Bio::SearchIO::Writer::HitTableWriter;
-
+$Bio::SearchIO::Writer::HitTableWriter::VERSION = '1.7.8';
 use strict;
 
 use base qw(Bio::SearchIO::Writer::ResultTableWriter);

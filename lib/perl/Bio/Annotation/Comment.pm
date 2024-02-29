@@ -1,4 +1,3 @@
-# $Id: Comment.pm 15635 2009-04-14 19:11:13Z cjfields $
 #
 # BioPerl module for Bio::Annotation::Comment
 #
@@ -44,6 +43,7 @@ methods. Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::Annotation::Comment;
+$Bio::Annotation::Comment::VERSION = '1.7.8';
 use strict;
 
 use base qw(Bio::Root::Root Bio::AnnotationI);

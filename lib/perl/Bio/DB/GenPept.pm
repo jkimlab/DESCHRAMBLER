@@ -1,4 +1,3 @@
-# $Id: GenPept.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::DB::GenPept
 #
@@ -77,7 +76,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Aaron Mackey, Jason Stajich
 
@@ -185,7 +184,7 @@ sub default_format {
   Usage   : $seq = $db->get_Seq_by_acc('AAC73346');
   Function: Gets a Seq objects by accession number
   Returns : Bio::Seq object
-  Args    : accession number to retrive by
+  Args    : accession number to retrieve by
 
 =head1 Routines implemented by Bio::DB::NCBIHelper
 

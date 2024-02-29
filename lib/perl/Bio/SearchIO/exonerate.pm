@@ -1,4 +1,3 @@
-# $Id: exonerate.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::SearchIO::exonerate
 #
@@ -98,7 +97,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -116,6 +115,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::SearchIO::exonerate;
+$Bio::SearchIO::exonerate::VERSION = '1.7.8';
 use strict;
 use vars qw(@STATES %MAPPING %MODEMAP $DEFAULT_WRITER_CLASS $MIN_INTRON);
 
@@ -155,7 +155,7 @@ use base qw(Bio::SearchIO);
     'ExonerateOutput_query-len' => 'RESULT-query_length',
     );
 
-$DEFAULT_WRITER_CLASS = 'Bio::Search::Writer::HitTableWriter';
+$DEFAULT_WRITER_CLASS = 'Bio::SearchIO::Writer::HitTableWriter';
 
 $MIN_INTRON=30; # This is the minimum intron size
 
@@ -165,7 +165,7 @@ $MIN_INTRON=30; # This is the minimum intron size
  Usage   : my $obj = Bio::SearchIO::exonerate->new();
  Function: Builds a new Bio::SearchIO::exonerate object
  Returns : an instance of Bio::SearchIO::exonerate
- Args    : -min_intron => somewhat obselete option, how to determine if a
+ Args    : -min_intron => somewhat obsolete option, how to determine if a
                           an indel is an intron or a local gap.  Use VULGAR
                           rather than CIGAR to avoid this heuristic,default 30.
            -cigar       => 1   set this to 1 if you want to parse
@@ -220,7 +220,7 @@ sub next_result{
    my (@q_ex, @m_ex, @h_ex); ## gc addition
    while( defined($_ = $self->_readline) ) {
        # warn( "Reading $_");
-       if( /^Query:\s+(\S+)\s*(.+)?/ ) {
+       if( /^\s*Query:\s+(\S+)\s*(.+)?/ ) {
 	   if( $seentop ) {
 	       $self->end_element({'Name' => 'ExonerateOutput'});
 	       $self->_pushback($_);
@@ -254,7 +254,7 @@ sub next_result{
 		 (\d+)\s+(\d+)\s+([\-\+\.])\s+ # query start-end-strand
 		 (\S+)\s+                      # target sequence id
 		 (\d+)\s+(\d+)\s+([\-\+])\s+   # target start-end-strand
-		 (\d+)\s+                      # score
+		 (-?\d+)\s+                    # score
 		 //ox ) {
 	   next if( $self->cigar || $self->{'_seencigar'});
 	   $self->{'_vulgar'}++;
@@ -367,7 +367,7 @@ sub next_result{
 		 (\d+)\s+(\d+)\s+([\-\+])\s+   # query start-end-strand
 		 (\S+)\s+                      # target sequence id
 		 (\d+)\s+(\d+)\s+([\-\+])\s+   # target start-end-strand
-		 (\d+)\s+                      # score
+		 (-?\d+)\s+                    # score
 		 //ox ) {
 	   next if( $self->vulgar || $self->{'_seenvulgar'});
 	   $self->{'_cigar'}++;

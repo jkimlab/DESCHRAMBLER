@@ -1,4 +1,3 @@
-# $Id: Generic.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Matrix::Generic
 #
@@ -68,7 +67,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -82,6 +81,7 @@ Internal methods are usually preceded with a _
 =cut
 
 package Bio::Matrix::Generic;
+$Bio::Matrix::Generic::VERSION = '1.7.8';
 use strict;
 
 
@@ -199,13 +199,14 @@ sub matrix_name{
 =head2 entry
 
  Title   : entry
- Usage   : my $entry = $matrix->entry($row,$col)
+ Usage   : my $entry = $matrix->entry($row,$col,$value)
  Function: Get the value for a specific cell as specified
            by the row and column names
  Returns : scalar value or undef if row or col does not
            exist
  Args    : $rowname - name of the row
            $colname - column name
+           $value   - [optional] New value for the entry
 
 =cut
 
@@ -223,11 +224,12 @@ sub entry{
 =head2 get_entry
 
  Title   : get_entry
- Usage   : my $entry = $matrix->get_entry($rowname,$columname)
+ Usage   : my $entry = $matrix->get_entry($rowname,$columname,$value)
  Function: Get the entry for a given row,column pair
  Returns : scalar
  Args    : $row name
            $column name 
+           $value
 
 
 =cut

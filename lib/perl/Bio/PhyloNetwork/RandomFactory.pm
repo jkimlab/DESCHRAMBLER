@@ -1,4 +1,3 @@
-# $Id: RandomFactory.pm 15635 2009-04-14 19:11:13Z cjfields $
 #
 # Module for Bio::PhyloNetwork::RandomFactory
 #
@@ -65,7 +64,6 @@ use warnings;
 use base qw(Bio::Root::Root);
 
 use Bio::PhyloNetwork;
-use Math::Random;
 use Bio::Tree::RandomFactory;
 
 =head2 new

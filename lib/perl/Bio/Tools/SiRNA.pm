@@ -1,4 +1,3 @@
-# $Id: SiRNA.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Tools::SiRNA
 #
@@ -47,7 +46,7 @@ Bio::SeqFeature::SiRNA::Pair contains two subfeatures
 oligos.  These objects provide accessors for the information on the
 individual reagent pairs.
 
-This verion of Bio::Tools::SiRNA represents a major change in architecture.
+This version of Bio::Tools::SiRNA represents a major change in architecture.
 Specific 'rulesets' for siRNA selection as developed by various groups are
 implemented as Bio::Tools::SiRNA::Ruleset objects, which inherit from
 Bio::Tools::SiRNA.  This will make it easier to add new rule sets or modify
@@ -114,7 +113,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 

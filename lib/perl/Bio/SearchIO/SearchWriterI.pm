@@ -1,5 +1,4 @@
 #-----------------------------------------------------------------
-# $Id: SearchWriterI.pm 15635 2009-04-14 19:11:13Z cjfields $
 #
 # BioPerl module Bio::SearchIO::SearchWriterI
 #
@@ -45,7 +44,7 @@ The rest of the documentation details each of the object methods.
 =cut
 
 package Bio::SearchIO::SearchWriterI;
-
+$Bio::SearchIO::SearchWriterI::VERSION = '1.7.8';
 
 use base qw(Bio::Root::RootI);
 

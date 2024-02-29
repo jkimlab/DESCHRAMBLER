@@ -1,4 +1,3 @@
-# $Id: DNAStatistics.pm 16147 2009-09-22 01:26:32Z cjfields $
 #
 # BioPerl module for Bio::Align::DNAStatistics
 #
@@ -314,7 +313,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -336,6 +335,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::Align::DNAStatistics;
+$Bio::Align::DNAStatistics::VERSION = '1.7.8';
 use vars qw(%DNAChanges @Nucleotides %NucleotideIndexes
 	    $GapChars $SeqCount $DefaultGapPenalty %DistanceMethods
             $CODONS %synchanges $synsites $Precision $GCChhars);
@@ -603,7 +603,8 @@ sub D_F81{
  Title   : D_Uncorrected
  Usage   : my $d = $stats->D_Uncorrected($aln)
  Function: Calculate a distance D, no correction for multiple substitutions 
-           is used.
+           is used.  In rare cases where sequences may not overlap, 'NA' is
+           substituted for the distance.
  Returns : L<Bio::Matrix::PhylipDist>
  Args    : L<Bio::Align::AlignI> (DNA Alignment)
            [optional] gap penalty
@@ -636,12 +637,18 @@ sub D_Uncorrected {
 	   my $m = ( $matrix->[0]->[0] + 
 		     $matrix->[1]->[1] +
 		     $matrix->[2]->[2] +
-		     $matrix->[3]->[3] ); 
-	   my $D = 1 - ( $m / ( $len - $gaps + ( $gaps * $gappenalty)));
+		     $matrix->[3]->[3] );
+       my $denom = ( $len - $gaps + ( $gaps * $gappenalty));
+       
+       $self->warn("No distance calculated between $names[$i] and $names[$j], inserting -1")
+            unless $denom;
+       
+	   my $D = $denom ? 1 - ( $m / $denom) : -1;
 	   # fwd and rev lookup
 	   $dist{$names[$i]}->{$names[$j]} = [$i,$j];
-	   $dist{$names[$j]}->{$names[$i]} = [$i,$j];	   
-	   $values[$j][$i] = $values[$i][$j] = sprintf($precisionstr,$D);
+	   $dist{$names[$j]}->{$names[$i]} = [$i,$j];
+	   $values[$j][$i] = $values[$i][$j] = $denom ? sprintf($precisionstr,$D)
+                                                  : sprintf("%-*s", $Precision + 2, $D);
            # (diagonals) distance is 0 for same sequence
 	   $dist{$names[$j]}->{$names[$j]} = [$j,$j];	   
 	   $values[$j][$j] = sprintf($precisionstr,0); 

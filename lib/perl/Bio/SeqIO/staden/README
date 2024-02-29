@@ -1,0 +1,54 @@
+o Version
+
+This version number is from Bioperl-ext version 1.5.1 from CVS HEAD.
+
+o Summary
+
+   Bio::SeqIO::staden::read (Aaron Mackey <amackey@virginia.edu>)
+
+o Installing
+
+ To install
+ 
+   perl Makefile.PL
+   make
+   make test
+   make install (may need root permissions)
+ 
+ This extension needs the rest of the main bioperl distribution to
+ function properly.  It is only useful as a helper module for the SeqIO
+ system to read sequence trace files handled by the Staden package's
+ io_lib "read" library.  You should have this library installed prior
+ to installing Bio::SeqIO::staden::read, it's currently available at:
+ 
+ https://sourceforge.net/project/showfiles.php?group_id=100316
+
+ Currently, the Bio::SeqIO::staden::read extension only works with io_lib
+ v. 1.8.11 or 1.8.12; v. 1.9 and higher have several prototype changes in the
+ "read" library which have broken compatibility in those versions for now.
+ It is possible these changes may be addressed in the future.
+
+ Many users have noted that the io_lib install process often forgets
+ to install the "os.h" file along with the rest of the include files;
+ you may have to do this manually.  If so, you may also have to
+ install the "config.h" file for "os.h" to find all the information it
+ needs.  Finally, you may also need to edit "os.h" to #include
+ <config.h> instead of #include "config.h" if you continue to get
+ undefined symbol errors during compilation.  On some OSes you may in fact
+ have to do the OPPOSITE, meaning change <config.h> to "config.h".
+
+ The bioperl-ext make process will prompt you for the LIB and INCLUDE
+ locations (usually /usr/local/lib and usr/local/include/io_lib,
+ respectively) of the io_lib "libread" library and Read.h header files,
+ after trying to automatically find them.  You may also specify these
+ via the environment variables "IOLIB_LIB" and "IOLIB_INC", or via
+ identically named options to perl Makefile.PL:
+ 
+   perl Makefile.PL IOLIB_LIB=/opt/lib IOLIB_INC=/opt/include/io_lib
+ 
+ Ignore any warnings about these options being unknown to MakeMaker.
+ 
+ A failed compilation is most likely due to an incomplete io_lib
+ installation; make sure that all the required io_lib ".h" files are in
+ place (see above regarding "os.h" and "config.h").
+

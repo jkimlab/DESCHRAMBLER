@@ -1,4 +1,3 @@
-# $Id: NetPhos.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Tools::Analysis::Protein::NetPhos
 #
@@ -55,7 +54,7 @@ phosphorylation sites in eukaryotic proteins.
 
 See L<http://www.cbs.dtu.dk/services/NetPhos/>.
 
-This the first implentation of Bio::SimpleAnalysisI which hopefully
+This the first implementation of Bio::SimpleAnalysisI which hopefully
 will make it easier to write wrappers on various services. This class
 uses a web resource and therefore inherits from Bio::WebAgent.
 
@@ -92,7 +91,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHORS
 
@@ -234,7 +233,7 @@ sub result {
 
  Usage   : $job->threshold(...)
  Returns  : The significance threshold of a prediction
- Args     : None (retrieves value) or a value beween 0 and 1.
+ Args     : None (retrieves value) or a value between 0 and 1.
  Purpose  : Get/setter of the threshold to be sumitted for analysis.
 
 =cut
@@ -267,7 +266,7 @@ sub _run {
 
     # format the sequence into fasta
     my $seq_fasta;
-    my $stringfh = new IO::String($seq_fasta);
+    my $stringfh = IO::String->new($seq_fasta);
     my $seqout = Bio::SeqIO->new(-fh => $stringfh,
                                 -format => 'fasta');
     $seqout->write_seq($self->seq);

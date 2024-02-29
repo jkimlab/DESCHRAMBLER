@@ -1,5 +1,5 @@
 package Bio::SeqFeature::Lite;
-
+$Bio::SeqFeature::Lite::VERSION = '1.7.8';
 =head1 NAME
 
 Bio::SeqFeature::Lite - Lightweight Bio::SeqFeatureI class
@@ -11,7 +11,7 @@ Bio::SeqFeature::Lite - Lightweight Bio::SeqFeatureI class
                                   -stop  => 2000,
                                   -type  => 'transcript',
                                   -name  => 'alpha-1 antitrypsin',
-				  -desc  => 'an enzyme inhibitor',
+                                  -desc  => 'an enzyme inhibitor',
                                  );
 
  # create a feature composed of multiple segments, all of type "similarity"
@@ -128,7 +128,7 @@ An alias for sub_SeqFeature() (you don't want to know why!)
 
 use strict;
 
-use base qw(Bio::Root::Root Bio::SeqFeatureI Bio::LocationI Bio::SeqI Bio::RangeI);
+use base qw(Bio::Root::Root Bio::SeqFeatureI Bio::LocationI Bio::SeqI);
 
 *stop        = \&end;
 *info        = \&name;
@@ -196,9 +196,9 @@ sub new {
 
   $arg{-strand} ||= 0;
   if ($arg{-strand} =~ /^[\+\-\.]$/){
-	$arg{-strand} = "+" && $self->{strand} ='1';
-	$arg{-strand} = "-" && $self->{strand} = '-1';
-	$arg{-strand} = "." && $self->{strand} = '0';
+	($arg{-strand} eq "+") && ($self->{strand} = '1');
+	($arg{-strand} eq "-") && ($self->{strand} = '-1');
+	($arg{-strand} eq ".") && ($self->{strand} = '0');
   } else {
 	  $self->{strand}  = $arg{-strand} ? ($arg{-strand} >= 0 ? +1 : -1) : 0;
   }
@@ -211,7 +211,8 @@ sub new {
   $self->{start}   = $arg{-start};
   $self->{stop}    = exists $arg{-end} ? $arg{-end} : $arg{-stop};
   $self->{ref}     = $arg{-seq_id} || $arg{-ref};
-  for my $option (qw(class url seq phase desc attributes primary_id)) {
+  $self->{attributes}     = $arg{-attributes} || $arg{-tag};
+  for my $option (qw(class url seq phase desc primary_id)) {
     $self->{$option} = $arg{"-$option"} if exists $arg{"-$option"};
   }
 
@@ -432,7 +433,7 @@ sub dna {
 
 =cut
 
-sub display_name { shift->name }
+sub display_name { shift->name(@_) }
 
 *display_id = \&display_name;
 
@@ -444,7 +445,7 @@ sub display_name { shift->name }
            called the accession_number. For sequences from established
            databases, the implementors should try to use the correct
            accession number. Notice that primary_id() provides the
-           unique id for the implemetation, allowing multiple objects
+           unique id for the implementation, allowing multiple objects
            to have the same accession number in a particular implementation.
 
            For sequences with no accession number, this method should return
@@ -498,7 +499,7 @@ sub alphabet{
 
 sub desc {
   my $self = shift;
-  my $d    = $self->notes;
+  my ($d)    = $self->notes;
   $self->{desc} = shift if @_;
   $d;
 }
@@ -506,7 +507,7 @@ sub desc {
 sub attributes {
   my $self = shift;
   if (@_) {
-    return $self->each_tag_value(@_);
+    return $self->get_tag_values(@_);
   } else {
     return $self->{attributes} ? %{$self->{attributes}} : ();
   }
@@ -764,7 +765,11 @@ sub introns {
   return;
 }
 
-sub has_tag { exists shift->{attributes}{shift()} }
+sub has_tag { 
+    my $self = shift;
+    my $tag  = shift;
+    return exists $self->{attributes}{$tag};
+}
 
 sub escape {
   my $self     = shift;
@@ -812,13 +817,14 @@ sub format_attributes {
   my $parent      = shift;
   my $fallback_id = shift;
 
-  my @tags = $self->all_tags;
+  my @tags = $self->get_all_tags;
   my @result;
   for my $t (@tags) {
-    my @values = $self->each_tag_value($t);
+    my @values = $self->get_tag_values($t);
     push @result,join '=',$self->escape($t),join(',', map {$self->escape($_)} @values) if @values;
   }
-  my $id        = $self->escape($self->_real_or_dummy_id) || $fallback_id;
+  #my $id        = $self->escape($self->_real_or_dummy_id) || $fallback_id;
+  my $id        = $fallback_id || $self->escape($self->_real_or_dummy_id);
 
   my $parent_id;
   if (@$parent) {

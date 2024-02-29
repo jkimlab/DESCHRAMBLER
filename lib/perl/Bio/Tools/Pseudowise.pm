@@ -1,6 +1,5 @@
 # BioPerl module for Bio::Tools::Pseudowise
 #
-# $Id: Pseudowise.pm 16123 2009-09-17 12:57:27Z cjfields $
 # 
 # Copyright Jason Stajich, Fugu Team 
 #
@@ -57,7 +56,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -77,6 +76,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::Tools::Pseudowise;
+$Bio::Tools::Pseudowise::VERSION = '1.7.8';
 use strict;
 use Symbol;
 

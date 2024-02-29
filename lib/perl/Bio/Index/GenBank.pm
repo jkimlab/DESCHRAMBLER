@@ -1,5 +1,4 @@
 #
-# $Id: GenBank.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Index::Abstract
 #
@@ -96,7 +95,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Ewan Birney
 
@@ -112,7 +111,7 @@ Internal methods are usually preceded with a _
 # Let's begin the code...
 
 package Bio::Index::GenBank;
-
+$Bio::Index::GenBank::VERSION = '1.7.8';
 use strict;
 
 use Bio::Seq;
@@ -150,13 +149,23 @@ sub _index_file {
 
     my $id_parser = $self->id_parser;
 
-    open my $GENBANK, '<', $file or 
-	$self->throw("Can't open file for read : $file");
+    open my $GENBANK, '<', $file or $self->throw("Could not read file '$file': $!");
 
     my %done_ids;
+
+    # In Windows, text files have '\r\n' as line separator, but when reading in
+    # text mode Perl will only show the '\n'. This means that for a line "ABC\r\n",
+    # "length $_" will report 4 although the line is 5 bytes in length.
+    # We assume that all lines have the same line separator and only read current line.
+    my $init_pos   = tell($GENBANK);
+    my $curr_line  = <$GENBANK>;
+    my $pos_diff   = tell($GENBANK) - $init_pos;
+    my $correction = $pos_diff - length $curr_line;
+    seek $GENBANK, $init_pos, 0; # Rewind position to proceed to read the file
+
     while (<$GENBANK>) {
         if (/^LOCUS/) {
-            $begin = tell($GENBANK) - length($_);
+            $begin = tell($GENBANK) - length($_) - $correction;
         }
         for my $id (&$id_parser($_)) {
             next if exists $done_ids{$id};

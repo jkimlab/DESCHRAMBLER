@@ -1,5 +1,4 @@
 #
-# $Id: EMBL.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::DB::EMBL
 #
@@ -24,7 +23,7 @@ Bio::DB::EMBL - Database object interface for EMBL entry retrieval
   $embl = Bio::DB::EMBL->new();
 
   # remember that EMBL_ID does not equal GenBank_ID!
-  $seq = $embl->get_Seq_by_id('BUM'); # EMBL ID
+  $seq = $embl->get_Seq_by_id('HSFOS'); # EMBL ID
   print "cloneid is ", $seq->id, "\n";
 
   # or changeing to accession number and Fasta format ...
@@ -42,7 +41,7 @@ Bio::DB::EMBL - Database object interface for EMBL entry retrieval
   # or ... best when downloading very large files, prevents
   # keeping all of the file in memory
 
-  # also don't want features, just sequence so let's save bandwith
+  # also don't want features, just sequence so let's save bandwidth
   # and request Fasta sequence
   $embl = Bio::DB::EMBL->new(-retrievaltype => 'tempfile' ,
  			    -format => 'fasta');
@@ -55,7 +54,7 @@ Bio::DB::EMBL - Database object interface for EMBL entry retrieval
 
 Allows the dynamic retrieval of sequence objects L<Bio::Seq> from the
 EMBL database using the dbfetch script at EBI:
-L<http://www.ebi.ac.uk/cgi-bin/dbfetch>.
+L<http://www.ebi.ac.uk/Tools/dbfetch/dbfetch>.
 
 In order to make changes transparent we have host type (currently only
 ebi) and location (defaults to ebi) separated out.  This allows later
@@ -92,7 +91,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Heikki Lehvaslaiho
 
@@ -120,7 +119,7 @@ BEGIN {
     # you can add your own here theoretically.
     %HOSTS = (
 	       'dbfetch' => {
-		   baseurl => 'http://%s/cgi-bin/dbfetch?db=embl&style=raw',
+		   baseurl => 'http://%s/Tools/dbfetch/dbfetch?db=embl&style=raw',
 		   hosts   => {
 		       'ebi'  => 'www.ebi.ac.uk'
 		       }

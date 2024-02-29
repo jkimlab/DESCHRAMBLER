@@ -1,5 +1,5 @@
 package Bio::Search::Result::CrossMatchResult;
-# $Id: CrossMatchResult.pm 16123 2009-09-17 12:57:27Z cjfields $
+$Bio::Search::Result::CrossMatchResult::VERSION = '1.7.8';
 #
 # BioPerl module for Bio::Search::Result::CrossMatchResult
 #
@@ -73,7 +73,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Shin Leong
 
@@ -94,7 +94,6 @@ Internal methods are usually preceded with a _
 # Let the code begin...
 
 
-package Bio::Search::Result::CrossMatchResult;
 use strict;
 
 use Bio::Search::Result::GenericResult;

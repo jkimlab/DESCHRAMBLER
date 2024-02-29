@@ -1,4 +1,3 @@
-# $Id: Scaffold.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Assembly::Scaffold
 #
@@ -14,7 +13,7 @@ Bio::Assembly::Scaffold - Perl module to hold and manipulate sequence assembly
 data.
 
 =head1 SYNOPSIS
-
+# 
     # Module loading
     use Bio::Assembly::IO;
 
@@ -61,7 +60,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Robson Francisco de Souza
 
@@ -471,13 +470,14 @@ sub add_singlet {
     $singlet->assembly($self); # weak circular reference
 
     # Put singlet sequence in the list of sequences belonging to the scaffold
-    my $seqID = $singlet->id();
+    my $seqID = $singlet->seqref->id();
     if (exists $self->{'_seqs'}{$seqID} &&
         not($self->{'_seqs'}{$seqID} eq $singlet) ) {
         $self->warn( "Sequence $seqID already assigned to object ".
             $self->{'_seqs'}{$seqID}->id().". Moving to singlet $singletID");
     }
     $self->{'_seqs'}{$seqID} = $singlet;
+
     return 1;
 }
 
@@ -517,8 +517,8 @@ sub update_seq_list {
     
     # Put singlet sequences in the list of sequences belonging to the scaffold
     foreach my $singlet ($self->all_singlets) {
-        my $seqID = $singlet->id();
         my $singletID = $singlet->id();
+        my $seqID     = $singlet->seqref->id();
         if (exists $self->{'_seqs'}{$seqID} &&
             not($self->{'_seqs'}{$seqID} eq $singlet) ) {
             $self->warn( "Sequence $seqID already assigned to object ".

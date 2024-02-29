@@ -1,8 +1,7 @@
-# $Id: obo.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::OntologyIO::obo
 #
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Sohel Merchant, s-merchant at northwestern.edu
 #
@@ -13,7 +12,7 @@
 
 =head1 NAME
 
-Bio::OntologyIO::obo - a parser for OBO flat-file format from Gene Ontology Consortium
+Bio::OntologyIO::obo - parser for OBO flat-file format
 
 =head1 SYNOPSIS
 
@@ -21,20 +20,37 @@ Bio::OntologyIO::obo - a parser for OBO flat-file format from Gene Ontology Cons
 
   # do not use directly -- use via Bio::OntologyIO
   my $parser = Bio::OntologyIO->new
-        ( -format       => "obo",
-          -file        =>  "gene_ontology.obo");
+        ( -format => "obo",
+          -file   =>  "gene_ontology.obo");
 
   while(my $ont = $parser->next_ontology()) {
   print "read ontology ",$ont->name()," with ",
-               scalar($ont->get_root_terms)," root terms, and ",
-               scalar($ont->get_all_terms)," total terms, and ",
-               scalar($ont->get_leaf_terms)," leaf terms\n";
+               scalar($ont->get_root_terms), " root terms, and ",
+               scalar($ont->get_all_terms),  " total terms, and ",
+               scalar($ont->get_leaf_terms), " leaf terms\n";
   }
-
 
 =head1 DESCRIPTION
 
-Needs Graph.pm from CPAN.
+Parser for OBO flat-file format. 'obo' example:
+
+ format-version: 1.2
+ ontology: so/dev/externalDerived
+ property_value: owl:versionInfo "$Revision: 80 $" xsd:string
+ default-namespace: SO
+
+ [Term]
+ id: SO_0000343
+ name: match
+ def: "A region of sequence, aligned to another sequence." []
+
+ [Term]
+ id: SO_0000039
+ name: match_part
+ def: "A part of a match." []
+ is_a: SO_0000343
+
+Specification: L<http://www.geneontology.org/GO.format.obo-1_2.shtml>.
 
 =head1 FEEDBACK
 
@@ -47,15 +63,15 @@ Bioperl mailing lists  Your participation is much appreciated.
   bioperl-l@bioperl.org                  - General discussion
   http://bioperl.org/wiki/Mailing_lists  - About the mailing lists
 
-=head2 Support 
+=head2 Support
 
 Please direct usage questions or support issues to the mailing list:
 
 I<bioperl-l@bioperl.org>
 
-rather than to the module maintainer directly. Many experienced and 
-reponsive experts will be able look at the problem and quickly 
-address it. Please include a thorough description of the problem 
+rather than to the module maintainer directly. Many experienced and
+reponsive experts will be able look at the problem and quickly
+address it. Please include a thorough description of the problem
 with code and data examples if at all possible.
 
 =head2 Reporting Bugs
@@ -64,14 +80,13 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
 Sohel Merchant
 
 Email: s-merchant@northwestern.edu
-
 
 Address:
 
@@ -84,7 +99,8 @@ Address:
 =head2 CONTRIBUTOR
 
  Hilmar Lapp, hlapp at gmx.net
- Chris Mungall,   cjm at fruitfly.org
+ Chris Mungall, cjm at fruitfly.org
+ Brian Osborne, briano@bioteam.net
 
 =head1 APPENDIX
 
@@ -94,7 +110,7 @@ methods. Internal methods are usually preceded with a _
 =cut
 
 package  Bio::OntologyIO::obo;
-
+$Bio::OntologyIO::obo::VERSION = '1.7.8';
 use strict;
 
 use Bio::Root::IO;
@@ -119,7 +135,7 @@ use base qw(Bio::OntologyIO);
  Function: Creates a new dagflat parser.
  Returns : A new dagflat parser object, implementing Bio::OntologyIO.
  Args    : -file      => a single ontology flat file holding the
-                          terms, descriptions and relationships
+                         terms, descriptions and relationships
            -ontology_name => the name of the ontology; if not specified the
                           parser will assign the name of the ontology as the
                           default-namespace header value from the OBO file.
@@ -133,24 +149,19 @@ See L<Bio::OntologyIO>.
 
 =cut
 
-# in reality, we let OntologyIO::new do the instantiation, and override
+# Let OntologyIO::new() do the instantiation, and override
 # _initialize for all initialization work
 sub _initialize {
     my ( $self, %arg ) = @_;
 
     my ( $file, $name, $eng ) = $self->_rearrange(
-        [
-            qw( FILE
-              ONTOLOGY_NAME
-              ENGINE)
-        ],
-        %arg
+        [ qw( FILE ONTOLOGY_NAME ENGINE) ], %arg
     );
 
     $self->SUPER::_initialize(%arg);
     delete $self->{'_ontologies'};
 
-    # ontology engine (and possibly name if it's an OntologyI)
+    # Ontology engine (and possibly name if it's an OntologyI)
     $eng = Bio::Ontology::OBOEngine->new() unless $eng;
     if ( $eng->isa("Bio::Ontology::OntologyI") ) {
         $self->ontology_name( $eng->name() );
@@ -159,8 +170,7 @@ sub _initialize {
     $self->_ont_engine($eng);
 
     $self->ontology_name($name) if $name;
-
-}    # _initialize
+}
 
 =head2 ontology_name
 
@@ -170,7 +180,6 @@ sub _initialize {
  Example :
  Returns : value of ontology_name (a scalar)
  Args    : on set, new value (a scalar or undef, optional)
-
 
 =cut
 
@@ -200,25 +209,24 @@ sub ontology_name {
 sub parse {
     my $self = shift;
 
-    # setup the default term factory if not done by anyone yet
-    $self->term_factory(
-        Bio::Ontology::TermFactory->new( -type => "Bio::Ontology::OBOterm" ) )
+    # Setup the default term factory if not done by anyone yet
+    $self->term_factory(Bio::Ontology::TermFactory->new( -type => "Bio::Ontology::OBOterm" ) )
       unless $self->term_factory();
 
-    ## Parse the file header
+    # Parse the file header
     my $annotations_collection = $self->_header();
 
-    # create the default ontology object itself
+    # Create the default ontology object itself
     my $ont = Bio::Ontology::Ontology->new(
         -name   => $self->ontology_name(),
         -engine => $self->_ont_engine()
     );
 
-    ## Assign the file headers
+    # Assign the file headers
     $ont->annotation($annotations_collection);
 
-    # set up the ontology of the relationship types
-    foreach (
+    # Set up the ontology of the relationship types
+    for (
         $self->_part_of_relationship(),
         $self->_is_a_relationship(),
         $self->_related_to_relationship(),
@@ -230,96 +238,85 @@ sub parse {
         $_->ontology($ont);
     }
 
-##################################
     $self->_add_ontology($ont);
-##################################
 
-    ### Adding new terms
+    # Adding new terms
     while ( my $term = $self->_next_term() ) {
 
-        ### CHeck if the terms has a valid ID and NAME otherwise ignore the term
+        # Check if the terms has a valid ID and NAME otherwise ignore the term
         if ( !$term->identifier() || !$term->name() ) {
             $self->throw( "OBO File Format Error on line "
                   . $self->{'_current_line_no'}
-                  . " \nThe term does not have a id/name tag. This term will be ignored.\n"
+                  . "\nThe term does not have a id/name tag. This term will be ignored."
             );
             next;
         }
 
-				#print $term->identifier(),"\t",$term->name(),"\n";
-
-        my $new_ontology_flag    = 1;
+        my $new_ontology_flag = 1;
         my $ontologies_array_ref = $self->{'_ontologies'};
-        foreach my $ontology (@$ontologies_array_ref) {
-            my ($oname, $t_ns) = ($ontology->name(), $term->namespace() );
-            next unless (defined($oname) && defined($t_ns));
+
+        for my $ontology ( @$ontologies_array_ref ) {
+            my ($oname, $t_ns) = ( $ontology->name, $term->namespace );
+            next unless ( defined($oname) && defined($t_ns) );
             if ( $oname eq $t_ns ) {
-                ### No need to create new ontology
+                # No need to create new ontology
                 $new_ontology_flag = 0;
-                $ont               = $ontology;
+                $ont = $ontology;
             }
         }
 
-        if ( $new_ontology_flag && $term->namespace() ) {
+        if ( $new_ontology_flag && $term->namespace ) {
             my $new_ont = Bio::Ontology::Ontology->new(
-                -name   => $term->namespace(),
-                -engine => $self->_ont_engine()
+                -name   => $term->namespace,
+                -engine => $self->_ont_engine
             );
             $new_ont->annotation($annotations_collection);
             $self->_add_ontology($new_ont);
             $ont = $new_ont;
         }
 
-
         $self->_add_term( $term, $ont );
 
-        #### Addding the IS_A relationship
-        my $isa_parents_array_ref = $self->{'_isa_parents'};
-        foreach my $parent_term (@$isa_parents_array_ref) {
-            ### Check if parent exist, if not then add the term to the graph.
-            if ( !( $self->_has_term($parent_term) ) ) {
-                $self->_add_term( $parent_term, $ont );
+        # Adding the IS_A relationship
+        for my $parent_term ( @{$self->{'_isa_parents'}} ) {
+            # Check if parent exists, if not then add the term to the graph.
+            if ( ! $self->_has_term($parent_term) ) {
+                $self->_add_term( $parent_term, $ont ); # !
             }
 
             $self->_add_relationship( $parent_term, $term,
                 $self->_is_a_relationship(), $ont );
         }
 
-        #### Addding the other relationships like part_of, realted_to, develpos_from
-        my $relationship_hash_ref = $self->{'_relationships'};
-        foreach my $relationship ( keys %$relationship_hash_ref ) {
+        # Adding the other relationships like part_of, related_to, develops_from
+        for my $relationship ( keys %{$self->{'_relationships'}} ) {
             my $reltype;
-            #### Check if relationship exist, if not add it.
+            # Check if relationship exists, if not add it
             if ( $self->_ont_engine->get_relationship_type($relationship) ) {
-                $reltype =
-                  $self->_ont_engine->get_relationship_type($relationship);
+                $reltype = $self->_ont_engine->get_relationship_type($relationship);
             }
             else {
-                $self->_ont_engine->add_relationship_type( $relationship,
-                    $ont );
-                $reltype =
-                  $self->_ont_engine->get_relationship_type($relationship);
+                $self->_ont_engine->add_relationship_type( $relationship, $ont );
+                $reltype = $self->_ont_engine->get_relationship_type($relationship);
             }
 
-            #### Check if the id already exist in the graph
-            my $id_array_ref = $$relationship_hash_ref{$relationship};
-            foreach my $id (@$id_array_ref) {
+            # Check if the id already exists in the graph
+            for my $id ( @{$self->{'_relationships'}->{$relationship}} ) {
                 my $parent_term = $self->_create_term_object();
                 $parent_term->identifier($id);
                 $parent_term->ontology($ont);
 
-                if ( !( $self->_has_term($parent_term) ) ) {
+                if ( ! $self->_has_term($parent_term) ) {
                     $self->_add_term( $parent_term, $ont );
                 }
 
                 $self->_add_relationship( $parent_term, $term, $reltype, $ont );
             }
-
         }
-
     }
+
     return $self->_ont_engine();
-}    # parse
+}
 
 =head2 next_ontology
 
@@ -332,16 +329,15 @@ sub parse {
            there is no more ontology in the input.
  Args    :
 
-
 =cut
 
 sub next_ontology {
     my $self = shift;
 
-    # parse if not done already
+    # Parse if not done already
     $self->parse() unless exists( $self->{'_ontologies'} );
 
-    # return next available ontology
+    # Return next available ontology
     if ( exists( $self->{'_ontologies'} ) ) {
         my $ont = shift( @{ $self->{'_ontologies'} } );
         if ($ont) {
@@ -370,7 +366,6 @@ sub next_ontology {
  Returns : none
  Args    : none
 
-
 =cut
 
 sub close {
@@ -381,90 +376,83 @@ sub close {
 }
 
 # INTERNAL METHODS
-# ----------------
 
 sub _add_ontology {
     my $self = shift;
     $self->{'_ontologies'} = [] unless exists( $self->{'_ontologies'} );
-    foreach my $ont (@_) {
-        $self->throw(
-            ref($ont) . " does not implement Bio::Ontology::OntologyI" )
-          unless ref($ont) && $ont->isa("Bio::Ontology::OntologyI");
-
-        # the ontology name may have been auto-discovered while parsing
+    for my $ont (@_) {
+        $self->throw( ref($ont) . " does not implement Bio::Ontology::OntologyI" )
+            unless ref($ont) && $ont->isa("Bio::Ontology::OntologyI");
+        # The ontology name may have been auto-discovered while parsing
         # the file
         $ont->name( $self->ontology_name ) unless $ont->name();
         push( @{ $self->{'_ontologies'} }, $ont );
     }
 }
 
-# This simply delegates. See OBOEngine.
+# This simply delegates. See Ontology::OBOEngine::add_term.
 sub _add_term {
     my ( $self, $term, $ont ) = @_;
     $term->ontology($ont) if $ont && ( !$term->ontology );
     $self->_ont_engine()->add_term($term);
-}    # _add_term
+}
 
 # This simply delegates. See OBOEngine
 sub _part_of_relationship {
     my $self = shift;
 
     return $self->_ont_engine()->part_of_relationship(@_);
-}    # _part_of_relationship
+}
 
 # This simply delegates. See OBOEngine
 sub _is_a_relationship {
     my $self = shift;
 
     return $self->_ont_engine()->is_a_relationship(@_);
-}    # _is_a_relationship
+}
 
 # This simply delegates. See OBOEngine
 sub _related_to_relationship {
     my $self = shift;
 
     return $self->_ont_engine()->related_to_relationship(@_);
-}    # _is_a_relationship
-
+}
 
 # This simply delegates. See OBOEngine
 sub _regulates_relationship {
     my $self = shift;
 
     return $self->_ont_engine()->regulates_relationship(@_);
-}    # _part_of_relationship
+}
 
 # This simply delegates. See OBOEngine
 sub _positively_regulates_relationship {
     my $self = shift;
 
     return $self->_ont_engine()->positively_regulates_relationship(@_);
-}    # _part_of_relationship
-
+}
 
 # This simply delegates. See OBOEngine
 sub _negatively_regulates_relationship {
     my $self = shift;
 
     return $self->_ont_engine()->negatively_regulates_relationship(@_);
-}    # _part_of_relationship
+}
 
 # This simply delegates. See OBOEngine
 sub _add_relationship {
     my ( $self, $parent, $child, $type, $ont ) = @_;
-
-    # note the triple terminology (subject,predicate,object) corresponds to
+    # Note the triple terminology (subject,predicate,object) corresponds to
     # (child,type,parent)
     $self->_ont_engine()->add_relationship( $child, $type, $parent, $ont );
-
-}    # _add_relationship
+}
 
 # This simply delegates. See OBOEngine
 sub _has_term {
     my $self = shift;
 
     return $self->_ont_engine()->has_term(@_);
-}    # _add_term
+}
 
 # Holds the OBO engine to be parsed into
 sub _ont_engine {
@@ -474,17 +462,17 @@ sub _ont_engine {
         $self->{"_ont_engine"} = $value;
     }
 
-    return $self->{"_ont_engine"};
-}    # _ont_engine
+    $self->{"_ont_engine"};
+}
 
-# Removes the escape chracters from the file
+# Removes the escape characters from the file
 sub _filter_line {
     my ( $self, $line ) = @_;
 
     chomp($line);
-    $line =~ tr [\200-\377]
-          [\000-\177];    # see 'man perlop', section on tr/
-                          # weird ascii characters should be excluded
+    $line =~ tr [\200-\377] [\000-\177];
+                               # see 'man perlop', section on tr/
+                               # weird ascii characters should be excluded
     $line =~ tr/\0-\10//d;     # remove weird characters; ascii 0-8
                                # preserve \11 (9 - tab) and \12 (10-linefeed)
     $line =~ tr/\13\14//d;     # remove weird characters; 11,12
@@ -503,7 +491,7 @@ sub _filter_line {
 
 # Parses the header
 sub _header {
-    my $self                  = shift;
+    my $self = shift;
     my $annotation_collection = Bio::Annotation::Collection->new();
     my ( $tag, $value );
     my $line_counter = 0;
@@ -514,32 +502,44 @@ sub _header {
     while ( my $line = $self->_readline() ) {
         ++$line_counter;
         my $line = $self->_filter_line($line);
+
         if ( !$line ) {
-            if ( !$format_version_header_flag || !$default_namespace_header_flag) {
-                $self->throw(
-"OBO File Format Error - \nCannot find tag format-version and/ default-namespace . These are required header.\n"
-                );
+            if ( !$format_version_header_flag ) {
+                $self->throw("Format Error - Cannot find tag format-version." .
+                             "This is required in header" );
             }
 
             $self->{'_current_line_no'} = $line_counter;
             return $annotation_collection;
         }
 
-        ### CHeck if there is a header
-        if($line =~ /\[\w*\]/) {
-                $self->throw(
-"OBO File Format Error - \nCannot find tag format-version. Thi ia a required header.\n"
-                );
+        # Check if there is a header
+        if ( $line =~ /\[\w*\]/ ) {
+                $self->throw("Format Error - Cannot find tag format-version." .
+                             "This is required in header." );
           }
 
-
-        ### If the line is not null, check it contains atleasdt one colon
+        # If the line is not null, check it contains at least one colon
         $self->_check_colon( $line, $line_counter );
 
-        ### Thsse ar the allowed headers. Any other headers will be ignored
-        if ( $line =~
-/^(\[|format-version:|typeref:|version:|date:|saved-by:|auto-generated-by:|default-namespace:|remark:|subsetdef:)/
-          )
+        # These are the allowed headers. Any other headers will be ignored
+        if ( $line =~ /^(\[|format-version:
+                           |data-version:
+                           |typeref:
+                           |version:
+                           |date:
+                           |saved-by:
+                           |auto-generated-by:
+                           |default-namespace:
+                           |remark:
+                           |subsetdef:
+                           |import:
+                           |synonymtypedef:
+                           |idspace:
+                           |default-relationship-id-prefix:
+                           |id-mapping:
+                           )/x
+            )
         {
             if ( $line =~ /^([\w\-]+)\:\s*(.*)/ ) {
                 ( $tag, $value ) = ( $1, $2 );
@@ -554,77 +554,86 @@ sub _header {
             my $header = Bio::Annotation::SimpleValue->new( -value => $value );
             $annotation_collection->add_Annotation( $tag, $header );
 
-            #### Assign the Ontology name as the value of the default-namespace header
+            # Assign the Ontology name as the value of the default-namespace header
             if ( $tag =~ /default-namespace/i ) {
-
                 $self->ontology_name($value);
             }
-
         }
-
     }
-
 }
 
-### Parses each stanza of the file
+# Parses each stanza of the file
 sub _next_term {
-    my $self             = shift;
-    my $term             ;
+    my $self = shift;
+    my $term;
     my $skip_stanza_flag = 1;
     my $line_counter     = $self->{'_current_line_no'};
 
     while ( my $line = $self->_readline() ) {
-        #print $line."\n";
         ++$line_counter;
         my $line = $self->_filter_line($line);
+
         if ( !$line && $term ) {
             $self->{'_current_line_no'} = $line_counter;
             return $term;
         }
 
-        if ( ( $line =~ /^\[(\w+)\]\s*(.*)/ ) ) {    #New stanza
-
+        if ( ( $line =~ /^\[(\w+)\]\s*(.*)/ ) ) { # New stanza
             if ( uc($1) eq "TERM" ) {
-
                 $term             = $self->_create_term_object;
                 $skip_stanza_flag = 0;
-                ### Reset the relationships after each stanza
+
+                # Reset the relationships after each stanza
                 $self->{'_relationships'} = {};
                 $self->{'_isa_parents'}   = undef;
             }
             elsif ( uc($1) eq "TYPEDEF" ) {
                 $skip_stanza_flag = 1;
-                ### Check if this typedef is already defined by the relationship
+                # Check if this typedef is already defined by the relationship
             }
             else {
                 $skip_stanza_flag = 1;
-                $self->warn(
-"OBO File Format Warning on line $line_counter $line \nUnrecognized stanza type found. Skipping this stanza.\n"
-                );
+                $self->warn("OBO File Format Warning on line $line_counter $line\n"
+                          . "Unrecognized stanza type found. Skipping this stanza." );
             }
             next;
         }
 
-        ### If the line is not null, check it contains atleasdt one colon
+        # If the line is not null, check it contains at least one colon
         $self->_check_colon( $line, $line_counter );
 
-        ### if there is any tag value other thn the list below move to the next tag
-        next
-          if (
-            (
-                $line !~
-/^(\[|id:|name:|is_a:|relationship:|namespace:|is_obsolete:|alt_id:|def:|xref_analog:|exact_synonym:|broad_synonym:|related_synonym:|synonym:|comment:)/
-            )
-            || $skip_stanza_flag
-          );
+        # If there is any tag value other than the list below move to the next tag
+        next if (( $line !~ /^(\[|id:
+                                 |is_anonymous:
+                                 |name:
+                                 |namespace:
+                                 |alt_id:
+                                 |def:
+                                 |comment:
+                                 |subset:
+                                 |synonym:
+                                 |xref:
+                                 |is_a:
+                                 |intersection_of:
+                                 |union_of:
+                                 |disjoint_from:
+                                 |relationship:
+                                 |is_obsolete:
+                                 |replaced_by:
+                                 |consider:
+                                 |created_by:
+                                 |creation_date:
+                               )/x
+                ) || $skip_stanza_flag );
 
-        if ( $line =~ /^([\w\-]+)\:\s*(.*)/ ) {    #TAg Value pair
+        # Tag/value pair
+        if ( $line =~ /^([\w\-]+)\:\s*(.*)/ ) {
             my ( $tag, $val ) = ( $1, $2 );
 
-            ### If no value for the tag thrown a warning
+            # If no value for the tag throw a warning
             if ( !$val ) {
-                $self->warn(
-"OBO File Format Warning on line $line_counter $line \nTag has no value\n"
+                $self->warn("OBO File Format Warning on line $line_counter $line\n" .
+                            "Tag has no value."
                 );
             }
 
@@ -634,23 +643,21 @@ sub _next_term {
             $val2 =~ s/\\,/,/g;
             $tag = uc($tag);
             if ( $tag eq "ID" ) {
-
                 $term->identifier($val);
                 if ( $self->_has_term($term) ) {
                     $term = $self->_ont_engine()->get_terms($val);
                 }
-
             }
             elsif ( $tag eq "NAME" ) {
                 $term->name($val);
             }
             elsif ( $tag eq "XREF_ANALOG" ) {
                 if ( !$term->has_dbxref($val) ) {
-                    $term->add_dbxref(-dbxrefs => $self->_to_annotation([$val]));
+                    $term->add_dbxref(-dbxrefs => $self->_to_annotation( [$val] ) );
                 }
             }
             elsif ( $tag eq "XREF_UNKNOWN" ) {
-                $term->add_dbxref(-dbxrefs => $self->_to_annotation([$val]));
+                $term->add_dbxref(-dbxrefs => $self->_to_annotation( [$val] ) );
             }
             elsif ( $tag eq "NAMESPACE" ) {
                 $term->namespace($val);
@@ -659,21 +666,22 @@ sub _next_term {
                 my ( $defstr, $parts ) = $self->_extract_qstr($val);
                 $term->definition($defstr);
                 my $ann = $self->_to_annotation($parts);
-                $term->add_dbxref(-dbxrefs => $ann);
+                $term->add_dbxref( -dbxrefs => $ann );
             }
-            elsif ( $tag =~ /(\w*)synonym/i ) {
-                $val =~ s/['"\[\]]//g;
+            elsif ( $tag eq "SYNONYM" ) {
                 $term->add_synonym($val);
             }
             elsif ( $tag eq "ALT_ID" ) {
                 $term->add_secondary_id($val);
             }
+            elsif ( $tag =~ /XREF/i ) {
+                $term->add_secondary_id($val);
+            }
             elsif ( $tag eq "IS_OBSOLETE" ) {
-
                 if ( $val eq 'true' ) {
                     $val = 1;
                 }
-                if ( $val eq 'false' ) {
+                elsif ( $val eq 'false' ) {
                     $val = 0;
                 }
                 $term->is_obsolete($val);
@@ -685,36 +693,25 @@ sub _next_term {
                 $self->_handle_relationship_tag($val);
             }
             elsif ( $tag eq "IS_A" ) {
-
                 $val =~ s/ //g;
                 my $parent_term = $self->_create_term_object();
                 $parent_term->identifier($val);
-
-                if ( $self->{'_isa_parents'} ) {
-                    my $isa_parents_array_ref = $self->{'_isa_parents'};
-                    push( @$isa_parents_array_ref, $parent_term );
-                }
-                else {
-                    my @terms_array;
-                    push( @terms_array, $parent_term );
-                    $self->{'_isa_parents'} = \@terms_array;
-                }
+                push @{ $self->{'_isa_parents'} }, $parent_term;
             }
         }
     }
-    return $term;
+
+    $term;
 }
+
 
 # Creates a Bio::Ontology::OBOterm object
 sub _create_term_object {
-
     my ($self) = @_;
     my $term = $self->term_factory->create_object();
-    return $term;
-
+    $term;
 }
 
-#
 sub _extract_quals {
     my ( $self, $str ) = @_;
 
@@ -742,7 +739,7 @@ sub _extract_quals {
         return ( $str, {} );
     }
 }
-#
+
 sub _extract_qstr {
     my ( $self, $str ) = @_;
 
@@ -756,7 +753,7 @@ sub _extract_qstr {
 
     my @extra = ();
 
-    # eg synonym: "foo" EXACT [...]
+    # e.g. synonym: "foo" EXACT [...]
     if ( $rem =~ /(\w+)\s+(\[.*)/ ) {
         $rem = $2;
         push( @extra, split( ' ', $1 ) );
@@ -773,9 +770,10 @@ sub _extract_qstr {
       map { $self->_split_on_comma($_) } @parts;
 
     $txt =~ s/\\//g;
-    return ( $txt, \@parts, \@extra );
+
+    ( $txt, \@parts, \@extra );
 }
-#
+
 sub _split_on_comma {
     my ( $self, $str ) = @_;
     my @parts = ();
@@ -786,6 +784,7 @@ sub _split_on_comma {
         $str =~ s/,\s*$//;
     }
     unshift( @parts, $str );
+
     return map { s/\\//g; $_ } @parts;
 }
 
@@ -793,8 +792,8 @@ sub _split_on_comma {
 sub _check_colon {
     my ( $self, $line, $line_no ) = @_;
     if ( $line && !( $line =~ /:/ ) ) {
-        $self->throw(
-"OBO File Format Error on line $line_no $line - \nCannot find key-terminating colon\n"
+        $self->throw("OBO File Format Error on line $line_no $line\n" .
+                     "Cannot find key-terminating colon"
         );
     }
 }
@@ -805,35 +804,20 @@ sub _handle_relationship_tag {
     my @parts        = split( / /, $val );
     my $relationship = uc($parts[0]);
     my $id           = $parts[1] =~ /\^(w+)\s+\!/ ? $1 : $parts[1];
-    my $parent_term  = $self->_create_term_object();
-    $parent_term->identifier($id);
-
-    if ( my $realtionships_hash = $self->{'_relationships'} ) {
-        my $id_array_ref = $$realtionships_hash{$relationship};
-        if ( !$id_array_ref ) {
-            my @ids;
-            push( @ids, $id );
-            $$realtionships_hash{$relationship} = \@ids;
-
-        }
-        else {
-            push( @$id_array_ref, $id );
-        }
-
-    }
-
+    push @{$self->{_relationships}->{$relationship}}, $id;
 }
 
-# convert simple strings to Bio::Annotation::DBLinks
+# Convert simple strings to Bio::Annotation::DBLinks
 sub _to_annotation {
     my ($self , $links) = @_;
     return unless $links;
     my @dbxrefs;
     for my $string (@{$links}) {
-        my ($db, $id) = split(':',$string);
+        my ($db, $id) = split(':',$string,2);
         push @dbxrefs, Bio::Annotation::DBLink->new(-database => $db, -primary_id => $id);
     }
-    return \@dbxrefs;
+
+    \@dbxrefs;
 }
 
 1;

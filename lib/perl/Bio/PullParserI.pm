@@ -1,4 +1,3 @@
-# $Id: PullParserI.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::PullParserI
 #
@@ -48,7 +47,7 @@ would need to cache some data or otherwise behave differently during a
 sequential read.
 
 The main method in the system is get_field(). This method relies on the
-existance of a private hash reference accessible to it with the method
+existence of a private hash reference accessible to it with the method
 _fields(). That hash ref should have as keys all the sorts of data you will want
 to parse (eg. 'score'), and prior to parsing the values would be undefined. A
 user of your module can then call either $module-E<gt>get_field('score') or
@@ -60,7 +59,7 @@ answer in the fields hash.
 
 How you implement your _discover_* methods is up to you, though you should never
 call a _discover_* method directly yourself; always use get_field(), since
-get_field() will deal with calling dependant methods for you if a forced
+get_field() will deal with calling dependent methods for you if a forced
 sequenctial read is in progress due to piped input. You will almost certainly
 want to make use of the various chunk-related methods of this class (that are
 denoted private by the leading '_'; this means you can use them as the author of
@@ -111,7 +110,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Sendu Bala
 
@@ -131,7 +130,7 @@ Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::PullParserI;
-
+$Bio::PullParserI::VERSION = '1.7.8';
 use vars qw($AUTOLOAD $FORCE_TEMP_FILE);
 use strict;
 
@@ -256,7 +255,7 @@ sub parent {
            treat as the chunk, or Bio::Root::IO.
            Optionally, also provide:
            -start => int : the byte position within the thing described by the
-                           first arguement to consider as the start of this
+                           first argument to consider as the start of this
                            chunk (default 0)
            -end   => int : the byte position to consider as the end (default
                            true end)
@@ -294,7 +293,7 @@ sub chunk {
             else {
                 unless ($FORCE_TEMP_FILE) {
                     # treat a string as a filehandle
-                    open(my $fake_fh, "+<", \$thing); # requires perl 5.8
+                    open my $fake_fh, "+<", \$thing or $self->throw("Could not open file '$thing': $!"); # requires perl 5.8
                     $self->{_chunk} = Bio::Root::IO->new(-fh => $fake_fh);
                 }
                 else {
@@ -487,6 +486,7 @@ sub _line_ending {
 
 sub _chunk_seek {
     my ($self, $pos) = @_;
+    $self->throw("Undefined position passed") unless defined $pos;
     return if $self->_sequential;
     
     my $fh = $self->chunk->_fh;

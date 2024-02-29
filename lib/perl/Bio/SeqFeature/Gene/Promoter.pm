@@ -1,4 +1,3 @@
-# $Id: Promoter.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::SeqFeature::Gene::Promoter
 #
@@ -52,7 +51,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - David Block
 
@@ -70,6 +69,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::SeqFeature::Gene::Promoter;
+$Bio::SeqFeature::Gene::Promoter::VERSION = '1.7.8';
 use strict;
 
 # Object preamble - inherits from Bio::Root::Root

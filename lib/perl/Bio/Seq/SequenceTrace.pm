@@ -1,4 +1,3 @@
-# $Id: SequenceTrace.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Seq::SequenceTrace
 #
@@ -52,7 +51,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Chad Matsalla
 
@@ -66,7 +65,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::Seq::SequenceTrace;
-
+$Bio::Seq::SequenceTrace::VERSION = '1.7.8';
 
 use strict;
 use Bio::Seq::QualI;
@@ -102,7 +101,7 @@ sub new {
     my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args);
 	# default: turn OFF the warnings
-	$self->{supress_warnings} = 1;
+	$self->{suppress_warnings} = 1;
     my($swq,$peak_indices,$trace_a,$trace_t,
           $trace_g,$trace_c,$acc_a,$acc_t,$acc_g,$acc_c) =
           $self->_rearrange([qw(
@@ -344,7 +343,7 @@ sub display_id {
         called the accession_number. For sequences from established
         databases, the implementors should try to use the correct
         accession number. Notice that primary_id() provides the unique id
-        for the implemetation, allowing multiple objects to have the same
+        for the implementation, allowing multiple objects to have the same
         accession number in a particular implementation. For sequences
         with no accession number, this method should return "unknown".
 	This method sets the accession_number for the Quality
@@ -374,7 +373,7 @@ sub accession_number {
  Usage   : $unique_implementation_key = $obj->primary_id();
  Function: Returns the unique id for this object in this implementation.
         This allows implementations to manage their own object ids in a
-        way the implementaiton can control clients can expect one id to
+        way the implementation can control clients can expect one id to
         map to one object. For sequences with no accession number, this
         method should return a stringified memory location.
 	This method sets the primary_id for the Quality

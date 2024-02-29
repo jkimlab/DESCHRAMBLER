@@ -1,4 +1,3 @@
-# $Id: BlastPullResult.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Search::Result::BlastPullResult
 #
@@ -60,7 +59,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Sendu Bala
 
@@ -80,7 +79,7 @@ Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::Search::Result::BlastPullResult;
-
+$Bio::Search::Result::BlastPullResult::VERSION = '1.7.8';
 use strict;
 
 use Bio::Search::Hit::BlastPullHit;
@@ -112,17 +111,18 @@ sub new {
 	
 	$self->_setup(@args);
 	
-	foreach my $field (qw( header hit_table hsp_table alignments next_model models query_length stats_and_params)) {
+	foreach my $field (qw( header hit_table hsp_table alignments next_model
+	models query_length stats_and_params)) {
 		$self->_fields->{$field} = undef;
 	}
 	
 	$self->_dependencies( { ( query_name => 'header',
                               query_accession => 'header',
                               query_description => 'header',
-							  query_length => 'header',
+			    query_length => 'header',
                               hit_table => 'header',
-							  num_hits => 'hit_table',
-							  no_hits_found => 'hit_table' ) } );
+			    num_hits => 'hit_table',
+			    no_hits_found => 'hit_table' ) } );
     
     return $self;
 }
@@ -135,6 +135,11 @@ sub _discover_header {
 	my $self = shift;
 	$self->_chunk_seek(0);
 	my $header = $self->_get_chunk_by_end("Value\n");
+	if (!$header) {
+	    $header = $self->_get_chunk_by_end("***** No hits found ******\n");
+	    $self->{_no_hits_found} = 1;
+	}
+	$self->throw("Invalid header returned") unless $header;
 	$self->{_after_header} = $self->_chunk_tell;
 	
 	($self->_fields->{query_name}) = $header =~ /^\s*(\S+)/;
@@ -159,11 +164,11 @@ sub _discover_header {
 
 sub _discover_hit_table {
 	my $self = shift;
-	
 	$self->_chunk_seek($self->{_after_header});
+	
 	my $table = $self->_get_chunk_by_end("\n>");
 	
-	unless ($table) {
+	if (!$table && !$self->{_no_hits_found}) {
 		# no alignments, presumably; hit table comprises the remainder of this
 		# result
 		while (my $line = $self->_get_chunk_by_nol(1)) {
@@ -171,8 +176,8 @@ sub _discover_hit_table {
 		}
 	}
     
-    $table ||= '';
-    
+	$table ||= '';
+	
 	$self->{_after_hit_table} = $self->_chunk_tell;
 	
 	my $evalue_cutoff = $self->get_field('evalue_cutoff');
@@ -223,8 +228,8 @@ sub _discover_next_hit {
 	#*** needs to inherit piped_behaviour, and we need to deal with _sequential
 	#    ourselves
 	$self->_fields->{next_hit} = Bio::Search::Hit::BlastPullHit->new(-parent => $self,
-																	-chunk => [$self->chunk, $start, $end],
-																	-hit_data => $hit_row);
+								-chunk => [$self->chunk, $start, $end],
+								-hit_data => $hit_row);
 	
 	$self->{_next_hit_index}++;
 	

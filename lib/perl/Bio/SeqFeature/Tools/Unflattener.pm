@@ -1,4 +1,3 @@
-# $Id: Unflattener.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # bioperl module for Bio::SeqFeature::Tools::Unflattener
 #
@@ -411,7 +410,7 @@ Occasionally a GenBank entry will have both implicit exons (from the
 mRNA location) B<and> explicit exon features.
 
 In this case, exons will still be transferred. Tag-value data from the
-explicit exon will be transfered to the implicit exon. If exons are
+explicit exon will be transferred to the implicit exon. If exons are
 shared between mRNAs these will be represented by different
 objects. Any inconsistencies between implicit and explicit will be
 reported.
@@ -605,7 +604,7 @@ report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Chris Mungall
 
@@ -622,6 +621,7 @@ methods. Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::SeqFeature::Tools::Unflattener;
+$Bio::SeqFeature::Tools::Unflattener::VERSION = '1.7.8';
 use strict;
 
 # Object preamble - inherits from Bio::Root::Root
@@ -937,13 +937,13 @@ sub problem {
     if (@sfs) {
 	foreach my $sf (@sfs) {
 	    $desc .=
-	      sprintf("\nSF [$sf]: %s\n",
+	      sprintf("\nSF [$sf]: ". $sf->location->to_FTstring . "; %s\n",
 		      join('; ',
                            $sf->primary_tag,
 			   map {
 			       $sf->has_tag($_) ?
 				 $sf->get_tag_values($_) : ()
-			     } qw(gene product label)));
+			     } qw(locus_tag gene product label)));
 	}
     }
     my $thresh = $self->error_threshold;
@@ -1109,7 +1109,7 @@ sub unflatten_seq{
    my ($self,@args) = @_;
 
     my($seq, $resolver_method, $group_tag, $partonomy, 
-       $structure_type, $resolver_tag, $use_magic) =
+       $structure_type, $resolver_tag, $use_magic, $noinfer) =
 	$self->_rearrange([qw(SEQ
                               RESOLVER_METHOD
                               GROUP_TAG
@@ -1117,11 +1117,15 @@ sub unflatten_seq{
 			      STRUCTURE_TYPE
 			      RESOLVER_TAG
 			      USE_MAGIC
+			      NOINFER
 			     )],
                           @args);
 
    # seq we want to unflatten
    $seq = $seq || $self->seq;
+   if (!$self->seq) {
+       $self->seq($seq);
+   }
 
 
    # prevent bad argument combinations
@@ -1403,6 +1407,8 @@ sub unflatten_seq{
 	   }
        }
 
+       $need_to_infer_exons = 0 if $noinfer; #NML
+
        if ($need_to_infer_exons) {
 	   # remove exons and introns from group -
 	   # we will infer exons later, and we
@@ -1513,7 +1519,7 @@ sub unflatten_seq{
    # modify the original Seq object - the top seqfeatures are now
    # the top features from each group
    $seq->remove_SeqFeatures;
-   $seq->add_SeqFeature(@top_sfs);
+   $seq->add_SeqFeature($_) foreach @top_sfs;
 
    # --------- FINISHED UNFLATTENING -------------
 
@@ -1526,7 +1532,7 @@ sub unflatten_seq{
        if ($self->verbose > 0) {
 	   printf STDERR "** INFERRING mRNA from CDS\n";
        }
-       $self->infer_mRNA_from_CDS(-seq=>$seq);
+       $self->infer_mRNA_from_CDS(-seq=>$seq, -noinfer=>$noinfer);
    }
 
    # INFERRING exons
@@ -2393,6 +2399,110 @@ sub _resolve_container_for_sf{
                $inside = 0;
            }
        }
+
+
+       # SPECIAL CASE FOR /ribosomal_slippage
+       # See: https://www.ncbi.nlm.nih.gov/collab/FT/
+       if (!$inside && $sf->has_tag('ribosomal_slippage')) {
+	   if ($self->verbose > 0) {
+	       printf STDERR "    Checking for ribosomal_slippage\n";
+	   }
+
+           # TODO: rewrite this to match introns;
+           #  each slippage will be a "fake" small CDS exon
+	   my @transcript_splice_sites = @container_coords;
+	   my @cds_splice_sites = @coords;
+           ##printf STDERR "xxTR SSs: @transcript_splice_sites :: %s\n", $_->get_tag_values('product');
+           ##printf STDERR "xxCD SSs: @cds_splice_sites :: %s\n\n", $sf->get_tag_values('product');
+
+	   # find the the first splice site within the CDS
+	   while (scalar(@transcript_splice_sites) &&
+		  $transcript_splice_sites[0] < $cds_splice_sites[0]) {
+	       shift @transcript_splice_sites;
+	   }
+
+           ##print STDERR "TR SSs: @transcript_splice_sites\n";
+           ##print STDERR "CD SSs: @cds_splice_sites\n\n";
+
+	   if (!(scalar(@transcript_splice_sites)) ||
+                 $transcript_splice_sites[0] == $cds_splice_sites[0]) {
+
+               # we will now try and align all splice remaining sites in the transcript and CDS;
+               # any splice site that can't be aligned is assumed to be a ribosomal slippage
+
+	       my @slips = ();
+	       my $in_exon = 1;
+	       $inside = 1;   # innocent until proven guilty..
+	       while (@cds_splice_sites) {
+		   if (!@transcript_splice_sites) {
+
+                       # ribosomal slippage is after the last transcript splice site
+                       # Example: (NC_00007, isoform 3 of PEG10)
+                       #     mRNA            join(85682..85903,92646..99007)
+                       #     mRNA            join(85682..85903,92646..99007)
+                       #     CDS             join(85899..85903,92646..93825,93825..94994)
+
+                       # OR: None of the splice sites align;
+                       #  may be a single CDS exon with one slippage inside it.
+                       # Example: (NC_00007, isoform 4 of PEG10)
+                       #     mRNA            join(85637..85892,92646..99007)
+                       #     CDS             join(92767..93825,93825..94994)
+                       
+                       # Yes, this code is repeated below...
+                       my $p1 = shift @cds_splice_sites;
+                       my $p2 = shift @cds_splice_sites;
+                       if ($self->verbose > 0) {
+                           printf STDERR "    Found the ribosomal_slippage: $p1..$p2\n";
+                       }
+                       push(@slips, ($p2-$p1)-1);
+		   }
+		   elsif ($cds_splice_sites[0] == $transcript_splice_sites[0]) {
+                       # splice sites align: this is not the slippage
+		       shift @cds_splice_sites;
+		       shift @transcript_splice_sites;
+                       ##print STDERR "MATCH\n";
+		   }
+		   else {
+		       # mismatch
+		       if ($cds_splice_sites[0] < $transcript_splice_sites[0]) {
+			   # potential slippage
+			   #             v
+			   # ---TTTTTTTTTT----
+			   # ---CCCC--CCCC----
+			   #       ^
+
+			   my $p1 = shift @cds_splice_sites;
+			   my $p2 = shift @cds_splice_sites;
+			   if ($self->verbose > 0) {
+			       printf STDERR "    Found the ribosomal_slippage: $p1..$p2\n";
+			   }
+			   push(@slips, ($p2-$p1)-1);
+		       }
+		       else {
+			   # not a potential ribosomal slippage
+			   $inside = 0; # guilty!
+                           ##print STDERR "FAIL\n";
+			   last;
+		       }
+		   }
+	       }
+	       if ($inside) {
+		   # TODO: this is currently completely arbitrary. How many ribosomal slippages do we allow?
+		   # perhaps we need some mini-statistical model here....?
+		   if (@slips > 1) {
+		       $inside = 0;
+		   }
+		   # TODO: this is currently completely arbitrary. What is the maximum size of a ribosomal slippage?
+		   # perhaps we need some mini-statistical model here....?
+		   if (grep {$_ > 2} @slips) {
+		       $inside = 0;
+		   }
+	       }
+	   }
+	   else {
+	       # not a ribosomal_slippage, sorry
+	   }
+       }
        if ($self->verbose > 0) {
 	   printf STDERR "    Checking containment:[$inside] (@container_coords) IN ($splice_uniq_str)\n";
        }
@@ -2404,7 +2514,6 @@ sub _resolve_container_for_sf{
 		$_=>$score);
        }
    }
-   # return array ( $sf1=>$score1, $sf2=>$score2, ...)
    return @sf_score_pairs;
 }
 
@@ -2605,9 +2714,10 @@ example, see ftp.ncbi.nih.gov/genomes/Schizosaccharomyces_pombe/)
 sub infer_mRNA_from_CDS{
    my ($self,@args) = @_;
 
-   my($sf, $seq) =
+   my($sf, $seq, $noinfer) =
      $self->_rearrange([qw(FEATURE
                            SEQ
+			   NOINFER
                           )],
                           @args);
    my @sfs = ($sf);
@@ -2633,6 +2743,8 @@ sub infer_mRNA_from_CDS{
        if (@cdsl) {
 	   my @children = grep {$_->primary_tag ne 'CDS'} $sf->get_SeqFeatures;
 	   my @mrnas = ();
+
+
 	   foreach my $cds (@cdsl) {
 	       
                if ($self->verbose > 0) {
@@ -2648,29 +2760,34 @@ sub infer_mRNA_from_CDS{
 						-strand=>$cdsexonloc->strand);
 		   $loc->add_sub_Location($subloc);
 	       }
-	       # share the same location
-	       my $mrna =
-		 Bio::SeqFeature::Generic->new(-location=>$loc,
-					       -primary_tag=>'mRNA');
-	       
-               ## Provide seq_id to new feature:
-               $mrna->seq_id($cds->seq_id) if $cds->seq_id;
-               $mrna->source_tag($cds->source_tag) if $cds->source_tag;
+		if ($noinfer) {
+		    push(@mrnas, $cds);
+		}
+		else {
+#		    share the same location
+		    my $mrna =
+			Bio::SeqFeature::Generic->new(-location=>$loc,
+				-primary_tag=>'mRNA');
 
-               $self->_check_order_is_consistent($mrna->location->strand,$mrna->location->each_Location);
+##		    Provide seq_id to new feature:
+		    $mrna->seq_id($cds->seq_id) if $cds->seq_id;
+		    $mrna->source_tag($cds->source_tag) if $cds->source_tag;
 
-               # make the mRNA hold the CDS; no EXPAND option,
-               # the CDS cannot be wider than the mRNA
-	       $mrna->add_SeqFeature($cds);
+		    $self->_check_order_is_consistent($mrna->location->strand,$mrna->location->each_Location);
 
-	       # mRNA steals children of CDS
-	       foreach my $subsf ($cds->get_SeqFeatures) {
-		   $mrna->add_SeqFeature($subsf);
-	       }
-	       $cds->remove_SeqFeatures;
-	       push(@mrnas, $mrna);
+#		    make the mRNA hold the CDS; no EXPAND option,
+#		    the CDS cannot be wider than the mRNA
+		    $mrna->add_SeqFeature($cds);
+
+#		    mRNA steals children of CDS
+		    foreach my $subsf ($cds->get_SeqFeatures) {
+			$mrna->add_SeqFeature($subsf);
+		    }
+		    $cds->remove_SeqFeatures;
+		    push(@mrnas, $mrna);
+		}
 	   }
-	   # change gene/CDS to gene/mRNA
+#	   change gene/CDS to gene/mRNA
 	   $sf->remove_SeqFeatures;
 	   $sf->add_SeqFeature($_) foreach (@mrnas, @children);
        }
@@ -2760,10 +2877,18 @@ sub _check_order_is_consistent {
 	my $rangeP = $ranges[$i-1];
 	my $range = $ranges[$i];
 	    if ($rangeP->start > $range->end) {
-                # failed - but still get one more chance..
-		$pass = 0;
-                $self->problem(2,"Ranges not in correct order. Strange ensembl genbank entry? Range: $rangestr");
-                last;
+                if ($self->seq->is_circular) {
+                    # see for example NC_006578.gbk
+                    # we make exceptions for circular genomes here.
+                    # see Re: [Gmod-ajax] flatfile-to-json.pl error with GFF
+                    # 2010-07-26
+                }
+                else {
+                    # failed - but still get one more chance..
+                    $pass = 0;
+                    $self->problem(2,"Ranges not in correct order. Strange ensembl genbank entry? Range: $rangestr");
+                    last;
+                }
 	    }
     }
     

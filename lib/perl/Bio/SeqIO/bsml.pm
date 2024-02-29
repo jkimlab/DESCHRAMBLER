@@ -1,7 +1,7 @@
 #
 # BioPerl module for Bio::SeqIO::bsml
 #
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Charles Tilford (tilfordc@bms.com)
 # Copyright (C) Charles Tilford 2001
@@ -21,10 +21,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # Also at:   http://www.gnu.org/copyleft/lesser.html
 
-
 # Much of the basic documentation in this module has been
 # cut-and-pasted from the embl.pm (Ewan Birney) SeqIO module.
-
 
 =head1 NAME
 
@@ -32,40 +30,27 @@ Bio::SeqIO::bsml - BSML sequence input/output stream
 
 =head1 SYNOPSIS
 
- It is probably best not to use this object directly, but rather go
- through the SeqIO handler system. To read a BSML file:
+It is probably best not to use this object directly, but rather go
+through the SeqIO handler system. To read a BSML file:
 
     $stream = Bio::SeqIO->new( -file => $filename, -format => 'bsml');
 
     while ( my $bioSeqObj = $stream->next_seq() ) {
-   	# do something with $bioSeqObj
+        # do something with $bioSeqObj
     }
 
- To write a Seq object to the current file handle in BSML XML format:
+To write a Seq object to the current file handle in BSML XML format:
 
     $stream->write_seq( -seq => $seqObj);
 
- If instead you would like a XML::DOM object containing the BSML, use:
+If instead you would like a XML::DOM object containing the BSML, use:
 
     my $newXmlObject = $stream->to_bsml( -seq => $seqObj);
 
-=head1 DEPENDENCIES
-
- In addition to parts of the Bio:: hierarchy, this module uses:
-
- XML::DOM
-
 =head1 DESCRIPTION
 
- This object can transform Bio::Seq objects to and from BSML (XML)
- flatfiles.
-
-=head2 NOTE:
-
- 2/1/02 - I have changed the API to more closely match argument
- passing used by other BioPerl methods ( -tag => value ). Internal
- methods are using the same API, but you should not be calling those
- anyway...
+This object can transform Bio::Seq objects to and from BSML (XML)
+flatfiles.
 
 =head1 FEEDBACK
 
@@ -78,56 +63,84 @@ of the Bioperl mailing lists.  Your participation is much appreciated.
   bioperl-l@bioperl.org                  - General discussion
   http://bioperl.org/wiki/Mailing_lists  - About the mailing lists
 
-=head2 Support 
+=head2 Support
 
 Please direct usage questions or support issues to the mailing list:
 
 I<bioperl-l@bioperl.org>
 
-rather than to the module maintainer directly. Many experienced and 
-reponsive experts will be able look at the problem and quickly 
-address it. Please include a thorough description of the problem 
+rather than to the module maintainer directly. Many experienced and
+reponsive experts will be able look at the problem and quickly
+address it. Please include a thorough description of the problem
 with code and data examples if at all possible.
 
 =head2 Reporting Bugs
 
- Report bugs to the Bioperl bug tracking system to help us keep track
- the bugs and their resolution.
- Bug reports can be submitted via the web:
+Report bugs to the Bioperl bug tracking system to help us keep track
+the bugs and their resolution.
+Bug reports can be submitted via the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head2 Things Still to Do
 
- * The module now uses the new Collection.pm system. However,
-   Annotations associated with a Feature object still seem to use the
-   old system, so parsing with the old methods are included..
+=over
 
- * Generate Seq objects with no sequence data but an assigned
-   length. This appears to be an issue with Bio::Seq. It is possible
-   (and reasonable) to make a BSML document with features but no
-   sequence data.
+=item *
 
- * Support <Seq-data-import>. Do not know how commonly this is used.
+The module now uses the new Collection.pm system. However,
+Annotations associated with a Feature object still seem to use the
+old system, so parsing with the old methods are included..
 
- * Some features are awaiting implementation in later versions of
-   BSML. These include:
+=item *
 
-       * Nested feature support
+Generate Seq objects with no sequence data but an assigned
+length. This appears to be an issue with Bio::Seq. It is possible
+(and reasonable) to make a BSML document with features but no
+sequence data.
 
-       * Complex feature (ie joins)
+=item *
 
-       * Unambiguity in strand (ie -1,0,1, not just  'complement' )
+Support C<Seq-data-import>. Do not know how commonly this is used.
 
-       * More friendly dblink structures
+=item *
 
- * Location.pm (or RangeI::union?) appears to have a bug when 'expand'
-   is used.
+Some features are awaiting implementation in later versions of
+BSML. These include:
 
- * More intelligent hunting for sequence and feature titles? It is not
-   terribly clear where the most appropriate field is located, better
-   grepping (eg looking for a reasonable count for spaces and numbers)
-   may allow for titles better than "AE008041".
+=over
+
+=item *
+
+Nested feature support
+
+=item *
+
+Complex feature (ie joins)
+
+=item *
+
+Unambiguity in strand (ie -1,0,1, not just  'complement' )
+
+=item *
+
+More friendly dblink structures
+
+=back
+
+=item *
+
+Location.pm (or RangeI::union?) appears to have a bug when 'expand'
+is used.
+
+=item *
+
+More intelligent hunting for sequence and feature titles? It is not
+terribly clear where the most appropriate field is located, better
+grepping (eg looking for a reasonable count for spaces and numbers)
+may allow for titles better than "AE008041".
+
+=back
 
 =head1 AUTHOR - Charles Tilford
 
@@ -143,6 +156,7 @@ for many of the subroutines that are common to SeqIO modules.
 =cut
 
 package Bio::SeqIO::bsml;
+$Bio::SeqIO::bsml::VERSION = '1.7.8';
 use strict;
 
 use Bio::SeqFeature::Generic;
@@ -164,13 +178,16 @@ my $nvtoken = ": ";  # The token used if a name/value pair has to be stuffed
 
 =cut
 
-# LS: this seems to get overwritten on line 1317, generating a redefinition error.  Dead code?
-# CAT: This was inappropriately added in revision 1.10 - I added the check for existance of a sequence factory to the actual _initialize
+# LS: this seems to get overwritten on line 1317, generating a redefinition error.
+# Dead code?
+# CAT: This was inappropriately added in revision 1.10 - I added the check for
+# existence of a sequence factory to the actual _initialize
 # sub _initialize {
 #   my($self,@args) = @_;
 #   $self->SUPER::_initialize(@args);
 #   if( ! defined $self->sequence_factory ) {
-#       $self->sequence_factory(Bio::Seq::SeqFactory->new(-verbose => $self->verbose(), -type => 'Bio::Seq::RichSeq'));
+#       $self->sequence_factory(Bio::Seq::SeqFactory->new(-verbose => $self->verbose(),
+#         -type => 'Bio::Seq::RichSeq'));
 #   }
 # }
 
@@ -247,7 +264,7 @@ sub next_seq {
     my %specs = ('common_name' => 'y',
 		 'genus'       => 'y',
 		 'species'     => 'y',
-		 'sub_species' => 'y', 
+		 'sub_species' => 'y',
 		 );
     my %seqMap = (
 		  'add_date'     => [ qw(date date-created date-last-updated)],
@@ -281,7 +298,7 @@ sub next_seq {
 		$value ||= $content if ($name =~ /$match/i);
 	    }
 	    if ($value ne "") {
-		
+
 		if( $method eq 'seq_version'&& $value =~ /\S+\.(\d+)/ ) {
 		    # hack for the fact that data in version is actually
 		    # ACCESSION.VERSION
@@ -355,30 +372,29 @@ sub next_seq {
 		-location => "RefJournal",
 		);
     for my $ref ( $xmlSeq->getElementsByTagName ("Reference") ) {
-	my %refVals;
-	for my $tag (keys %tags) {
-	    my $rt = &FIRSTDATA($ref->getElementsByTagName($tags{$tag})
-				->item(0));
-	    next unless ($rt);
-	    $rt =~ s/^[\s\r\n]+//; # Kill leading space
-	    $rt =~ s/[\s\r\n]+$//; # Kill trailing space
-	    $rt =~ s/[\s\r\n]+/ /; # Collapse internal space runs
-	    $refVals{$tag} = $rt;
-	}
+		my %refVals;
+		for my $tag (keys %tags) {
+	    	my $rt = &FIRSTDATA($ref->getElementsByTagName($tags{$tag})->item(0));
+	    	next unless ($rt);
+	    	$rt =~ s/^[\s\r\n]+//; # Kill leading space
+	    	$rt =~ s/[\s\r\n]+$//; # Kill trailing space
+	    	$rt =~ s/[\s\r\n]+/ /; # Collapse internal space runs
+	    	$refVals{$tag} = $rt;
+		}
 	my $reference = Bio::Annotation::Reference->new( %refVals );
-	
+
 	# Pull out any <Reference> information hidden in <Attributes>
 	my %refMap = (
 		      comment         => [ 'comment', 'remark' ],
 		      medline         => [ 'medline', ],
 		      pubmed          => [ 'pubmed' ],
 		      start           => [ 'start', 'begin' ],
-		      end             => [ 'stop', 'end' ],		      
+		      end             => [ 'stop', 'end' ],
 		      );
 	my @refCom = ();
 	my $floppies = &GETFLOPPIES($ref);
 	for my $attr (@{$floppies}) {
-	    my ($name, $content) = &FLOPPYVALS($attr);	    
+	    my ($name, $content) = &FLOPPYVALS($attr);
 	    my $value = "";
 	    # Cycle through the Seq methods:
 	    for my $method (keys %refMap) {
@@ -412,12 +428,12 @@ sub next_seq {
     for my $feat ( $xmlSeq->getElementsByTagName("Feature") ) {
 	$bioSeq->add_SeqFeature( $self->_parse_bsml_feature($feat) );
     }
-    
+
     $species->classification( @classification );
     $bioSeq->species( $species );
-    
+
     $bioSeq->annotation->add_Annotation('dblink' => $_) for @links;
-    
+
     $self->{'current_node'}++;
     return $bioSeq;
 }
@@ -516,7 +532,7 @@ sub STRIP {
            hash reference, those specific tags will be ignored.
 
            Skipping some or all tags and features can result in
-           noticable speed improvements.
+           noticeable speed improvements.
 
    -nodata If true, then <Seq-data> will not be included.  This may be
            useful if you just want annotations and do not care about
@@ -534,13 +550,13 @@ sub STRIP {
            not want this behavior.
 
  Examples : my $domObj = $stream->to_bsml( -seq => \@fourCoolSequenceObjects,
-					   -skipfeat => { source => 1 },
-					   );
+                                           -skipfeat => { source => 1 },
+                                          );
 
             # Or add sequences to an existing BSML document:
-            $stream->to_bsml( -seq => \@fourCoolSequenceObjects,
-			      -skipfeat => { source => 1 },
-			      -xmldoc => $myBsmlDocumentInProgress,  );
+            $stream->to_bsml(-seq => \@fourCoolSequenceObjects,
+                             -skipfeat => { source => 1 },
+                             -xmldoc => $myBsmlDocumentInProgress,  );
 
 =cut
 
@@ -611,7 +627,12 @@ sub to_bsml {
 	my $seqRefs = []; my $featRefs = [];
 	# Array references to hold <Attribute> values (not objects):
 	my $seqDesc = [];
-	push @{$seqDesc}, ["comment" , "This file generated to BSML 2.2 standards - joins will be collapsed to a single feature enclosing all members of the join"];
+    push @{$seqDesc},
+    [
+    "comment",
+    "This file generated to BSML 2.2 standards - " .
+    "joins will be collapsed to a single feature enclosing all members of the join"
+    ];
 	push @{$seqDesc}, ["description" , eval{$bioSeq->desc}];
 	for my $kwd ( eval{$bioSeq->get_keywords} ) {
 	    push @{$seqDesc}, ["keyword" , $kwd];
@@ -752,7 +773,7 @@ sub to_bsml {
 		next if (defined $args->{SKIPTAGS} &&
 			 $args->{SKIPTAGS} =~ /all/i);
 		# Tags can consume a lot of CPU cycles, and can often be
-		# rather non-informative, so -skiptags can allow total or
+		# rather non-informative, so -skiptags can allow one total or
 		# selective omission of tags.
 		for my $tag ($bioFeat->all_tags()) {
 		    next if (exists $args->{SKIPTAGS}{$tag});
@@ -832,11 +853,11 @@ sub to_bsml {
            it is the sequence object (can also be an array ref of
            many Seq objects )
 
--printmime If true prints "Content-type: $mimetype\n\n" at top of
+      -printmime If true prints "Content-type: $mimetype\n\n" at top of
            document, where $mimetype is the value designated by this
            key. For generic XML use text/xml, for BSML use text/x-bsml
 
-   -return This option will be supressed, since the nature of this
+      -return This option will be suppressed, since the nature of this
            method is to print out the XML document. If you wish to
            retrieve the <Sequence> objects generated, use the to_bsml
            method directly.
@@ -867,10 +888,9 @@ sub write_seq {
 }
 
 =head1 INTERNAL METHODS
-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-
 
- The following methods are used for internal processing, and should probably
- not be accessed by the user.
+The following methods are used for internal processing, and should probably
+not be accessed by the user.
 
 =head2 _parse_location
 
@@ -999,7 +1019,7 @@ sub _parse_bsml_feature {
     for my $attr (@{$floppies}) {
 	my ($name, $content) = &FLOPPYVALS($attr);
 	# Don't know what the object is, dump it to a tag:
-	$basegsf->add_tag_value(lc($name), $content);	
+	$basegsf->add_tag_value(lc($name), $content);
     }
 
     # Mostly this helps with debugging, but may be of utility...
@@ -1070,11 +1090,11 @@ sub _parse_bsml_location {
 
       -xml The DOM::Document being modified
 
-   -refobj The Annotation::Reference Object
+      -refobj The Annotation::Reference Object
 
-     -refs An array reference to hold the new <Reference> DOM object
+      -refs An array reference to hold the new <Reference> DOM object
 
-       -id Optional. If the XML id for the 'calling' element is
+      -id Optional. If the XML id for the 'calling' element is
            provided, it will be placed in any <Reference> refs
            attribute.
 
@@ -1136,11 +1156,11 @@ sub _parse_reference {
 
       -obj Reference to the Bio object being analyzed
 
-    -descr An array reference for holding description text items
+      -descr An array reference for holding description text items
 
-     -refs An array reference to hold <Reference> DOM objects
+      -refs An array reference to hold <Reference> DOM objects
 
-       -id Optional. If the XML id for the 'calling' element is
+      -id Optional. If the XML id for the 'calling' element is
            provided, it will be placed in any <Reference> refs
            attribute.
 
@@ -1204,11 +1224,11 @@ sub _parse_annotation {
 
       -obj Reference to the Bio object being analyzed
 
-    -descr An array reference for holding description text items
+      -descr An array reference for holding description text items
 
-     -refs An array reference to hold <Reference> DOM objects
+      -refs An array reference to hold <Reference> DOM objects
 
-       -id Optional. If the XML id for the 'calling' element is
+      -id Optional. If the XML id for the 'calling' element is
            provided, it will be placed in any <Reference> refs
            attribute.
 
@@ -1420,7 +1440,7 @@ sub _parse_xml {
 	$self->throw("Could not parse non-existant XML file '$file'.");
 	return;
     }
-    my $parser = new XML::DOM::Parser;
+    my $parser = XML::DOM::Parser->new();
     my $doc = $parser->parsefile ($file);
     return $doc;
 }
@@ -1438,13 +1458,13 @@ sub DESTROY {
 
 =head1 TESTING SCRIPT
 
- The following script may be used to test the conversion process. You
- will need a file of the format you wish to test. The script will
- convert the file to BSML, store it in /tmp/bsmltemp, read that file
- into a new SeqIO stream, and write it back as the original
- format. Comparison of this second file to the original input file
- will allow you to track where data may be lost or corrupted. Note
- that you will need to specify $readfile and $readformat.
+The following script may be used to test the conversion process. You
+will need a file of the format you wish to test. The script will
+convert the file to BSML, store it in /tmp/bsmltemp, read that file
+into a new SeqIO stream, and write it back as the original
+format. Comparison of this second file to the original input file
+will allow you to track where data may be lost or corrupted. Note
+that you will need to specify $readfile and $readformat.
 
  use Bio::SeqIO;
  # Tests preservation of details during round-trip conversion:
@@ -1459,21 +1479,21 @@ sub DESTROY {
  my $seq = $biostream->next_seq();
 
  # Write BSML from SeqObject
- my $bsmlout = Bio::SeqIO->new( -format => 'bsml',
-				   -file => ">$tempspot/out.bsml");
+ my $bsmlout = Bio::SeqIO->new(-format => 'bsml',
+                               -file => ">$tempspot/out.bsml");
  warn "\nBSML written to $tempspot/out.bsml\n";
  $bsmlout->write_seq($seq);
  # Need to kill object for following code to work... Why is this so?
  $bsmlout = "";
 
  # Make Seq object from BSML
- my $bsmlin = Bio::SeqIO->new( -file => "$tempspot/out.bsml",
-				  -format => 'bsml');
+ my $bsmlin = Bio::SeqIO->new(-file => "$tempspot/out.bsml",
+                              -format => 'bsml');
  my $seq2 = $bsmlin->next_seq();
 
  # Write format back from Seq Object
- my $genout = Bio::SeqIO->new( -format => $readformat,
-				   -file => ">$tempspot/out.$readformat");
+ my $genout = Bio::SeqIO->new(-format => $readformat,
+                              -file => ">$tempspot/out.$readformat");
  $genout->write_seq($seq2);
  warn "$readformat  written to $tempspot/out.$readformat\n";
 

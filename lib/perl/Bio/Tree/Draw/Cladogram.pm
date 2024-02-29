@@ -1,4 +1,3 @@
-# $Id: Cladogram.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Cladogram
 #
@@ -104,7 +103,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Gabriel Valiente
 
@@ -436,7 +435,7 @@ sub print {
   my ($file) = $self->_rearrange([qw(FILE)], @args);
   $file ||= "output.eps"; # stdout
 
-  open(my $INFO,">", $file);
+  open my $INFO, '>', $file or $self->throw("Could not write file '$file': $!");
   print $INFO "%!PS-Adobe-\n";
   print $INFO "%%BoundingBox: 0 0 ", $width, " ", $height, "\n";
   print $INFO "1 setlinewidth\n";

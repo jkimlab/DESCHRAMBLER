@@ -1,5 +1,4 @@
 #
-# $Id: fasta.pm 16191 2009-09-28 15:44:43Z cjfields $
 #
 # BioPerl module for Bio::DB::Flat::BDB
 #
@@ -53,7 +52,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 SEE ALSO
 
@@ -66,7 +65,7 @@ Email - lstein@cshl.org
 =cut
 
 package Bio::DB::Flat::BDB::fasta;
-
+$Bio::DB::Flat::BDB::fasta::VERSION = '1.7.8';
 use strict;
 
 use base qw(Bio::DB::Flat::BDB);
@@ -86,7 +85,7 @@ sub parse_one_record {
     my $fh    = shift;
     
     # fasta parses by changing $/ to '\n>', need to adjust accordingly
-    my $adj = ( $^O =~ /mswin/i ) ? -2 : -1; 
+    my $adj = -1;
     my $parser =
       $self->{cached_parsers}{fileno($fh)}
         ||= Bio::SeqIO->new(-fh=>$fh,-format=>$self->default_file_format);

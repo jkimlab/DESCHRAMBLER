@@ -1,4 +1,3 @@
-# $Id: Mutation.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::LiveSeq::Mutation
 #
@@ -18,7 +17,7 @@ Bio::LiveSeq::Mutation - Mutation event descriptor class
 
 =head1 SYNOPSIS
 
-  # full descrition of a point mutation
+  # full description of a point mutation
   $mutation1a = Bio::LiveSeq::Mutation->new ( -seq => 'A',
 					      -seqori => 'T',
 					      -pos  => 100,
@@ -87,7 +86,7 @@ report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Heikki Lehvaslaiho
 
@@ -220,7 +219,7 @@ sub pos {
  Function: 
 
             Sets and returns the len of the affected original allele
-            sequence.  If value is not set, defaults to the lenght of
+            sequence.  If value is not set, defaults to the length of
             the mutated sequence (seq).
 
  Example : 

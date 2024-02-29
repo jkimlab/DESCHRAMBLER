@@ -1,5 +1,3 @@
-#
-#
 # BioPerl module for Bio::Index::Fastq
 #
 # Please direct questions and support issues to <bioperl-l@bioperl.org> 
@@ -48,7 +46,7 @@ Bio::Index::Fastq - Interface for indexing (multiple) fastq files
 =head1 DESCRIPTION
 
 Inherits functions for managing dbm files from Bio::Index::Abstract.pm,
-and provides the basic funtionallity for indexing fastq files, and
+and provides the basic funtionality for indexing fastq files, and
 retrieving the sequence from them. Note: for best results 'use strict'.
 
 Bio::Index::Fastq supports the Bio::DB::BioSeqI interface, meaning
@@ -82,7 +80,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Tony Cox
 
@@ -100,7 +98,7 @@ methods. Internal methods are usually preceded with a _
 
 
 package Bio::Index::Fastq;
-
+$Bio::Index::Fastq::VERSION = '1.7.8';
 use strict;
 
 use Bio::Seq;
@@ -158,15 +156,25 @@ sub _index_file {
 
     my $id_parser = $self->id_parser;
     my $c = 0;
-    open my $FASTQ, '<', $file or $self->throw("Can't open file for read : $file");
+    open my $FASTQ, '<', $file or $self->throw("Could not read file '$file': $!");
+
+    # In Windows, text files have '\r\n' as line separator, but when reading in
+    # text mode Perl will only show the '\n'. This means that for a line "ABC\r\n",
+    # "length $_" will report 4 although the line is 5 bytes in length.
+    # We assume that all lines have the same line separator and only read current line.
+    my $init_pos   = tell($FASTQ);
+    my $curr_line  = <$FASTQ>;
+    my $pos_diff   = tell($FASTQ) - $init_pos;
+    my $correction = $pos_diff - length $curr_line;
+    seek $FASTQ, $init_pos, 0; # Rewind position to proceed to read the file
+
     # Main indexing loop
     while (<$FASTQ>) {
         if (/^@/) {
-            # $begin is the position of the first character after the '@'
-            my $begin = tell($FASTQ) - length( $_ ) + 1;
+            my $begin = tell($FASTQ) - length( $_ ) - $correction;
             foreach my $id (&$id_parser($_)) {
                 $self->add_record($id, $i, $begin);
-		$c++;
+                $c++;
             }
         }
     }

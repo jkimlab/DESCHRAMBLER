@@ -1,4 +1,3 @@
-# $Id: withrefm.pm 16123 2009-09-17 12:57:27Z cjfields $
 # BioPerl module for Bio::Restriction::IO::withrefm
 #
 # Please direct questions and support issues to <bioperl-l@bioperl.org> 
@@ -54,7 +53,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -140,7 +139,7 @@ sub read {
                      # occurring against the variables set by 
 	             # regexp matching (unless anyone has other ideas...)
 
-	my ($precut, $recog, $postcut) = ( $site =~ m/^(?:\((\w+\/\w+)\))?([\w^]+)(?:\((\w+\/\w+)\))?/ );
+	my ($precut, $recog, $postcut) = ( $site =~ m/^(?:\((-?\w+\/-?\w+)\))?([\w^]+)(?:\((-?\w+\/-?\w+)\))?/ );
 
 
         #
@@ -171,7 +170,7 @@ sub read {
         #
         # references
         #
-        my ($refs) = $entry =~ /<8>(.+)/s;
+        my ($refs) = $entry =~ /<8>(.+)<1>/s;
 	my @refs = map {split /\n+/} $refs;
 
 	use warnings; 

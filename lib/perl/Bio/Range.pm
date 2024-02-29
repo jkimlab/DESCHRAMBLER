@@ -1,4 +1,3 @@
-# $Id: Range.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Range
 #
@@ -72,7 +71,7 @@ with code and data examples if at all possible.
 Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via  the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Heikki Lehvaslaiho
 
@@ -86,7 +85,7 @@ methods. Internal methods are usually preceded with a _
 =cut
 
 package Bio::Range;
-
+$Bio::Range::VERSION = '1.7.8';
 use strict;
 use Carp;
 use integer;
@@ -243,18 +242,30 @@ sub end {
 
 =cut
 
+{
+
+my %VALID_STRAND = (
+    -1      => -1,
+    0       => 0,
+    1       => 1,
+    '+'     => 1,
+    '-'     => -1,
+    '.'     => 0
+);
+
 sub strand {
   my $self = shift;
   if(@_) {
     my $val = shift;
-    $val =~ tr/+/1/;
-    $val =~ tr/-/-1/;
-    $val =~ tr/./0/;
-    if($val == -1 || $val == 0 || $val == 1 ) {
-      $self->{'strand'} = $val;
+    if (exists $VALID_STRAND{$val}) {
+        $self->{'strand'} = $VALID_STRAND{$val};
+    } else {
+        $self->throw("Invalid strand: $val");
     }
   }
   return $self->{'strand'};
+}
+
 }
 
 =head2 length

@@ -1,4 +1,3 @@
-# $Id: EMBL.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Index::EMBL
 #
@@ -49,7 +48,7 @@ Bio::Index::EMBL - Interface for indexing (multiple) EMBL/Swissprot
 =head1 DESCRIPTION
 
 Inherits functions for managing dbm files from Bio::Index::Abstract.pm,
-and provides the basic funtionallity for indexing EMBL files, and
+and provides the basic funtionality for indexing EMBL files, and
 retrieving the sequence from them. Heavily snaffled from James Gilbert
 and his Fasta system. Note: for best results 'use strict'.
 
@@ -85,7 +84,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Ewan Birney
 
@@ -103,9 +102,8 @@ methods. Internal methods are usually preceded with a _
 
 
 package Bio::Index::EMBL;
-
+$Bio::Index::EMBL::VERSION = '1.7.8';
 use strict;
-
 use Bio::Seq;
 
 use base qw(Bio::Index::AbstractSeq);
@@ -146,7 +144,17 @@ sub _index_file {
 
     $begin = 0;
 
-    open my $EMBL, '<', $file or $self->throw("Can't open file for read : $file");
+    open my $EMBL, '<', $file or $self->throw("Could not read file '$file': $!");
+
+    # In Windows, text files have '\r\n' as line separator, but when reading in
+    # text mode Perl will only show the '\n'. This means that for a line "ABC\r\n",
+    # "length $_" will report 4 although the line is 5 bytes in length.
+    # We assume that all lines have the same line separator and only read current line.
+    my $init_pos   = tell($EMBL);
+    my $curr_line  = <$EMBL>;
+    my $pos_diff   = tell($EMBL) - $init_pos;
+    my $correction = $pos_diff - length $curr_line;
+    seek $EMBL, $init_pos, 0; # Rewind position to proceed to read the file
 
     # Main indexing loop
     $id = undef;
@@ -172,7 +180,7 @@ sub _index_file {
 	    $id = $1;
 	    # not sure if I like this. Assummes tell is in bytes.
 	    # we could tell before each line and save it.
-            $begin = tell($EMBL) - length( $_ );
+            $begin = tell($EMBL) - length( $_ ) - $correction;
 	
 	} elsif (/^AC\s+(.*)?/) {
             push @accs , split (/[; ]+/, $1);
@@ -206,13 +214,3 @@ sub _file_format{
 
 
 1;
-
-
-
-
-
-
-
-
-
-

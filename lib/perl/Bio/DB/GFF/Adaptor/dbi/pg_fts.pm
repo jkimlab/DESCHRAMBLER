@@ -1,6 +1,5 @@
 package Bio::DB::GFF::Adaptor::dbi::pg_fts;
 
-# $Id: pg_fts.pm 11724 2007-10-16 19:28:22Z lstein $
 
 =head1 NAME
 
@@ -87,7 +86,7 @@ like the one above, only executing the remove_TSearch2() method.
 =head1 NOTES ABOUT TSearch2 SEARCHING
 
 You should know a few things about how searching with TSearch2 works in
-the GBrowse enviroment:
+the GBrowse environment:
 
 =over
 

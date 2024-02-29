@@ -2,7 +2,6 @@
 # PACKAGE : Bio::Tools::Sigcleave
 # AUTHOR  : Chris Dagdigian, dag@sonsorol.org
 # CREATED : Jan 28 1999
-# REVISION: $Id: Sigcleave.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # Copyright (c) 1997-9 bioperl, Chris Dagdigian and others. All Rights Reserved.
 #           This module is free software; you can redistribute it and/or 
@@ -93,7 +92,7 @@ In both cases, the "threshold" setting controls the score reporting
 level. If no value for threshold is passed in by the user, the code
 defaults to a reporting value of 3.5.
 
-In this implemntation the accessor will never return any
+In this implementation the accessor will never return any
 score/position pair which does not meet the threshold limit. This is
 the slightly different from the behaviour of the 8.1 EGCG sigcleave
 program which will report the highest of the under-threshold results
@@ -143,7 +142,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -155,7 +154,7 @@ Heikki Lehvaslaiho, heikki-at-bioperl-dot-org
 
 =head1 VERSION
 
-Bio::Tools::Sigcleave, $Id: Sigcleave.pm 16123 2009-09-17 12:57:27Z cjfields $
+Bio::Tools::Sigcleave, $Id$
 
 =head1 COPYRIGHT
 
@@ -190,7 +189,7 @@ preceded by an underscore ("_").
 #
 
 package Bio::Tools::Sigcleave;
-
+$Bio::Tools::Sigcleave::VERSION = '1.7.8';
 use Bio::PrimarySeq;
 
 use base qw(Bio::Root::Root);

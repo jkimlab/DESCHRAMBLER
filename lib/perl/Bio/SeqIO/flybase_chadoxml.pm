@@ -1,4 +1,3 @@
-# $Id: flybase_chadoxml.pm 16147 2009-09-22 01:26:32Z cjfields $
 #
 # BioPerl module for Bio::SeqIO::flybase_chadoxml
 #
@@ -60,7 +59,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.
 Bug reports can be submitted via the web:
 
-  http://bugzilla.bioperl.org
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Peili Zhang
 

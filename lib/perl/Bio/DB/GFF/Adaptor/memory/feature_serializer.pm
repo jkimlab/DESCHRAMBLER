@@ -1,6 +1,5 @@
 package Bio::DB::GFF::Adaptor::memory::feature_serializer;
 
-# $Id: feature_serializer.pm 15515 2009-02-10 13:41:46Z dave_messina $
 
 =head1 NAME
 

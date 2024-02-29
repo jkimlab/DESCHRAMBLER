@@ -1,4 +1,3 @@
-# $Id: PsmI.pm 16123 2009-09-17 12:57:27Z cjfields $
 #---------------------------------------------------------
 #ISA SiteMatrix, HAS InstanceSite
 
@@ -42,7 +41,7 @@ Bio::Matrix::PSM::PsmI - abstract interface to handler of site matricies
   # Bio::Matrix::PSM::SiteMatrix), and everything else is self-explenatory, 
   # except for
   #-instances (reference to an array of Bio::Matrix::PSM::InstanceSite objects)
-  # which is documented bellow.
+  # which is documented below.
 
 =head1 DESCRIPTION
 
@@ -67,7 +66,7 @@ way is to return SiteMatrix object + arrray of InstanceSite objects
 and then mast will return undef for SiteMatrix and transfac will
 return undef for InstanceSite. Probably I cannot see some other design
 issues that might arise from such approach, but it seems more
-straightforward.  Hilmar does not like this beacause it is an
+straightforward.  Hilmar does not like this because it is an
 exception from the general BioPerl rules Should I leave this as an
 option?  Also the header rightfully belongs the driver object, and
 could be retrieved as hashes.  I do not think it can be done any other
@@ -108,7 +107,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Stefan Kirov
 
@@ -125,6 +124,7 @@ This software is provided "as is" without warranty of any kind.
 
 # Let the code begin...
 package Bio::Matrix::PSM::PsmI;
+$Bio::Matrix::PSM::PsmI::VERSION = '1.7.8';
 use Bio::Matrix::PSM::SiteMatrix;
 use Bio::Matrix::PSM::InstanceSite;
 use strict;

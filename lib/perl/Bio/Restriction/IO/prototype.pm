@@ -1,4 +1,3 @@
-# $Id: prototype.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Restriction::IO::prototype
 #
@@ -53,7 +52,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -77,7 +76,6 @@ package Bio::Restriction::IO::prototype;
 use vars qw(%WITH_REFM_FIELD);
 use strict;
 
-#use Bio::Restriction::IO;
 use Bio::Restriction::Enzyme;
 use Bio::Restriction::EnzymeCollection;
 
@@ -99,6 +97,8 @@ sub read {
     my $self = shift;
     my $coll = Bio::Restriction::EnzymeCollection->new(-empty => 1);
     my ($seentop, $last_type);
+    
+    ENZYME:
     while (defined (my $line = $self->_readline)) {
         chomp $line;
         next unless $line;
@@ -120,6 +120,12 @@ sub read {
         $site =~ s/\s+//g;
         
         my $precut;
+        if ($site =~ /,/) {
+            $self->warn("Split site support not available for Bio::Restriction::Enzyme yet, ".
+                        "skipping $enzyme [$site]");
+            next ENZYME;
+        }
+        
         if ($site =~ m/^\((\d+\/\d+)\)[RYATGCN]+/) {
             $precut=$1;
             $site =~ s/\($precut\)//;

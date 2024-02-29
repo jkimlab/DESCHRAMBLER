@@ -1,4 +1,3 @@
-# $Id: Repeat_Unit.pm 15635 2009-04-14 19:11:13Z cjfields $
 #
 # bioperl module for Bio::LiveSeq::Repeat_Unit
 #

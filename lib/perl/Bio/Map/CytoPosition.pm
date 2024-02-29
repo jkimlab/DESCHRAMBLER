@@ -1,4 +1,3 @@
-# $Id: CytoPosition.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Map::CytoPosition
 #
@@ -37,12 +36,12 @@ cytogenetic map. See L<Bio::Map::MarkerI> for more information.
 
 Cytogenetic locations are names of bands visible in stained mitotic
 eucaryotic chromosomes. The naming follows strict rules which are
-consistant at least in higher vertebates, e.g. mammals. The chromosome
+consistent at least in higher vertebates, e.g. mammals. The chromosome
 name preceds the band names.
 
 The shorter arm of the chromosome is called 'p' ('petit') and usually
 drawn pointing up. The lower arm is called 'q' ('queue'). The bands
-are named from the region separting these, a centromere (cen), towards
+are named from the region separating these, a centromere (cen), towards
 the tips or telomeric regions (ter) counting from 1 upwards. Depending
 of the resolution used the bands are identified with one or more
 digit. The first digit determines the major band and subsequent digits
@@ -80,7 +79,7 @@ report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Heikki Lehvaslaiho
 
@@ -126,7 +125,7 @@ use base qw(Bio::Map::Position);
 
             The values between -100,000 through 0 for centromere to
             100,000 would have reflected the band numbering better but
-            use of positive integers was choosen since the
+            use of positive integers was chosen since the
             transformation is very easy. These values are not metric.
 
             Each band defines a range in a chromosome. A band string
@@ -518,7 +517,7 @@ sub range2value {
 
  Title   : value
  Usage   : my $pos = $position->value;
- Function: Get/Set the value for this postion
+ Function: Get/Set the value for this position
  Returns : scalar, value
  Args    : none to get, OR scalar to set
 

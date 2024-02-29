@@ -1,4 +1,3 @@
-# $Id: SimilarityPair.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::SeqFeature::SimilarityPair
 #
@@ -68,7 +67,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Hilmar Lapp
 
@@ -86,6 +85,7 @@ methods. Internal methods are usually preceded with a _
 
 
 package Bio::SeqFeature::SimilarityPair;
+$Bio::SeqFeature::SimilarityPair::VERSION = '1.7.8';
 use strict;
 
 use Bio::SeqFeature::Similarity;
@@ -130,8 +130,6 @@ sub new {
                               )],@args);
     
     if( $sbjct ) { 
-        # undeprecated by Jason before 1.1 release 
-        # $self->deprecated("use of -subject deprecated: SimilarityPair now uses 'hit'");
         if(! $hit) { $hit = $sbjct } 
         else { 
             $self->warn("-hit and -subject were specified, using -hit and ignoring -subject");
@@ -185,13 +183,11 @@ sub query {
  Function: Get/Set Subject for a SimilarityPair 
  Returns : Bio::SeqFeature::Similarity
  Args    : [optional] Bio::SeqFeature::Similarity
- Notes   : Deprecated.  Use the method 'hit' instead
 
 =cut
 
 sub subject { 
     my $self = shift;
-#    $self->deprecated("Method subject deprecated: use hit() instead");
     $self->hit(@_); 
 }
 

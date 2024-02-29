@@ -65,7 +65,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Chad Matsalla
 
@@ -103,7 +103,7 @@ use base qw(Bio::Map::Marker);
 		default 'Unknown microsatellite')
         -positions => position(s) for this marker in maps[optional],
                 An array reference of tuples (array refs themselves)
-                Each tuple conatins a Bio::Map::MapI-inherited object and a 
+                Each tuple contains a Bio::Map::MapI-inherited object and a
 		Bio::Map::PositionI-inherited obj, no default)
 	-sequence => the sequence of this microsatellite (optional,
 		 scalar, no default)

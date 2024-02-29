@@ -2,7 +2,6 @@
 # PACKAGE : Bio::SeqIO::tab
 # AUTHOR  : Philip Lijnzaad <p.lijnzaad@med.uu.nl>
 # CREATED : Feb 6 2003
-# REVISION: $Id: tab.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # Copyright (c) This module is free software; you can redistribute it
 # and/or modify it under the same terms as Perl itself.
@@ -70,15 +69,15 @@ of the Bioperl mailing lists.  Your participation is much appreciated.
   bioperl-l@bioperl.org                  - General discussion
   http://bioperl.org/wiki/Mailing_lists  - About the mailing lists
 
-=head2 Support 
+=head2 Support
 
 Please direct usage questions or support issues to the mailing list:
 
 I<bioperl-l@bioperl.org>
 
-rather than to the module maintainer directly. Many experienced and 
-reponsive experts will be able look at the problem and quickly 
-address it. Please include a thorough description of the problem 
+rather than to the module maintainer directly. Many experienced and
+reponsive experts will be able look at the problem and quickly
+address it. Please include a thorough description of the problem
 with code and data examples if at all possible.
 
 =head2 Reporting Bugs
@@ -87,7 +86,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.
 Bug reports can be submitted via the web:
 
-  http://bugzilla.bioperl.org
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHORS
 
@@ -104,6 +103,7 @@ Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::SeqIO::tab;
+$Bio::SeqIO::tab::VERSION = '1.7.8';
 use strict;
 
 use Bio::Seq;
@@ -131,7 +131,7 @@ sub next_seq{
    return unless defined $nextline;
    if ($nextline =~ /^([^\t]*)\t(.*)/) {
        my ($id, $seq)=($1, uc($2));
-       $seq =~ s/\W//g;
+       $seq =~ s/\s+//g;
        return  Bio::Seq->new(-display_id=> $id, -seq => $seq);
    }  else {
        $self->throw("Can't parse tabbed sequence entry:'$nextline' around line $.");
@@ -157,7 +157,7 @@ sub write_seq {
        }
        $self->_print($_->display_id(), "\t",$_->seq, "\n") or return;
    }
-   
+
    $self->flush if $self->_flush_on_write && defined $self->_fh;
    return 1;
 }

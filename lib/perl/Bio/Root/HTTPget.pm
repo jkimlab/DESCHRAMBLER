@@ -1,4 +1,3 @@
-# $Id: HTTPget.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for fallback HTTP get operations.
 #
@@ -69,7 +68,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Lincoln Stein
 
@@ -88,12 +87,16 @@ methods. Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::Root::HTTPget;
-
+$Bio::Root::HTTPget::VERSION = '1.7.8';
 use strict;
+use warnings;
 use IO::Socket qw(:DEFAULT :crlf);
 
 use base qw(Bio::Root::Root);
 
+{
+    # default attributes, in case used as a class/sub call
+    my %attributes;
 
 =head2 get
 
@@ -111,7 +114,7 @@ use base qw(Bio::Root::Root);
 
 sub get {
     my $self;
-    if( ref($_[0]) ) {
+    if($_[0] && (ref($_[0]) or $_[0] =~ /^Bio::/)) {
 	$self = shift;
     }
     
@@ -199,6 +202,10 @@ sub get {
 =cut
 
 sub getFH {
+  my $self;
+    if($_[0] && (ref($_[0]) or $_[0] =~ /^Bio::/)) {
+	$self = shift;
+    }
   my ($url,$proxy,$timeout,$auth_user,$auth_pass) = 
     __PACKAGE__->_rearrange([qw(URL PROXY TIMEOUT USER PASS)],@_);
   my $dest  = $proxy || $url;
@@ -275,6 +282,10 @@ sub getFH {
 =cut
 
 sub _http_parse_url {
+  my $self;
+    if($_[0] && (ref($_[0]) or $_[0] =~ /^Bio::/)) {
+	$self = shift;
+    }
   my $url = shift;
   my ($user,$pass,$hostent,$path) = 
     $url =~ m!^http://(?:([^:]+):([^:]+)@)?([^/]+)(/?[^\#]*)! or return;
@@ -318,6 +329,10 @@ sub _http_connect {
 =cut
 
 sub _encode_base64 {
+    my $self;
+    if($_[0] && (ref($_[0]) or $_[0] =~ /^Bio::/)) {
+	$self = shift;
+    }
     my $res = "";
     my $eol = $_[1];
     $eol = "\n" unless defined $eol;
@@ -345,7 +360,7 @@ sub _encode_base64 {
  Function: Get/Set a proxy for use of proxy. Defaults to environment variable
            http_proxy if present.
  Returns : a string indicating the proxy
- Args    : $protocol : an array ref of the protocol(s) to set/get
+ Args    : $protocol : string for the protocol to set/get
            $proxyurl : url of the proxy to use for the specified protocol
            $username : username (if proxy requires authentication)
            $password : password (if proxy requires authentication)
@@ -353,9 +368,14 @@ sub _encode_base64 {
 =cut
 
 sub proxy {
-    my ($self,$protocol,$proxy,$username,$password) = @_;
+    my $self;
+    if($_[0] && (ref($_[0]) or $_[0] =~ /^Bio::/)) {
+	$self = shift;
+    }
+    my ($protocol,$proxy,$username,$password) = @_;
+    my $atts = ref($self) ? $self : \%attributes;
     $protocol ||= 'http';
-    unless ($proxy) {
+    if (!$proxy) {
         if (defined $ENV{http_proxy}) {
             $proxy = $ENV{http_proxy};
             if ($proxy =~ /\@/) {
@@ -364,10 +384,34 @@ sub proxy {
             }
         }
     }
-    return unless (defined $proxy);
-    $self->authentication($username, $password) 
-	if ($username && $password);
-    return $self->{'_proxy'}->{$protocol} = $proxy;
+    if (defined $proxy) {
+        # default to class method call
+        __PACKAGE__->authentication($username, $password) 
+        if ($username && $password);
+        $atts->{'_proxy'}->{$protocol} = $proxy;
+    }
+    return $atts->{'_proxy'}->{$protocol};
+}
+
+=head2 clear_proxy
+
+ Title   : clear_proxy
+ Usage   : my $old_prozy = $db->clear_proxy('http')
+ Function: Unsets (clears) the proxy for the protocol indicated 
+ Returns : a string indicating the old proxy value
+ Args    : $protocol : string for the protocol to clear
+
+=cut
+
+sub clear_proxy {
+    my $self;
+    if($_[0] && (ref($_[0]) or $_[0] =~ /^Bio::/)) {
+        $self = shift;
+    }
+    my ($protocol) = @_;
+    my $atts = ref($self) ? $self : \%attributes;
+    $protocol ||= 'http';
+    delete $atts->{'_proxy'}->{$protocol};
 }
 
 =head2 authentication
@@ -381,13 +425,21 @@ sub proxy {
 
 =cut
 
-sub authentication{
-   my ($self,$u,$p) = @_;
+sub authentication {
+    my $self;
+    if($_[0] && (ref($_[0]) or $_[0] =~ /^Bio::/)) {
+	$self = shift;
+    }
+    my $atts = ref($self) ? $self : \%attributes;
+    if (@_) {
+	my ($u,$p) = @_;
+	my $atts = ref($self) ? $self : \%attributes;
+     
+	$atts->{'_authentication'} = [ $u,$p];
+    }
+    return @{$atts->{'_authentication'} || []};
+}
 
-   if( defined $u && defined $p ) {
-       $self->{'_authentication'} = [ $u,$p];
-   }
-   return @{$self->{'_authentication'} || []};
 }
 
 1;

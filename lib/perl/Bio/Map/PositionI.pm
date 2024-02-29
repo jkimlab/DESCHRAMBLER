@@ -1,4 +1,3 @@
-# $Id: PositionI.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Map::PositionI
 #
@@ -24,7 +23,7 @@ Bio::Map::PositionI - Abstracts the notion of a position having a value in the c
 
 =head1 DESCRIPTION
 
-This object stores one of the postions that a mappable object
+This object stores one of the positions that a mappable object
 (e.g. Marker) may have in a map.
 
 Positions can have non-numeric values or other methods to store the locations,
@@ -66,7 +65,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -370,7 +369,7 @@ stop, strand) from which new positions could be built. When a PositionI is made
 it will have a map transferred to it if all the arguments shared the same map.
 If a Relative was supplied the result will have that same Relative.
 
-Note that the strand-testing args are there for compatability with the RangeI
+Note that the strand-testing args are there for compatibility with the RangeI
 interface. They have no meaning when only using PositionI objects since maps do
 not have strands. Typically you will just set the argument to undef if you want
 to supply the argument after it.

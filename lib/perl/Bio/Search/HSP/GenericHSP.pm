@@ -1,4 +1,3 @@
-# $Id: GenericHSP.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Search::HSP::GenericHSP
 #
@@ -94,7 +93,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich and Steve Chervitz
 
@@ -115,6 +114,7 @@ Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::Search::HSP::GenericHSP;
+$Bio::Search::HSP::GenericHSP::VERSION = '1.7.8';
 use strict;
 
 use Bio::Root::Root;
@@ -138,7 +138,7 @@ use base qw(Bio::Search::HSP::HSPI);
            -identical => # of residues that that matched identically
            -percent_identity => (optional) percent identity
            -conserved => # of residues that matched conservatively
-                           (only protein comparisions;
+                           (only protein comparisons;
                             conserved == identical in nucleotide comparisons)
            -hsp_gaps   => # of gaps in the HSP
            -query_gaps => # of gaps in the query in the alignment
@@ -216,17 +216,13 @@ sub new {
 
 sub _logical_length {
     my ($self, $type) = @_;
-    my $algo = $self->algorithm;
-    my $len = $self->length($type);
-    my $logical = $len;
-    if($algo =~ /^(PSI)?T(BLAST|FAST)[NY]/oi ) {
-        $logical = $len/3 if $type =~ /sbjct|hit|tot/i;
-    } elsif($algo =~ /^(BLAST|FAST)(X|Y|XY)/oi ) {
-        $logical = $len/3 if $type =~ /query|tot/i;
-    } elsif($algo =~ /^T(BLAST|FAST)(X|Y|XY)/oi ) {
-        $logical = $len/3;
-    }
-    return $logical;
+    if (!defined($self->{_sbjct_offset}) || !defined($self->{_query_offset})) {
+        $self->_calculate_seq_offsets();
+    }    
+    my $key = $type =~ /sbjct|hit|tot/i ? 'sbjct' : 'query';
+    
+    my $offset = $self->{"_${key}_offset"};
+    return $self->length($type) / $offset ;
 }
 
 =head2 L<Bio::Search::HSP::HSPI> methods
@@ -306,6 +302,7 @@ sub evalue {
                              synonyms: 'hsp'
                    default = 'total'
            arg 2: [optional] frac identical value to set for the type requested
+ Note    : for translated sequences, this adjusts the length accordingly
 
 =cut
 
@@ -477,6 +474,60 @@ sub homology_string{
     return $previous;
 }
 
+=head2 consensus_string
+
+ Title   : consensus_string
+ Usage   : my $cs_string = $hsp->consensus_string;
+ Function: Retrieves the consensus structure line for this HSP as a string (HMMER).
+         : If the model had any consensus structure or reference line annotation
+         : that it inherited from a multiple alignment (#=GC SS cons,
+         : #=GC RF annotation in Stockholm files), that information is shown
+         : as CS or RF annotation line.
+ Returns : string
+ Args    : [optional] string to set for consensus structure
+
+=cut
+
+sub consensus_string {
+    my ($self,$value) = @_;
+    my $previous = $self->{CS_SEQ};
+    if( defined $value || ! defined $previous ) {
+        $value = $previous = '' unless defined $value;
+        $self->{CS_SEQ} = $value;
+        # do some housekeeping so we know when to
+        # re-run _calculate_seq_positions
+        $self->{'_sequenceschanged'} = 1;
+    }
+    return $previous;
+}
+
+=head2 posterior_string
+
+ Title   : posterior_string
+ Usage   : my $pp_string = $hsp->posterior_string;
+ Function: Retrieves the posterior probability line for this HSP as a string (HMMer3).
+         : The posterior probability is the string of symbols at the bottom
+         : of the alignment indicating the expected accuracy of each aligned residue.
+         : A 0 means 0-5%, 1 means 5-15%, and so on; 9 means 85-95%,
+         : and a * means 95-100% posterior probability.
+ Returns : string
+ Args    : [optional] string to set for posterior probability
+
+=cut
+
+sub posterior_string {
+    my ($self,$value) = @_;
+    my $previous = $self->{PP_SEQ};
+    if( defined $value || ! defined $previous ) {
+        $value = $previous = '' unless defined $value;
+        $self->{PP_SEQ} = $value;
+        # do some housekeeping so we know when to
+        # re-run _calculate_seq_positions
+        $self->{'_sequenceschanged'} = 1;
+    }
+    return $previous;
+}
+
 =head2 length
 
  Title    : length
@@ -627,6 +678,7 @@ sub get_aln {
     my ($self) = @_;
     require Bio::LocatableSeq;
     require Bio::SimpleAlign;
+
     my $aln = Bio::SimpleAlign->new();
     my $hs = $self->hit_string();
     my $qs = $self->query_string();
@@ -646,22 +698,26 @@ sub get_aln {
     #}
     
     # mapping: 1 residues for every x coordinate positions
-    my $query = Bio::LocatableSeq->new('-seq'   => $qs,
-                                      '-id'    => $q_nm,
-                                      '-start' => $self->query->start,
-                                      '-end'   => $self->query->end,
-                                      '-force_nse' => $q_nm ? 0 : 1,
-                                      '-mapping' => [1, $self->{_query_mapping}]
-                                      );
+    my $query = Bio::LocatableSeq->new(
+        -seq       => $qs,
+        -id        => $q_nm,
+        -start     => $self->query->start,
+        -end       => $self->query->end,
+        -strand    => $self->query->strand,
+        -force_nse => $q_nm ? 0 : 1,
+        -mapping   => [ 1, $self->{_query_mapping} ]
+    );
     $seqonly = $hs;
     $seqonly =~ s/[\-\s]//g;
-    my $hit =  Bio::LocatableSeq->new('-seq'    => $hs,
-                                      '-id'    => $s_nm,
-                                      '-start' => $self->hit->start,
-                                      '-end'   => $self->hit->end,
-                                      '-force_nse' => $s_nm ? 0 : 1,
-                                      '-mapping' => [1, $self->{_hit_mapping}]
-                                      );
+    my $hit = Bio::LocatableSeq->new(
+        -seq       => $hs,
+        -id        => $s_nm,
+        -start     => $self->hit->start,
+        -end       => $self->hit->end,
+        -strand    => $self->hit->strand,
+        -force_nse => $s_nm ? 0 : 1,
+        -mapping   => [ 1, $self->{_hit_mapping} ]
+    );
     $aln->add_seq($query);
     $aln->add_seq($hit);
     return $aln;
@@ -755,7 +811,7 @@ sub rank {
            :             'conserved-not-identical' - conserved positions w/o 
            :                            identical residues
            :             The name can be shortened to 'id' or 'cons' unless
-           :             the name is ambiguous.  The default value is
+           :             the name is .  The default value is
            :             'identical'
            :
            : collapse  = boolean, if true, consecutive positions are merged
@@ -874,9 +930,12 @@ See Also   : L<Bio::Search::Hit::HSPI::seq_inds()>
 
 sub ambiguous_seq_inds {
     my $self = shift;
-    $self->_calculate_seq_positions();    
-    return $self->{seqinds}{'_warnRes'} if exists $self->{seqinds}{'_warnRes'};
-    return $self->{seqinds}{'_warnRes'} = '';
+    $self->_calculate_seq_positions();
+    my $type = ($self->{_query_offset} == 3 && $self->{_sbjct_offset} == 3) ?
+        'query/subject' :
+        ($self->{_query_offset} == 3) ? 'query' :
+        ($self->{_sbjct_offset} == 3) ? 'subject' : '';
+    return $type;
 }
 
 =head2 Inherited from L<Bio::SeqFeature::SimilarityPair>
@@ -970,6 +1029,29 @@ sub significance {
     return $self->{SIGNIFICANCE};
 }
 
+=head2 strand
+
+ Title   : strand
+ Usage   : $hsp->strand('query')
+ Function: Retrieves the strand for the HSP component requested
+ Returns : +1 or -1
+ Args    : 'hit' or 'subject' or 'sbjct' to retrieve the strand of the subject,
+           'query' to retrieve the query strand (default)
+
+=cut
+
+sub strand {
+    my ($self,$type) = @_;
+
+    if( $type =~ /^q/i && defined $self->{'QUERY_STRAND'} ) {
+        return $self->{'QUERY_STRAND'};
+    } elsif( $type =~ /^(hit|subject|sbjct)/i && defined $self->{'HIT_STRAND'} ) {
+        return $self->{'HIT_STRAND'};
+    } 
+
+    return $self->SUPER::strand($type)
+}
+
 =head2 score
 
  Title   : score
@@ -979,7 +1061,6 @@ sub significance {
  Returns : numeric
  Args    : [optional] new value to set
 
-
 =head2 bits
 
  Title   : bits
@@ -988,18 +1069,6 @@ sub significance {
  Function: Get/Set the bits value
  Returns : numeric
  Args    : [optional] new value to set
-
-
-=head2 strand
-
- Title   : strand
- Usage   : $hsp->strand('query')
- Function: Retrieves the strand for the HSP component requested
- Returns : +1 or -1 (0 if unknown)
- Args    : 'hit' or 'subject' or 'sbjct' to retrieve the strand of the subject
-           'query' to retrieve the query strand (default)
-
-=cut
 
 =head1 Private methods
 
@@ -1068,20 +1137,10 @@ sub _calculate_seq_positions {
         #$sseq =~ s![\\\/]!!g;
     }
 
-    $self->{seqinds}{'_warnRes'} = '';
-    ($self->{_sbjct_offset}, $self->{_query_offset}) = (1,1);
-    if($prog =~ /^(?:PSI)?T(BLAST|FAST)(N|X|Y)/oi ) {
-        $self->{_sbjct_offset} = 3;
-        if ($1 eq 'BLAST' && $2 eq 'X') { #TBLASTX
-            $self->{_query_offset} = 3;
-            $self->{seqinds}{'_warnRes'} = 'query/subject';
-        } else {
-            $self->{seqinds}{'_warnRes'} = 'subject';
-        }
-    } elsif($prog =~ /^(BLAST|FAST)(X|Y|XY)/oi  ) {
-        $self->{_query_offset} = 3;
-        $self->{seqinds}{'_warnRes'} = 'query';
+    if (!defined($self->{_sbjct_offset}) || !defined($self->{_query_offset})) {
+        $self->_calculate_seq_offsets();
     }
+    
     my ($qfs, $sfs) = (0,0);
     CHAR_LOOP:
     for my $pos (0..CORE::length($seqString)-1) {
@@ -1182,6 +1241,21 @@ sub _calculate_seq_positions {
     return 1;
 }
 
+sub _calculate_seq_offsets {
+    my $self = shift;
+    my $prog = $self->algorithm;
+    ($self->{_sbjct_offset}, $self->{_query_offset}) = (1,1);
+    if($prog =~ /^(?:PSI)?T(BLAST|FAST)(N|X|Y)/oi ) {
+        $self->{_sbjct_offset} = 3;
+        if ($1 eq 'BLAST' && $2 eq 'X') { #TBLASTX
+            $self->{_query_offset} = 3;
+        } 
+    } elsif($prog =~ /^(BLAST|FAST)(X|Y|XY)/oi  ) {
+        $self->{_query_offset} = 3;
+    }
+    1;
+}
+
 =head2 n
 
 See documentation in L<Bio::Search::HSP::HSPI::n()|Bio::Search::HSP::HSPI>
@@ -1191,7 +1265,8 @@ See documentation in L<Bio::Search::HSP::HSPI::n()|Bio::Search::HSP::HSPI>
 sub n {
     my $self = shift;
     if(@_) { $self->{'N'} = shift; }
-    defined $self->{'N'} ? $self->{'N'} : '';
+    # note that returning 1 is completely an assumption
+    defined $self->{'N'} ? $self->{'N'} : 1;
 }
 
 =head2 range
@@ -1412,7 +1487,7 @@ sub _pre_seq_feature {
         $queryfactor = 1;
         $querymap = 3;
     }
-    elsif ($algo =~ /^T(BLAST|FAST|SW)(X|Y|XY)/oi || $algo =~ /^(BLAST|FAST|SW)N/oi || $algo =~ /^WABA|AXT|BLAT|BLASTZ|PSL|MEGABLAST|EXONERATE|SW|SMITH\-WATERMAN|SIM4$/){
+    elsif ($algo =~ /^T(BLAST|FAST|SW)(X|Y|XY)/oi || $algo =~ /^(BLAST|FAST|SW)N/oi || $algo =~ /^WABA|AXT|BLAT|BLASTZ|PSL|MEGABLAST|EXONERATE|SW|SSEARCH|SMITH\-WATERMAN|SIM4$/){
         if ($2) {
             $hitmap = $querymap = 3;
         }
@@ -1617,6 +1692,7 @@ sub _pre_similar_stats {
 
 sub _pre_frac {
     my $self = shift;
+    
     my $hsp_len = $self->{HSP_LENGTH};
     my $hit_len = $self->{HIT_LENGTH};
     my $query_len = $self->{QUERY_LENGTH};
@@ -1647,7 +1723,7 @@ sub _pre_frac {
 # before calling gaps()
 # This relies first on passed parameters (parser-dependent), then on gaps
 # calculated by seq_inds() (if set), then falls back to directly checking
-# for '-' as a last resort  
+# for '-' or '.' as a last resort
 
 sub _pre_gaps {
     my $self = shift;
@@ -1661,14 +1737,18 @@ sub _pre_gaps {
     if( defined $query_gaps ) {
         $self->gaps('query', $query_gaps);
     } elsif( defined $query_seq ) {
-        my $qg = (defined $self->{'_query_offset'}) ? $self->seq_inds('query','gaps') : scalar( $query_seq =~ tr/\-//);
+        my $qg = (defined $self->{'_query_offset'}) ? $self->seq_inds('query','gaps')
+               : ($self->algorithm eq 'ERPIN')      ? scalar( $hit_seq =~ tr/\-//)
+               :  scalar( $query_seq =~ tr/\-\.// ); # HMMER3 and Infernal uses '.' and '-'
         my $offset = $self->{'_query_offset'} || 1;
         $self->gaps('query', $qg/$offset);
     }
     if( defined $hit_gaps ) {
         $self->gaps('hit', $hit_gaps);
     } elsif( defined $hit_seq ) {
-        my $hg = (defined $self->{'_sbjct_offset'}) ? $self->seq_inds('hit','gaps') : scalar( $hit_seq =~ tr/\-//);
+        my $hg = (defined $self->{'_sbjct_offset'}) ? $self->seq_inds('hit','gaps')
+               : ($self->algorithm eq 'ERPIN')      ? scalar( $hit_seq =~ tr/\-//)
+               :  scalar( $hit_seq =~ tr/\-\.// ); # HMMER3 and Infernal uses '.' and '-'
         my $offset = $self->{'_sbjct_offset'} || 1;
         $self->gaps('hit', $hg/$offset);
     }

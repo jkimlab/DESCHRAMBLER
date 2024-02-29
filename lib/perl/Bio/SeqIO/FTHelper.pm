@@ -1,4 +1,3 @@
-# $Id: FTHelper.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::SeqIO::FTHelper
 #
@@ -14,7 +13,7 @@
 
 =head1 NAME
 
-Bio::SeqIO::FTHelper - Helper class for Embl/Genbank feature tables
+Bio::SeqIO::FTHelper - Helper class for EMBL/Genbank feature tables
 
 =head1 SYNOPSIS
 
@@ -56,7 +55,7 @@ with code and data examples if at all possible.
 Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Ewan Birney
 
@@ -78,14 +77,13 @@ methods. Internal methods are usually preceded with a _
 
 
 package Bio::SeqIO::FTHelper;
+$Bio::SeqIO::FTHelper::VERSION = '1.7.8';
 use strict;
 
 use Bio::SeqFeature::Generic;
 use Bio::Location::Simple;
 use Bio::Location::Fuzzy;
 use Bio::Location::Split;
-
-
 
 use base qw(Bio::Root::Root);
 
@@ -109,7 +107,6 @@ sub new {
            location strings. The ID (e.g., display_id) of the sequence on which
            this feature is located, optionally a string indicating the source
            (GenBank/EMBL/SwissProt)
-
 
 =cut
 
@@ -208,12 +205,19 @@ sub from_SeqFeature {
   $fth->loc($locstr);
   $fth->key($key);
   $fth->field->{'note'} = [];
+  
+  # the lines below take specific tags (e.g. /score=23 ) and re-enter them as
+  # new tags like /note="score=25" - if the file is round-tripped this creates
+  # duplicate values
+
   #$sf->source_tag && do { push(@{$fth->field->{'note'}},"source=" . $sf->source_tag ); };
 
-  ($sf->can('score') && $sf->score) && do { push(@{$fth->field->{'note'}},
-                                                 "score=" . $sf->score ); };
-  ($sf->can('frame') && $sf->frame) && do { push(@{$fth->field->{'note'}},
-                                                 "frame=" . $sf->frame ); };
+  #($sf->can('score') && $sf->score) && do { push(@{$fth->field->{'note'}},
+  #                                               "score=" . $sf->score ); };
+  
+  #($sf->can('frame') && $sf->frame) && do { push(@{$fth->field->{'note'}},
+  #                                               "frame=" . $sf->frame ); };
+  
   #$sf->strand && do { push(@{$fth->field->{'note'}},"strand=" . $sf->strand ); };
 
   foreach my $tag ( $sf->get_all_tags ) {

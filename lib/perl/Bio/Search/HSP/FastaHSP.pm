@@ -1,4 +1,3 @@
-# $Id: FastaHSP.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Search::HSP::FastaHSP
 #
@@ -62,7 +61,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -80,6 +79,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::Search::HSP::FastaHSP;
+$Bio::Search::HSP::FastaHSP::VERSION = '1.7.8';
 use strict;
 
 
@@ -100,9 +100,11 @@ sub new {
 
   my $self = $class->SUPER::new(@args);
   
-  my ($swscore) = $self->_rearrange([qw(SWSCORE)], @args);
+  my ($swscore, $evalue2) = $self->_rearrange([qw(SWSCORE EVALUE2)], @args);
 
   defined $swscore && $self->sw_score($swscore);
+
+  defined $evalue2 && $self->evalue2($evalue2);
 
   return $self;
 }
@@ -126,6 +128,26 @@ sub sw_score{
 	$self->{'_sw_score'} = $value;
     }
     return $self->{'_sw_score'};
+}
+
+=head2 evalue2
+
+ Title   : evalue2
+ Usage   : $obj->evalue2($newval)
+ Function: Get/Set E2() expectation value
+ Returns : value of evalue2
+ Args    : newvalue (optional)
+
+
+=cut
+
+sub evalue2{
+    my ($self,$value) = @_;
+    if( defined $value || ! defined $self->{'_evalue2'} ) {
+	$value = 0 unless defined $value; # default value
+	$self->{'_evalue2'} = $value;
+    }
+    return $self->{'_evalue2'};
 }
 
 

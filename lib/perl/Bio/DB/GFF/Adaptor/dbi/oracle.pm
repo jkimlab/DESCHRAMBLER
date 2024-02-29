@@ -120,7 +120,7 @@ This is the feature data table.  Its columns are:
     fid	           feature ID (integer)
     fref           reference sequence name (string)
     fstart         start position relative to reference (integer)
-    fstop          stop postion relative to reference (integer)
+    fstop          stop position relative to reference (integer)
     ftypeid        feature type ID (integer)
     fscore         feature score (float); may be null
     fstrand        strand; one of "+" or "-"; may be null
@@ -492,8 +492,19 @@ index => {
 CREATE  INDEX fattribute_to_feature_fid ON fattribute_to_feature (fid,fattribute_id)
 }
 	   } # fattribute_to_feature indexes
-} # fattribute_to_feature  
+}, # fattribute_to_feature  
 
+       finterval_stats => {
+table=> q{
+CREATE TABLE "finterval_stats" (
+   "ftypeid"          integer DEFAULT '0' NOT NULL,
+   "fref"             VARCHAR(100) DEFAULT '' NOT NULL,
+   "fbin"             integer DEFAULT '0' NOT NULL,
+   "fcum_count"       integer DEFAULT '0' NOT NULL,
+   CONSTRAINT finterval_stats_pk PRIMARY KEY (ftypeid,fref,fbin)
+)
+} # finterval_stats table
+},# finterval_stats
 
 );
   return \%schema;
@@ -885,7 +896,7 @@ END
 
   my $sth = $self->dbh->do_query($query);
   my @results;
-  while (my ($class,$name,$note) = $sth->fetchrow_array) {
+  while (my ($class,$name,$note,$method,$source) = $sth->fetchrow_array) {
      next unless $class && $name;    # sorry, ignore NULL objects
      my @matches = $note =~ /($regex)/g;
      my $relevance = 10*@matches;

@@ -1,4 +1,3 @@
-# $Id: Taxon.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Taxon
 #
@@ -23,15 +22,15 @@ Bio::Taxon - A node in a represented taxonomy
   # Typically you will get a Taxon from a Bio::DB::Taxonomy object
   # but here is how you initialize one
   my $taxon = Bio::Taxon->new(-name      => $name,
-                             -id        => $id,
-                             -rank      => $rank,
-                             -division  => $div);
+                              -id        => $id,
+                              -rank      => $rank,
+                              -division  => $div);
 
   # Get one from a database
   my $dbh = Bio::DB::Taxonomy->new(-source   => 'flatfile',
-                                  -directory=> '/tmp',
-                                  -nodesfile=> '/path/to/nodes.dmp',
-                                  -namesfile=> '/path/to/names.dmp');
+                                   -directory=> '/tmp',
+                                   -nodesfile=> '/path/to/nodes.dmp',
+                                   -namesfile=> '/path/to/names.dmp');
   my $human = $dbh->get_taxon(-name => 'Homo sapiens');
   $human = $dbh->get_taxon(-taxonid => '9606');
 
@@ -46,7 +45,7 @@ Bio::Taxon - A node in a represented taxonomy
   my @ranks = qw(superkingdom class genus species);
   my @h_lineage = ('Eukaryota', 'Mammalia', 'Homo', 'Homo sapiens');
   my $list_dbh = Bio::DB::Taxonomy->new(-source => 'list', -names => \@h_lineage,
-                                                          -ranks => \@ranks);
+                                                           -ranks => \@ranks);
   $human = $list_dbh->get_taxon(-name => 'Homo sapiens');
   my @names = $human->common_names; # @names is empty
   $human->common_names('woman');
@@ -73,6 +72,7 @@ Bio::Taxon - A node in a represented taxonomy
   use Bio::Tree::Tree;
   my $tree_functions = Bio::Tree::Tree->new();
   my @lineage = $tree_functions->get_lineage_nodes($human);
+  my $lineage = $tree_functions->get_lineage_string($human);
   my $lca = $tree_functions->get_lca($human, $mouse);
 
   # b) for other methods, create a tree using your Taxon object
@@ -128,7 +128,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Sendu Bala
 
@@ -147,12 +147,16 @@ Internal methods are usually preceded with a _
 
 =cut
 
+
 package Bio::Taxon;
+$Bio::Taxon::VERSION = '1.7.8';
 use strict;
+use Scalar::Util qw(blessed);
 
 use Bio::DB::Taxonomy;
 
 use base qw(Bio::Tree::Node Bio::IdentifiableI);
+
 
 =head2 new
 
@@ -165,7 +169,7 @@ use base qw(Bio::Tree::Node Bio::IdentifiableI);
            -name              => a string representing the taxon name
                                  (scientific name)
            -id                => human readable id - typically NCBI taxid
-           -ncbi_taxid        => same as -id, but explicitely say that it is an
+           -ncbi_taxid        => same as -id, but explicitly say that it is an
                                  NCBI taxid
            -rank              => node rank (one of 'species', 'genus', etc)
            -common_names      => array ref of all common names
@@ -223,6 +227,11 @@ sub new {
     defined $div        && $self->division($div);
     defined $dbh        && $self->db_handle($dbh);
     
+    # Making an administrative decision to override this behavior, particularly
+    # for optimization reasons (if it works to cache it up front, why not?
+    # Please trust your implementations to get it right)
+    
+    # Original note:
     # deprecated and will issue a warning when method called,
     # eventually to be removed completely as option
     defined $parent_id  && $self->parent_id($parent_id);
@@ -233,6 +242,7 @@ sub new {
     
     return $self;
 }
+
 
 =head1 Bio::IdentifiableI interface 
 
@@ -253,6 +263,7 @@ sub version {
     return $self->{'version'};
 }
 
+
 =head2 authority
 
  Title   : authority
@@ -268,6 +279,7 @@ sub authority {
     return $self->{'authority'};
 }
 
+
 =head2 namespace
 
  Title   : namespace
@@ -282,6 +294,7 @@ sub namespace {
     return $self->{'namespace'} = shift if @_;
     return $self->{'namespace'};
 }
+
 
 =head1 Bio::Taxonomy::Node implementation
 
@@ -317,6 +330,7 @@ sub db_handle {
     return $self->{'db_handle'};
 }
 
+
 =head2 rank
 
  Title   : rank
@@ -332,6 +346,7 @@ sub rank {
     return $self->{'rank'} = shift if @_;
     return $self->{'rank'};
 }
+
 
 =head2 id
 
@@ -350,6 +365,7 @@ sub id {
 }
 
 *object_id = \&id;
+
 
 =head2 ncbi_taxid
 
@@ -377,6 +393,7 @@ sub ncbi_taxid {
     return;
 }
 
+
 =head2 parent_id
 
  Title   : parent_id
@@ -385,20 +402,43 @@ sub ncbi_taxid {
            parent_taxon_id() is a synonym of this method.
  Returns : value of parent_id (a scalar)
  Args    : none
- Status  : deprecated
 
 =cut
 
 sub parent_id {
     my $self = shift;
     if (@_) {
-        $self->warn("You can no longer set the parent_id - use ancestor() instead");
+        $self->{parent_id} = shift;
+    }
+    if (defined $self->{parent_id}) {
+        return $self->{parent_id}
     }
     my $ancestor = $self->ancestor() || return;
     return $ancestor->id;
 }
 
 *parent_taxon_id = \&parent_id;
+
+=head2 trusted_parent_id
+
+ Title   : trusted_parent_id
+ Usage   : $taxon->trusted_parent_id()
+ Function: If the parent_id is explicitly set, trust it
+ Returns : simple boolean value (whether or not it has been set)
+ Args    : none
+ Notes   : Previously, the parent_id method was to be deprecated in favor of
+           using ancestor(). However this removes one key optimization point,
+           namely when an implementation has direct access to the taxon's
+           parent ID when retrieving the information for the taxon ID.  This
+           method is in place so implementations can choose to (1) check whether
+           the parent_id is set and (2) trust that the implementation (whether
+           it is self or another implementation) set the parent_id correctly.
+
+=cut
+
+sub trusted_parent_id {
+    return defined $_[0]->{parent_id};
+}
 
 =head2 genetic_code
 
@@ -416,6 +456,7 @@ sub genetic_code {
     return $self->{'genetic_code'};
 }
 
+
 =head2 mitochondrial_genetic_code
 
  Title   : mitochondrial_genetic_code
@@ -431,6 +472,7 @@ sub mitochondrial_genetic_code {
     return $self->{'mitochondrial_genetic_code'} = shift if @_;
     return $self->{'mitochondrial_genetic_code'};
 }
+
 
 =head2 create_date
 
@@ -448,6 +490,7 @@ sub create_date {
     return $self->{'create_date'};
 }
 
+
 =head2 update_date
 
  Title   : update_date
@@ -464,6 +507,7 @@ sub update_date {
     return $self->{'update_date'};
 }
 
+
 =head2 pub_date
 
  Title   : pub_date
@@ -479,6 +523,7 @@ sub pub_date {
     return $self->{'pub_date'} = shift if @_;
     return $self->{'pub_date'};
 }
+
 
 =head2 ancestor
 
@@ -503,18 +548,17 @@ sub pub_date {
 sub ancestor {
     my $self = shift;
     my $ancestor = $self->SUPER::ancestor(@_);
-    my $dbh = $self->db_handle || return $ancestor;
-    
     if ($ancestor) {
         return $ancestor;
     }
-    else {
-        #*** could avoid the db lookup if we knew our current id was definitely
-        #    information from the db...
-        my $definitely_from_dbh = $self->_get_similar_taxon_from_db($self);
-        return $dbh->ancestor($definitely_from_dbh);
-    }
+    my $dbh = $self->db_handle;
+    #*** could avoid the db lookup if we knew our current id was definitely
+    #    information from the db...
+
+    my $definitely_from_dbh = $self->_get_similar_taxon_from_db($self);
+    return $dbh->ancestor($definitely_from_dbh);
 }
+
 
 =head2 get_Parent_Node
 
@@ -529,6 +573,7 @@ sub get_Parent_Node {
     $self->warn("get_Parent_Node is deprecated, use ancestor() instead");
     return $self->ancestor(@_);
 }
+
 
 =head2 each_Descendent
 
@@ -553,6 +598,7 @@ sub get_Parent_Node {
 
 =cut
 
+
 # implemented by Bio::Tree::Node
 
 =head2 get_Children_Nodes
@@ -569,6 +615,7 @@ sub get_Children_Nodes {
     return $self->each_Descendent(@_);
 }
 
+
 =head2 name
 
   Title:    name
@@ -584,7 +631,7 @@ sub get_Children_Nodes {
                 scientific name and common name, respectively. 'scientific' and
                 'division' are treated specially, allowing only the first value
                 in the Arg2 list to be set.
-            Arg2 .. => list of names
+            Arg2 ... => list of names
 
 =cut
 
@@ -601,6 +648,7 @@ sub name {
     }
     return $self->{'_names_hash'}->{$name_class} || return;
 }
+
 
 =head2 node_name
 
@@ -622,6 +670,7 @@ sub node_name {
 
 *scientific_name = \&node_name;
 
+
 =head2 common_names
 
  Title   : common_names
@@ -642,6 +691,7 @@ sub common_names {
 
 *common_name = \&common_names;
 
+
 =head2 division
 
  Title   : division
@@ -659,6 +709,7 @@ sub division {
     return pop @v;
 }
 
+
 # get a node from the database that is like the supplied node
 sub _get_similar_taxon_from_db {
     #*** not really happy with this having to be called so much; there must be
@@ -667,7 +718,9 @@ sub _get_similar_taxon_from_db {
     $self->throw("Must supply a Bio::Taxon") unless ref($taxon) && $taxon->isa("Bio::Taxon");
     ($self->id || $self->node_name) || return;
     $db ||= $self->db_handle || return;
-    
+    if (!blessed($db) || !$db->isa('Bio::DB::Taxonomy')) {
+        $self->throw("DB handle is not a Bio::DB::Taxonomy: got $db in node ".$self->node_name)
+    }
     my $db_taxon = $db->get_taxon(-taxonid => $taxon->id) if $taxon->id;
     unless ($db_taxon) {
         my @try_ids = $db->get_taxonids($taxon->node_name) if $taxon->node_name;
@@ -685,6 +738,7 @@ sub _get_similar_taxon_from_db {
     
     return $db_taxon;
 }
+
 
 # merge data from supplied Taxon into self
 sub _merge_taxa {
@@ -717,6 +771,7 @@ sub _merge_taxa {
     #*** haven't merged the other things in names() hash, could do above much easier with direct access to object data
 }
 
+
 =head2 remove_Descendent
 
  Title   : remove_Descendent
@@ -745,5 +800,6 @@ sub remove_Descendent {
     }
     return $c;
 }
+
 
 1;

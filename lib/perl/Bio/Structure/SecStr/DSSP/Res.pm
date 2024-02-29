@@ -75,7 +75,7 @@ The methods are roughly divided into 3 sections:
     etc.).  These methods do not require an argument.
 2.  Residue specific features ( amino acid, secondary structure,
     solvent exposed surface area, etc. ).  These methods do require an
-    arguement.  The argument is supposed to uniquely identify a
+    argument.  The argument is supposed to uniquely identify a
     residue described within the structure.  It can be of any of the
     following forms:
     ('#A:B') or ( #, 'A', 'B' )
@@ -135,7 +135,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Ed Green
 
@@ -246,7 +246,7 @@ sub new {
 =head2 totSurfArea
 
  Title         : totSurfArea
- Usage         : returns total accessible surface area in square Ang.
+ Usage         : returns total accessible surface area in square And.
  Function      :
  Example       : $surArea = $dssp_obj->totSurfArea();
  Returns       : scalar
@@ -465,7 +465,7 @@ sub resPsi {
 
  Title         : resSolvAcc
  Usage         : returns solvent exposed area of this residue in
-                 square Angstroms
+                 square Andstroms
  Function      :
  Example       : $solv_acc = $dssp_obj->resSolvAcc( RESIDUE_ID );
  Returns       : scalar
@@ -485,7 +485,7 @@ sub resSolvAcc {
 
  Title         : resSurfArea
  Usage         : returns solvent exposed area of this residue in
-                 square Angstroms
+                 square Andstroms
  Function      :
  Example       : $solv_acc = $dssp_obj->resSurfArea( RESIDUE_ID );
  Returns       : scalar
@@ -1185,36 +1185,18 @@ sub _toDsspKey {
     # fast access.  Could be built during parse of input.
 
     my $self = shift;
-    my $arg_str;
+ 
+    my ( $key_num, $chain_id, $ins_code ) = @_;
 
-    my ( $key_num, $chain_id, $ins_code );
-
-    # check to see how many args are given
-    if ( $#_ > 1 ) { # multiple args
-	$key_num = shift;
-	if ( $#_ > 1 ) { # still multiple args => ins. code, too
-	    $ins_code = shift;
-	    $chain_id = shift;
-	}
-	else { # just one more arg. => chain_id
-	    $chain_id = shift;
-	}
-    }
-    else { # only single arg.  Might be number or string
-	$arg_str = shift;
-	if ( $arg_str =~ /:/ ) {
-	    # a chain is specified
-	    ( $chain_id ) = ( $arg_str =~ /:(.)/);
-	    $arg_str =~ s/:.//;
-	}
-	if ( $arg_str =~ /[A-Z]|[a-z]/ ) {
-	    # an insertion code is specified
-	    ( $ins_code ) = ( $arg_str =~ /([A-Z]|[a-z])/ );
-	    $arg_str =~ s/[A-Z]|[a-z]//g;
-	}
-	#now, get the number bit-> everything still around
-	$key_num = $arg_str;
-    }
+    if ( ! $chain_id) { # parse the lone argument
+	( $key_num, $chain_id, $ins_code ) 
+	    = $key_num =~ m/^(\-?[0-9]+) # PDB coords can be negative
+                            ([a-zA-Z]?)
+                            (?::([a-zA-Z\-]))?$/x # missing chains are '-'
+              ? ( $1, $3, $2 )
+	      : $self->throw("Could not derive PDB key $key_num");
+     }
+    
 
     # Now find the residue which fits this description.  Linear search is
     # probably not the best way to do this, but oh well...
@@ -1232,7 +1214,7 @@ sub _toDsspKey {
 				return $i;
 			    }
 			}
-			else { # no isertion code specified, this is it
+			elsif ( $self->{'Res'}->[$i]->{'insertionco'} eq ''  ) { # no isertion code specified, but need to check that the located residue doesn't have an insertion code E.g. pdb1aye fails on this
 			    return $i;
 			}
 		    }

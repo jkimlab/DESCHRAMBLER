@@ -1,4 +1,3 @@
-# $Id: blast_pull.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::SearchIO::blast_pull
 #
@@ -68,7 +67,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Sendu Bala
 
@@ -84,7 +83,7 @@ Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::SearchIO::blast_pull;
-
+$Bio::SearchIO::blast_pull::VERSION = '1.7.8';
 use strict;
 use Bio::Search::Result::BlastPullResult;
 

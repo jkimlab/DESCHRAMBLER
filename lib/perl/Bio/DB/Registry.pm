@@ -1,4 +1,3 @@
-# $Id: Registry.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # POD documentation - main docs before the code
 
@@ -22,33 +21,33 @@ Bio::DB::Registry - Access to the Open Bio Database Access registry scheme
 =head1 DESCRIPTION
 
 This module provides access to the Open Bio Database Access (OBDA)
-scheme, which provides a single cross-language and cross-platform 
-specification of how to get to databases. These databases may be 
+scheme, which provides a single cross-language and cross-platform
+specification of how to get to databases. These databases may be
 accessible through the Web, they may be BioSQL databases, or
 they may be local, indexed flatfile databases.
 
-If the user or system administrator has not installed the default init 
-file, seqdatabase.ini, in /etc/bioinformatics or ${HOME}/.bioinformatics 
-then creating the first Registry object copies the default settings from 
-the www.open-bio.org. The Registry object will attempt to store these 
+If the user or system administrator has not installed the default init
+file, seqdatabase.ini, in /etc/bioinformatics or ${HOME}/.bioinformatics
+then creating the first Registry object copies the default settings from
+the www.open-bio.org. The Registry object will attempt to store these
 settings in a new file, ${HOME}/.bioinformatics/seqdatabase.ini.
 
-Users can specify one or more custom locations for the init file by 
-setting $OBDA_SEARCH_PATH to those directories, where multiple 
+Users can specify one or more custom locations for the init file by
+setting $OBDA_SEARCH_PATH to those directories, where multiple
 directories should be separated by ';'.
 
 Please see the OBDA Access HOWTO for more information
-(L<http://bioperl.open-bio.org/wiki/HOWTO:OBDA>).
+(L<http://bioperl.org/howtos/OBDA_HOWTO.html>).
 
-=head2 Support 
+=head2 Support
 
 Please direct usage questions or support issues to the mailing list:
 
 I<bioperl-l@bioperl.org>
 
-rather than to the module maintainer directly. Many experienced and 
-reponsive experts will be able look at the problem and quickly 
-address it. Please include a thorough description of the problem 
+rather than to the module maintainer directly. Many experienced and
+reponsive experts will be able look at the problem and quickly
+address it. Please include a thorough description of the problem
 with code and data examples if at all possible.
 
 =head2 Reporting Bugs
@@ -57,7 +56,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 APPENDIX
 
@@ -69,9 +68,9 @@ methods. Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::DB::Registry;
-
+$Bio::DB::Registry::VERSION = '1.7.8';
 use vars qw($OBDA_SPEC_VERSION $OBDA_SEARCH_PATH
-			   $HOME $PRIVATE_DIR $PUBLIC_DIR $REGISTRY 
+			   $HOME $PRIVATE_DIR $PUBLIC_DIR $REGISTRY
 			   $FALLBACK_REGISTRY);
 use strict;
 
@@ -123,7 +122,9 @@ sub _load_registry {
    my $self = shift;
 	eval { $HOME = (getpwuid($>))[7]; } unless $HOME;
 	if ($@) {
-		$self->warn("This Perl doesn't implement function getpwuid(), no \$HOME");
+		# Windows can have Win32::LoginName to get the Username, so check if it works before giving up
+		 ( defined &Win32::LoginName ) ? ( $HOME =  Win32::LoginName() )
+		:                                 $self->warn("This Perl doesn't implement function getpwuid(), no \$HOME");
 	}
 	my @ini_files = $self->_get_ini_files();
 
@@ -131,7 +132,7 @@ sub _load_registry {
 
    my ($db,$hash) = ();
    for my $file (@ini_files) {
-      open my $FH,"$file";
+      open my $FH, '<', $file or $self->throw("Could not read file '$file': $!");
       while( <$FH> ) {
 			if (/^VERSION=([\d\.]+)/) {
 				if ($1 > $OBDA_SPEC_VERSION or !$1) {
@@ -173,7 +174,7 @@ sub _load_registry {
       } else {
 			eval {
 				my $randi = $class->new_from_registry( %{$hash->{$db}} );
-				$self->{'_dbs'}->{$db}->add_database($randi); 
+				$self->{'_dbs'}->{$db}->add_database($randi);
 			};
 			if ($@) {
 				$self->warn("Couldn't call new_from_registry() on [$class]\n$@");
@@ -245,7 +246,7 @@ sub _get_ini_files {
 			push @ini_files,$file;
       }
    }
-   push @ini_files,"$HOME/$PRIVATE_DIR/$REGISTRY" 
+   push @ini_files,"$HOME/$PRIVATE_DIR/$REGISTRY"
      if ( $HOME && -e "$HOME/$PRIVATE_DIR/$REGISTRY" );
    push @ini_files, "$PUBLIC_DIR/$REGISTRY"
      if ( -e "$PUBLIC_DIR/$REGISTRY" );
@@ -266,11 +267,11 @@ sub _make_private_registry {
 	my $self = shift;
    my @ini_file;
 
-	my $nor_in = $OBDA_SEARCH_PATH ? 
-	  "nor in directory specified by\n$OBDA_SEARCH_PATH" : 
+	my $nor_in = $OBDA_SEARCH_PATH ?
+	  "nor in directory specified by\n$OBDA_SEARCH_PATH" :
 	  "and environment variable OBDA_SEARCH_PATH wasn't set";
 
-	$self->warn("No $REGISTRY file found in $HOME/$PRIVATE_DIR/\n" . 
+	$self->warn("No $REGISTRY file found in $HOME/$PRIVATE_DIR/\n" .
 					"nor in $PUBLIC_DIR $nor_in.\n" .
 					"Using web to get registry from\n$FALLBACK_REGISTRY");
 
@@ -285,7 +286,8 @@ sub _make_private_registry {
 	$self->throw("Could not make directory $HOME/$PRIVATE_DIR, " .
 					 "no $REGISTRY file available") if $@;
 
-	open(my $F,">$HOME/$PRIVATE_DIR/$REGISTRY");
+	open my $F, '>', "$HOME/$PRIVATE_DIR/$REGISTRY"
+	  or $self->throw("Could not write file '$HOME/$PRIVATE_DIR/$REGISTRY': $!");
 	print $F while (<$F>);
 	close $F;
 

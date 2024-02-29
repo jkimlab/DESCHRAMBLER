@@ -53,7 +53,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Sheldon McKay
 
@@ -67,7 +67,7 @@ methods. Internal methods are usually preceded with a _
 =cut
 
 package Bio::SeqIO::game::gameHandler;
-
+$Bio::SeqIO::game::gameHandler::VERSION = '1.7.8';
 use Bio::SeqIO::game::seqHandler;
 use strict;
 use vars qw {};
@@ -114,7 +114,7 @@ sub end_document {
  Usage   : $seqs = $handler->load
  Function: start parsing
  Returns : a ref to a list of sequence objects
- Args    : an optional flag to supress <computation_analysis> elements (not used yet)
+ Args    : an optional flag to suppress <computation_analysis> elements (not used yet)
 
 =cut
 

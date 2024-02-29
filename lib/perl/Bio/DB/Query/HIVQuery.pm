@@ -108,10 +108,9 @@ An attempt was made to make the query field names natural and easy to
 remember. Aliases are specified in an XML file (C<lanl-schema.xml>) that is part
 of the distribution. Custom field aliases can be set up by modifying this file.
 
-An HTML cheatsheet with valid field names, aliases, and match data can
-be generated from the XML by using
-C<hiv_object-E<gt>help('help.html')>. A query can also be validated
-locally before it is unleashed on the server; see below.
+An HTML cheatsheet with valid field names, aliases, and match data can be
+generated from the XML by using C<hiv_object-E<gt>help('help.html')>. A query
+can also be validated locally before it is unleashed on the server; see below.
 
 =head2 Annotations
 
@@ -180,7 +179,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Mark A. Jensen
 
@@ -402,16 +401,16 @@ sub help{
    my ($self, $fname) = @_;
    my (@ret, @tok);
    my $schema = $self->_schema;
-   my $h = new CGI;
+   my $h = CGI->new();
 
    my (@tbls, @flds, @als, @opts, $fh);
    if ($fname) {
-       open ($fh, ">", $fname) or $self->throw(-class=>'Bio::Root::IOException',
-                                               -text=>"Error opening help html file $fname for writing",
-                                               -value=>$!);
+       open $fh, '>', $fname or $self->throw(-class => 'Bio::Root::IOException',
+                                             -text  => "Error opening help html file $fname for writing",
+                                             -value => $!);
    }
    else {
-       open($fh, ">&1");
+       open $fh, ">&1";
    }
    @tbls = $schema->tables;
    @tbls = ('COMMAND', grep !/COMMAND/,@tbls);
@@ -429,44 +428,50 @@ sub help{
        @flds = grep /^$tbl/, $schema->fields;
        @flds = grep !/_id/, @flds;
        print $fh (
-	   $h->start_Tr({-style=>"background-color: lightblue;"}), 
-	   $h->td([$h->a({-id=>$tbl},$tbl), $h->span({-style=>"font-style:italic"},"fields"), $h->span({-style=>"font-style:italic"}, "aliases")]),
-	   $h->end_Tr
-	   );
+           $h->start_Tr({-style=>"background-color: lightblue;"}), 
+           $h->td([$h->a({-id=>$tbl},$tbl), $h->span({-style=>"font-style:italic"},"fields"), $h->span({-style=>"font-style:italic"}, "aliases")]),
+           $h->end_Tr
+       );
        foreach my $fld (@flds) {
-	   @als = reverse $schema->aliases($fld);
-	   print $fh (
-	       $h->Tr( $h->td( ["", $h->a({-href=>"#opt$fld"}, shift @als), $h->code(join(',',@als))] ))
-	       );
-       my @tmp = grep {$_} $schema->options($fld);
-	   @tmp = sort {(($a =~ /^[0-9]+$/) && $b =~ /^[0-9]+$/) ? $a<=>$b : $a cmp $b} @tmp;
-	   if (grep /Any/,@tmp) {
-	       @tmp = grep !/Any/, @tmp;
-	       unshift @tmp, 'Any';
-	   }
-       #print STDERR join(', ',@tmp)."\n";
-	   push @opts, $h->div(
-	       {-style=>"font-family:sans-serif;font-size:small"},
-	       $h->hr,
-	       $h->a(
-		   {-id=>"opt$fld"},
-		   "<i>Valid options for</i> <b>$fld</b>: "),
-	       $h->blockquote(
-		   @tmp ? $h->code(join(", ", @tmp)) : $h->i("free text")
-	       ),
-	       $h->span(
-		   "<i>Other aliases</i>: "),
-	       $h->blockquote(
-		   @als ? $h->code(join(",",@als)) : "<i>none</i>"
-	       ),
-	       " ", 
-	       $h->table( $h->Tr( 
-			      $h->td([
-				  $h->a({-href=>"#$tbl"}, $h->small('BACK')), 
-				  $h->a({-href=>"#TOP"}, $h->small('TOP'))
-				     ]) ) )
-	       );
-	   
+           @als = reverse $schema->aliases($fld);
+           print $fh (
+               # note that aliases can sometimes be empty
+               $h->Tr( $h->td( ["", $h->a({-href=>"#opt$fld"}, shift @als || '???'), $h->code(join(',',@als))] ))
+           );
+           my @tmp = grep {$_} $schema->options($fld);
+           @tmp = sort {(($a =~ /^[0-9]+$/) && $b =~ /^[0-9]+$/) ? $a<=>$b : $a cmp $b} @tmp;
+           if (grep /Any/,@tmp) {
+               @tmp = grep !/Any/, @tmp;
+               unshift @tmp, 'Any';
+           }
+           #print STDERR join(', ',@tmp)."\n";
+           push @opts, $h->div(
+               {-style=>"font-family:sans-serif;font-size:small"},
+               $h->hr,
+               $h->a(
+                   {-id=>"opt$fld"},
+                   "<i>Valid options for</i> <b>$fld</b>: "
+               ),
+               $h->blockquote(
+                   @tmp ? $h->code(join(", ", @tmp)) : $h->i("free text")
+               ),
+               $h->span(
+                   "<i>Other aliases</i>: "
+               ),
+               $h->blockquote(
+                   @als ? $h->code(join(",",@als)) : "<i>none</i>"
+               ),
+               " ", 
+               $h->table(
+                   $h->Tr(
+                       $h->td([
+                           $h->a({-href=>"#$tbl"}, $h->small('BACK')), 
+                           $h->a({-href=>"#TOP"}, $h->small('TOP'))
+                       ])
+                   )
+               )
+           );
+   
        }
    }
    print $fh $h->end_table;
@@ -526,7 +531,7 @@ sub add_annotations_for_id{
     my $self = shift;
     my ($id, $ac) = @_;
     $id = "" unless defined $id; # avoid warnings
-    $ac = new Bio::Annotation::Collection unless defined $ac;
+    $ac = Bio::Annotation::Collection->new() unless defined $ac;
     $self->throw(-class=>'Bio::Root::BadParameter'
 		 -text=>'Bio::Annotation::Collection required at arg 2',
 		 -value=>"") unless ref($ac) eq 'Bio::Annotation::Collection';
@@ -585,7 +590,7 @@ sub remove_annotations {
  Title   : get_value
  Usage   : $ac->get_value($tagname) -or-
            $ac->get_value( $tag_level1, $tag_level2,... )
- Function: access the annotation value assocated with the given tags
+ Function: access the annotation value associated with the given tags
  Example :
  Returns : a scalar
  Args    : an array of tagnames that descend into the annotation tree
@@ -1340,7 +1345,7 @@ sub _do_lanl_request {
 	eval { # encapsulate communication errors here, defer biothrows...
         
         #mark the useragent should be setable from outside (so we can modify timeouts, etc)
-	    my $ua = new Bio::WebAgent($self->_ua_hash);
+	    my $ua = Bio::WebAgent->new($self->_ua_hash);
 	    my $idPing = $ua->get($self->_map_db_uri);
 	    $idPing->is_success || do {
 		$response=$idPing; 
@@ -1479,7 +1484,7 @@ sub _parse_lanl_response {
 	    @rec{@cols} = split /\t/;
 	    my $id = $rec{'se_id'};
 	    $self->add_id($id);
-	    $ac = new Bio::Annotation::Collection();
+	    $ac = Bio::Annotation::Collection->new();
 	    #create annotations
 	    foreach (@cols) {
                 next if $_ eq '#';
@@ -1539,5 +1544,3 @@ sub _sorry{
 }
 
 1;
-
- 

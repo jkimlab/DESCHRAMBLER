@@ -26,7 +26,7 @@ A parser for Tandem Repeats Finder output.
 Written and tested for version 4.00
 
 Location, seq_id, and score are stored in Bio::SeqFeature::Generic feature.
-All other data is stored in tags.  The availabale tags are
+All other data is stored in tags.  The available tags are
 
         period_size
         copy_number
@@ -81,7 +81,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Eric Just
 
@@ -95,6 +95,7 @@ Internal methods are usually preceded with a _
 =cut
 
 package Bio::Tools::TandemRepeatsFinder;
+$Bio::Tools::TandemRepeatsFinder::VERSION = '1.7.8';
 use strict;
 use constant DEBUG => 0;
 use Bio::SeqFeature::Generic;
@@ -225,7 +226,7 @@ You appear to be using Verion $version.  Use at your own risk.}) if ($version !=
 
         # Parse Sequence identifier
         # i.e. Sequence: DDB0215018 |Masked Chromosomal Sequence| Chr 2f
-        elsif ( /^Sequence: ([^\s]+)\s(.+)/ ) {
+        elsif ( /^Sequence: ([^\s]+)\s(.+)?/ ) {
             my $seq_id          = $1;
             my $seq_description = $2;
             $self->warn("parsed sequence_id: $seq_id\n") if DEBUG;

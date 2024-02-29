@@ -1,4 +1,3 @@
-# $Id: psl.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::SearchIO::psl
 #
@@ -62,7 +61,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -78,6 +77,7 @@ Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::SearchIO::psl;
+$Bio::SearchIO::psl::VERSION = '1.7.8';
 use vars qw(%MAPPING %MODEMAP $DEFAULT_WRITER_CLASS $DefaultProgramName);
 
 use strict;
@@ -86,7 +86,7 @@ use Bio::Search::Hit::HitFactory;
 use Bio::Search::Result::ResultFactory;
 
 $DefaultProgramName   = 'BLAT';
-$DEFAULT_WRITER_CLASS = 'Bio::Search::Writer::HitTableWriter';
+$DEFAULT_WRITER_CLASS = 'Bio::SearchIO::Writer::HitTableWriter';
 
 # mapping of terms to Bioperl hash keys
 %MODEMAP = (
@@ -361,11 +361,13 @@ sub next_result {
                 }
             );
         }
+
         my $hsplen =
-          $q_base_insert +
+          ($q_base_insert +
           $t_base_insert +
           abs( $t_end - $t_start ) +
-          abs( $q_end - $q_start );
+          abs( $q_end - $q_start ))/2;
+
         $self->element(
             {
                 'Name' => 'Hsp_hit-from',

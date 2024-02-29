@@ -76,7 +76,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Albert Vilella
 
@@ -93,6 +93,7 @@ Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::Seq::LargeLocatableSeq;
+$Bio::Seq::LargeLocatableSeq::VERSION = '1.7.8';
 use vars qw($AUTOLOAD);
 use strict;
 

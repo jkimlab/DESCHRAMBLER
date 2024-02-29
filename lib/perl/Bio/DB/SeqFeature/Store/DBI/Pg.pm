@@ -6,7 +6,7 @@ use MIME::Base64;
 
 =head1 NAME
 
-Bio::DB::SeqFeature::Store::DBI::Pg -- Mysql implementation of Bio::DB::SeqFeature::Store
+Bio::DB::SeqFeature::Store::DBI::Pg -- PostgreSQL implementation of Bio::DB::SeqFeature::Store
 
 =head1 SYNOPSIS
 
@@ -95,13 +95,13 @@ Bio::DB::SeqFeature::Store::DBI::Pg -- Mysql implementation of Bio::DB::SeqFeatu
 
 =head1 DESCRIPTION
 
-Bio::DB::SeqFeature::Store::Pg is the Mysql adaptor for
+Bio::DB::SeqFeature::Store::Pg is the Pg adaptor for
 Bio::DB::SeqFeature::Store. You will not create it directly, but
 instead use Bio::DB::SeqFeature::Store-E<gt>new() to do so.
 
 See L<Bio::DB::SeqFeature::Store> for complete usage instructions.
 
-=head2 Using the Mysql adaptor
+=head2 Using the Pg adaptor
 
 Before you can use the adaptor, you must use the Pgadmin tool to
 create a database and establish a user account with write
@@ -115,14 +115,14 @@ additional arguments are as follows:
   Argument name       Description
   -------------       -----------
 
- -dsn              The database name. You can abbreviate 
+ -dsn              The database name. You can abbreviate
                    "dbi:Pg:foo" as "foo" if you wish.
 
  -user             Username for authentication.
 
  -pass             Password for authentication.
 
- -namespace        A prefix to attach to each table. This allows you
+ -namespace        Creates a SCHEMA for the tables. This allows you
                    to have several virtual databases in the same
                    physical database.
 
@@ -160,11 +160,10 @@ use DBI;
 use Memoize;
 use Cwd 'abs_path';
 use Bio::DB::GFF::Util::Rearrange 'rearrange';
+use File::Copy;
 use File::Spec;
 use constant DEBUG=>0;
 
-# from the MySQL documentation...
-# WARNING: if your sequence uses coordinates greater than 2 GB, you are out of luck!
 use constant MAX_INT =>  2_147_483_647;
 use constant MIN_INT => -2_147_483_648;
 use constant MAX_BIN =>  1_000_000_000;  # size of largest feature = 1 Gb
@@ -202,7 +201,7 @@ sub init {
 		   ],@_);
 
 
-  $dbi_options  ||= {};
+  $dbi_options  ||= {pg_server_prepare => 0};
   $writeable    = 1 if $is_temporary or $dump_dir;
 
   $dsn or $self->throw("Usage: ".__PACKAGE__."->init(-dsn => \$dbh || \$dsn)");
@@ -224,9 +223,9 @@ sub init {
   $self->{dbh}       = $dbh;
   $self->{dbh}->{InactiveDestroy} = 1;
   $self->{is_temp}   = $is_temporary;
-  $self->{namespace} = $namespace;
   $self->{writeable} = $writeable;
-  $self->schema($schema) if ($schema);
+  $self->{namespace} = $namespace || $schema || 'public';
+  $self->schema($self->{namespace});
 
   $self->default_settings;
   $self->autoindex($autoindex)                   if defined $autoindex;
@@ -263,24 +262,26 @@ END
 	  locationlist => <<END,
 (
   id         serial primary key,
-  seqname    varchar(256)   not null
+  seqname    text   not null
 ); CREATE INDEX locationlist_seqname ON locationlist(seqname);
 END
 
 	  typelist => <<END,
 (
   id       serial primary key,
-  tag      varchar(256)  not null
+  tag      text  not null
 ); CREATE INDEX typelist_tab ON typelist(tag);
 END
 	  name => <<END,
 (
   id           int       not null,
-  name         varchar(256)  not null,
+  name         text  not null,
   display_name int       default 0
 );
-  CREATE INDEX name_id ON name(id);
-  CREATE INDEX name_name ON name(name);
+  CREATE INDEX name_id ON name( id );
+  CREATE INDEX name_name ON name( name );
+  CREATE INDEX name_lcname ON name( lower(name) );
+  CREATE INDEX name_lcname_varchar_patt_ops ON name USING BTREE (lower(name) varchar_pattern_ops);
 END
 
 	  attribute => <<END,
@@ -296,7 +297,7 @@ END
 	  attributelist => <<END,
 (
   id       serial primary key,
-  tag      varchar(256)  not null
+  tag      text  not null
 );
   CREATE INDEX attributelist_tag ON attributelist(tag);
 END
@@ -305,13 +306,13 @@ END
   id               int       not null,
   child            int       not null
 );
-  CREATE INDEX parent2child_id_child ON parent2child(id,child);
+  CREATE UNIQUE INDEX parent2child_id_child ON parent2child(id,child);
 END
 
 	  meta => <<END,
 (
-  name      varchar(128) primary key,
-  value     varchar(128) not null
+  name      text primary key,
+  value     text not null
 )
 END
 	  sequence => <<END,
@@ -322,6 +323,16 @@ END
   primary key(id,"offset")
 )
 END
+
+    interval_stats => <<END,
+(
+   typeid            int not null,
+   seqid             int not null,
+   bin               int not null,
+   cum_count         int not null
+ );
+ CREATE UNIQUE INDEX interval_stats_id ON interval_stats(typeid,seqid,bin);
+END
 	 };
 }
 
@@ -329,7 +340,8 @@ sub schema {
   my ($self, $schema) = @_;
   $self->{'schema'} = $schema if defined($schema);
   if ($schema) {
-    $self->dbh->do("SET search_path TO " . $self->{'schema'} . ", public");
+    $self->_check_for_namespace();
+    $self->dbh->do("SET search_path TO " . $self->{'schema'} );
   } else {
     $self->dbh->do("SET search_path TO public");
   }
@@ -343,14 +355,16 @@ sub _init_database {
   my $erase = shift;
 
   my $dbh    = $self->dbh;
+  my $namespace = $self->namespace;
   my $tables = $self->table_definitions;
+    my $temporary = $self->is_temp ? 'TEMPORARY' : '';
   foreach (keys %$tables) {
     next if $_ eq 'meta';      # don't get rid of meta data!
     my $table = $self->_qualify($_);
     $dbh->do("DROP TABLE IF EXISTS $table") if $erase;
-    my @table_exists = $dbh->selectrow_array("SELECT * FROM pg_tables WHERE tablename = '$table'");
+    my @table_exists = $dbh->selectrow_array("SELECT * FROM pg_tables WHERE tablename = '$table' AND schemaname = '$self->namespace'");
 		if (!scalar(@table_exists)) {
-			my $query = "CREATE TABLE $table $tables->{$_}";
+			my $query = "CREATE $temporary TABLE $table $tables->{$_}";
 			$dbh->do($query) or $self->throw($dbh->errstr);
 		}
   }
@@ -361,12 +375,73 @@ sub _init_database {
 sub maybe_create_meta {
   my $self = shift;
   return unless $self->writeable;
+  my $namespace    = $self->namespace;
   my $table        = $self->_qualify('meta');
   my $tables       = $self->table_definitions;
   my $temporary    = $self->is_temp ? 'TEMPORARY' : '';
-  my @table_exists = $self->dbh->selectrow_array("SELECT * FROM pg_tables WHERE tablename = '$table'");
+  my @table_exists = $self->dbh->selectrow_array("SELECT * FROM pg_tables WHERE tablename = 'meta' AND schemaname = '$namespace'");
   $self->dbh->do("CREATE $temporary TABLE $table $tables->{meta}")
-      unless @table_exists || $temporary;
+      unless @table_exists;
+}
+
+###
+# check if the namespace/schema exists, if not create it
+#
+
+sub _check_for_namespace {
+  my $self = shift;
+  my $namespace = $self->namespace;
+  return if $namespace eq 'public';
+  my $dbh  = $self->dbh;
+  my @schema_exists = $dbh->selectrow_array("SELECT * FROM pg_namespace WHERE nspname = '$namespace'");
+  if (!scalar(@schema_exists)) {
+      my $query = "CREATE SCHEMA $namespace";
+	  $dbh->do($query) or $self->throw($dbh->errstr);
+
+	  # if temp parameter is set and schema created for this process then enable removal in remove_namespace()
+	  if ($self->is_temp) {
+	      $self->{delete_schema} = 1;
+	  }
+  }
+}
+
+###
+# Overiding inherited mysql _qualify (We do not need to qualify for PostgreSQL as we have set the search_path above)
+#
+sub _qualify {
+  my $self = shift;
+  my $table_name = shift;
+  return $table_name;
+}
+
+###
+# when is_temp is set and the schema did not exist beforehand then we are able to remove it
+#
+sub remove_namespace {
+  my $self = shift;
+  if ($self->{delete_schema}) {
+      my $namespace = $self->namespace;
+      $self->dbh->do("DROP SCHEMA $namespace") or $self->throw($self->dbh->errstr);
+  }
+}
+
+####Overiding the inherited mysql function _prepare
+
+sub _prepare {
+   my $self = shift;
+   my $query = shift;
+   my $dbh   = $self->dbh;
+   my $schema = $self->{namespace};
+
+   if ($schema) {
+     $self->_check_for_namespace();
+     $dbh->do("SET search_path TO " . $self->{'schema'} );
+   } else {
+     $dbh->do("SET search_path TO public");
+   }
+   my $sth   = $dbh->prepare_cached($query, {}, 3) or
+   $self->throw($dbh->errstr);
+   $sth;
 }
 
 sub _finish_bulk_update {
@@ -378,16 +453,16 @@ sub _finish_bulk_update {
     my $path = $self->dump_path($table);
     $fh->close;
     my $qualified_table = $self->_qualify($table);
-    system "cp $path $path.bak";
+    copy($path, "$path.bak");
     # Get stuff from file into STDIN so we don't have to be superuser
-    open FH, $path;
+    open my $FH, '<', $path or $self->throw("Could not read file '$path': $!");
     print STDERR "Loading file $path\n";
     $dbh->do("COPY $qualified_table FROM STDIN CSV QUOTE '''' DELIMITER '\t'") or $self->throw($dbh->errstr);
-    while (my $line = <FH>) {
+    while (my $line = <$FH>) {
       $dbh->pg_putline($line);
     }
     $dbh->pg_endcopy() or $self->throw($dbh->errstr);
-    close FH;
+    close $FH;
     #unlink $path;
   }
   delete $self->{bulk_update_in_progress};
@@ -418,10 +493,10 @@ sub _add_SeqFeature {
   my $sthdel = $self->_prepare($querydel);
   my $sth = $self->_prepare($query);
 
-  my $parent_id = (ref $parent ? $parent->primary_id : $parent) 
+  my $parent_id = (ref $parent ? $parent->primary_id : $parent)
     or $self->throw("$parent should have a primary_id");
 
-  $dbh->begin_work or $self->throw($dbh->errstr);
+  $self->begin_work or $self->throw($dbh->errstr);
   eval {
     for my $child (@children) {
       my $child_id = ref $child ? $child->primary_id : $child;
@@ -434,10 +509,10 @@ sub _add_SeqFeature {
 
   if ($@) {
     warn "Transaction aborted because $@";
-    $dbh->rollback;
+    $self->rollback;
   }
   else {
-    $dbh->commit;
+    $self->commit;
   }
   $sth->finish;
   $count;
@@ -482,7 +557,7 @@ END
   while (my($frag,$offset) = $sth->fetchrow_array) {
     substr($frag,0,$start-$offset) = '' if defined $start && $start > $offset;
     $seq .= $frag;
-  }  
+  }
   substr($seq,$end-$start+1) = '' if defined $end && $end-$start+1 < length($seq);
   if ($reversed) {
     $seq = reverse $seq;
@@ -605,8 +680,8 @@ sub _match_sql {
     $name =~ s/(^|[^\\])([%_])/$1\\$2/g;
     $name =~ s/(^|[^\\])\*/$1%/g;
     $name =~ s/(^|[^\\])\?/$1_/g;
-    $match = "ILIKE ?";
-    $string  = $name;
+    $match = "LIKE ?";
+    $string  = lc($name);
   } else {
     $match = "= lower(?)";
     $string  = lc($name);
@@ -637,7 +712,7 @@ sub _types_sql {
       ($primary_tag,$source_tag) = split ':',$type,2;
     }
 
-    if (defined $source_tag) {
+    if ($source_tag) {
       push @matches,"lower(tl.tag)=lower(?)";
       push @args,"$primary_tag:$source_tag";
     } else {
@@ -872,5 +947,36 @@ sub _dump_store {
   }
   $count;
 }
+
+sub _enable_keys  { }  # nullop
+sub _disable_keys { }  # nullop
+
+sub _add_interval_stats_table {
+    my $self = shift;
+    my $tables          = $self->table_definitions;
+    my $interval_stats  = $self->_interval_stats_table;
+    ##check to see if it exists yet; if it does, just return because
+    ##there is a drop from in the next step
+    my $dbh = $self->dbh;
+    my @table_exists = $dbh->selectrow_array("SELECT * FROM pg_tables WHERE tablename
+ = '$interval_stats' AND schemaname = '".$self->namespace."'");
+    if (!scalar(@table_exists)) {
+        my $query = "CREATE TABLE $interval_stats $tables->{interval_stats}";
+        $dbh->do($query) or $self->throw($dbh->errstr);
+    }
+}
+
+sub _fetch_indexed_features_sql {
+    my $self     = shift;
+    my $features = $self->_feature_table;
+    return <<END;
+SELECT typeid,seqid,start-1,"end"
+  FROM $features as f
+ WHERE f.indexed=1
+  ORDER BY typeid,seqid,start
+END
+}
+
+
 
 1;

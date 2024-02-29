@@ -1,4 +1,3 @@
-# $Id: psi.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::AlignIO::psi
 #
@@ -52,7 +51,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -70,6 +69,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::AlignIO::psi;
+$Bio::AlignIO::psi::VERSION = '1.7.8';
 use vars qw($BlockLen $IdLength);
 use strict;
 
@@ -124,12 +124,13 @@ sub next_aln {
 	my $seq = Bio::LocatableSeq->new(-seq => $seqs{$id},
 					-id  => $id,
 					-start => 1,
-					-end   => length($seqs{$id}) - $gaps
+					-end   => length($seqs{$id}) - $gaps,
+					 -alphabet => $self->alphabet,
                     );
 	$aln->add_seq($seq);
     }
     return $aln if defined $aln && $aln->num_sequences;
-	return $aln;
+	return;
 }
 
 =head2 write_aln

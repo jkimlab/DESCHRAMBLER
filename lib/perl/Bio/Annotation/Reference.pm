@@ -1,4 +1,3 @@
-# $Id: Reference.pm 15635 2009-04-14 19:11:13Z cjfields $
 #
 # BioPerl module for Bio::Annotation::Reference
 #
@@ -54,6 +53,7 @@ methods. Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::Annotation::Reference;
+$Bio::Annotation::Reference::VERSION = '1.7.8';
 use strict;
 
 use base qw(Bio::Annotation::DBLink);
@@ -411,7 +411,7 @@ sub pubmed {
  Usage   :
  Function: Overrides DBLink database to be hard coded to 'MEDLINE' (or 'PUBMED'
            if only pubmed id has been supplied), unless the database has been
-           set explicitely before.
+           set explicitly before.
  Example :
  Returns :
  Args    :

@@ -1,4 +1,4 @@
-<!-- $Id: lanl-schema.xml 16090 2009-09-15 21:57:56Z cjfields $ updated schema of 01/14/09 -->
+<!-- $Id$ updated schema of 01/14/09 -->
 <hivschema>
   <sfield blank_ok="false" comment="select" multiple="multiple" type="option">author.au_authornumber<alias>au_authornumber</alias>
 <ankey antype='Reference'>author_number</ankey>

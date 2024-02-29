@@ -1,6 +1,5 @@
 package Bio::DB::SeqFeature::Store::GFF3Loader;
 
-# $Id: GFF3Loader.pm 16168 2009-09-25 21:07:32Z cjfields $
 
 =head1 NAME
 
@@ -31,7 +30,7 @@ databases. For certain combinations of SeqFeature classes and
 SeqFeature::Store databases it features a "fast load" mode which will
 greatly accelerate the loading of GFF3 databases by a factor of 5-10.
 
-The GFF3 file format has been extended very slightly to accomodate
+The GFF3 file format has been extended very slightly to accommodate
 Bio::DB::SeqFeature::Store. First, the loader recognizes is a new
 directive:
 
@@ -71,6 +70,7 @@ use strict;
 use Carp 'croak';
 use Bio::DB::GFF::Util::Rearrange;
 use Bio::DB::SeqFeature::Store::LoadHelper;
+use constant DEBUG => 0;
 
 use base 'Bio::DB::SeqFeature::Store::Loader';
 
@@ -108,7 +108,7 @@ pairs as described in this table:
  Name               Value
  ----               -----
 
- -store             A writeable Bio::DB::SeqFeature::Store database handle.
+ -store             A writable Bio::DB::SeqFeature::Store database handle.
 
  -seqfeature_class  The name of the type of Bio::SeqFeatureI object to create
                       and store in the database (Bio::DB::SeqFeature by default)
@@ -128,6 +128,11 @@ pairs as described in this table:
  -ignore_seqregion  Ignore ##sequence-region directives. The default is to create a
                        feature corresponding to the directive.
 
+ -noalias_target    Don't create an Alias attribute for a target_id named in a 
+                    Target attribute. The default is to create an Alias
+                    attribute containing the target_id found in a Target 
+                    attribute.
+
 When you call new(), a connection to a Bio::DB::SeqFeature::Store
 database should already have been established and the database
 initialized (if appropriate).
@@ -145,10 +150,10 @@ normal (slow) loading.
 If you use an unnormalized feature class, such as
 Bio::SeqFeature::Generic, then the loader needs to create a temporary
 database in which to cache features until all their parts and subparts
-have been seen. This temporary databases uses the "berkeleydb" adaptor. The
--tmp option specifies the directory in which that database will be
-created. If not present, it defaults to the system default tmp
-directory specified by File::Spec-E<gt>tmpdir().
+have been seen. This temporary databases uses the "berkeleydb"
+adaptor. The -tmp option specifies the directory in which that
+database will be created. If not present, it defaults to the system
+default tmp directory specified by File::Spec-E<gt>tmpdir().
 
 The -chunk_size option allows you to tune the representation of
 DNA/Protein sequence in the Store database. By default, sequences are
@@ -166,6 +171,8 @@ sub new {
     my $self  = $class->SUPER::new(@_);
     my ($ignore_seqregion) = rearrange(['IGNORE_SEQREGION'],@_);
     $self->ignore_seqregion($ignore_seqregion);
+    my ($noalias_target) = rearrange(['NOALIAS_TARGET'],@_);
+    $self->noalias_target($noalias_target);
     $self;
 }
 
@@ -183,6 +190,24 @@ sub ignore_seqregion {
     my $self = shift;
     my $d    = $self->{ignore_seqregion};
     $self->{ignore_seqregion} = shift if @_;
+    $d;
+}
+
+=head2 noalias_target
+
+  $noalias_target = $loader->noalias_target([$new_flag])
+
+Get or set the noalias_target flag, which if true, will disable the creation of
+an Alias attribute for a target_id named in a Target attribute. The default is 
+to create an Alias attribute containing the target_id found in a Target 
+attribute.
+
+=cut
+
+sub noalias_target {
+    my $self = shift;
+    my $d    = $self->{noalias_target};
+    $self->{noalias_target} = shift if @_;
     $d;
 }
 
@@ -238,7 +263,7 @@ The following read-only accessors return values passed or created during new():
 
 =head2 Internal Methods
 
-The following methods are used internally and may be overidden by
+The following methods are used internally and may be overridden by
 subclasses.
 
 =over 4
@@ -326,6 +351,7 @@ sub finish_load { #overridden
     $self->msg(sprintf "%5.2fs\n",$self->time()-$start);
   }
   eval {$self->store->commit};
+
   # don't delete load data so that caller can ask for the loaded IDs
   # $self->delete_load_data;
 }
@@ -363,7 +389,10 @@ sub load_line { #overridden
     $load_data->{line}++;
 
     return unless $line =~ /^\S/;     # blank line
-    $load_data->{mode} = 'gff' if /\t/;  # if it has a tab in it, switch to gff mode
+
+    # if it has a tab in it or looks like a chrom.sizes file, switch to gff mode
+    $load_data->{mode} = 'gff' if $line =~ /\t/
+	or $line =~ /^\w+\s+\d+\s*$/;
 
     if ($line =~ /^\#\s?\#\s*(.+)/) {  ## meta instruction
       $load_data->{mode} = 'gff';
@@ -375,8 +404,8 @@ sub load_line { #overridden
     }
 
     elsif ($line =~ /^>\s*(\S+)/) { # FASTA lines are coming
-      $load_data->{mode} = 'fasta';
-      $self->start_or_finish_sequence($1);
+	$load_data->{mode} = 'fasta';
+	$self->start_or_finish_sequence($1);
     }
 
     elsif ($load_data->{mode} eq 'fasta') {
@@ -467,9 +496,15 @@ sub handle_feature { #overridden
   my $ld       = $self->{load_data};
 
   my $allow_whitespace = $self->allow_whitespace;
-  $gff_line    =~ s/\s+/\t/g if $allow_whitespace;
 
-  my @columns = map {$_ eq '.' ? undef : $_ } split /\t/,$gff_line;
+  # special case for a chrom.sizes-style line
+  my @columns;
+  if ($gff_line =~ /^(\w+)\s+(\d+)\s*$/) {
+      @columns = ($1,undef,'chromosome',1,$2,undef,undef,undef,"Name=$1");
+  } else {
+      $gff_line    =~ s/\s+/\t/g if $allow_whitespace;
+      @columns = map {$_ eq '.' ? undef : $_ } split /\t/,$gff_line;
+  }
 
   $self->invalid_gff($gff_line) if @columns < 4;
   $self->invalid_gff($gff_line) if @columns > 9 && $allow_whitespace;
@@ -484,8 +519,8 @@ sub handle_feature { #overridden
   my ($refname,$source,$method,$start,$end,$score,$strand,$phase,$attributes) = @columns;
   
   $self->invalid_gff($gff_line) unless defined $refname;
-  $self->invalid_gff($gff_line) unless $start eq '.' || $start =~ /^[\d.-]+$/;
-  $self->invalid_gff($gff_line) unless $end   eq '.' || $end   =~ /^[\d.-]+$/;
+  $self->invalid_gff($gff_line) unless !defined $start || $start =~ /^[\d.-]+$/;
+  $self->invalid_gff($gff_line) unless !defined $end   || $end   =~ /^[\d.-]+$/;
   $self->invalid_gff($gff_line) unless defined $method;
 
   $strand = $Strandedness{$strand||0};
@@ -521,11 +556,12 @@ sub handle_feature { #overridden
   $feature_id = '' unless defined $feature_id;
   $name       = '' unless defined $name;  # prevent uninit variable warnings
   # push @{$unreserved->{Alias}},$feature_id  if $has_loadid && $feature_id ne $name;
-  $unreserved->{parent_id} = \@parent_ids   if @parent_ids;
+  # If DEBUG != 0, any Parent attribute is also copied over (as 'parent_id')
+  $unreserved->{parent_id} = \@parent_ids   if DEBUG && @parent_ids;
 
   # POSSIBLY A PERMANENT HACK -- TARGETS BECOME ALIASES
   # THIS IS TO ALLOW FOR TARGET-BASED LOOKUPS
-  if (exists $reserved->{Target}) {
+  if (exists $reserved->{Target} && !$self->{noalias_target}) {
     my %aliases = map {$_=>1} @{$unreserved->{Alias}};
     for my $t (@{$reserved->{Target}}) {
       (my $tc = $t) =~ s/\s+.*$//;  # get rid of coordinates

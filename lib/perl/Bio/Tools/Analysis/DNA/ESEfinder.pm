@@ -1,4 +1,3 @@
-# $Id: ESEfinder.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Tools::Analysis::DNA::ESEfinder
 #
@@ -87,7 +86,7 @@ score]
 
 See L<http://rulai.cshl.edu/tools/ESE2/>
 
-This the second implentation of Bio::SimpleAnalysisI which hopefully
+This the second implementation of Bio::SimpleAnalysisI which hopefully
 will make it easier to write wrappers on various services. This class
 uses a web resource and therefore inherits from L<Bio::WebAgent>.
 
@@ -124,7 +123,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHORS
 
@@ -206,7 +205,7 @@ sub _init {
 sub _run {
     my $self  = shift;
     my $seq_fasta;
-    my $stringfh = new IO::String($seq_fasta);
+    my $stringfh = IO::String->new($seq_fasta);
     my $seqout = Bio::SeqIO->new(-fh => $stringfh,
                                 -format => 'fasta');
     $seqout->write_seq($self->seq);

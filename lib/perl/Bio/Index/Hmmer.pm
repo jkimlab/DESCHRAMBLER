@@ -1,12 +1,12 @@
 #
 # BioPerl module for Bio::Index::Hmmer
-# 
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+#
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Josh Lauricha <laurichj@bioinfo.ucr.edu>
 #
 # Copyright Josh Lauricha
-# Unless otherwise noted, this was shamelessly ripped from 
+# Unless otherwise noted, this was shamelessly ripped from
 # Bio::Index::Blast
 #
 # You may distribute this module under the terms of perl itself
@@ -57,7 +57,7 @@ This object allows one to build an index on a HMMER file (or files)
 and provide quick access to the HMMER report for that accession.
 For best results 'use strict'.
 
-You can also set or customize the unique key used to retrieve by 
+You can also set or customize the unique key used to retrieve by
 writing your own function and calling the id_parser() method.
 For example:
 
@@ -84,15 +84,15 @@ the Bioperl mailing list.  Your participation is much appreciated.
   bioperl-l@bioperl.org                  - General discussion
   http://bioperl.org/wiki/Mailing_lists  - About the mailing lists
 
-=head2 Support 
+=head2 Support
 
 Please direct usage questions or support issues to the mailing list:
 
 I<bioperl-l@bioperl.org>
 
-rather than to the module maintainer directly. Many experienced and 
-reponsive experts will be able look at the problem and quickly 
-address it. Please include a thorough description of the problem 
+rather than to the module maintainer directly. Many experienced and
+reponsive experts will be able look at the problem and quickly
+address it. Please include a thorough description of the problem
 with code and data examples if at all possible.
 
 =head2 Reporting Bugs
@@ -101,7 +101,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Josh Lauricha
 
@@ -181,7 +181,7 @@ sub fetch_report
 
 	seek($fh, 0, 0); # The HMMER SearchIO wants the header, so we fetch it
 	while($line = <$fh>) {
-		push @header, $line; 
+		push @header, $line;
 		last if $line =~ /Query sequence:/o;
 	}
 	seek($fh, $pos, 0);
@@ -193,7 +193,7 @@ sub fetch_report
 	}
 
 	# Then join them and send
-	my $rfh = new IO::String(join('', @header, @data));
+	my $rfh = IO::String->new(join('', @header, @data));
 	my $report = Bio::SearchIO->new(
 		-noclose => 1,
 		-format  => 'hmmer',
@@ -211,7 +211,7 @@ sub fetch_report
   Function: Stores or returns the code used by record_id to
             parse the ID for record from a string.  Useful
             for (for instance) specifying a different
-            parser for different flavours of blast dbs. 
+            parser for different flavours of blast dbs.
             Returns \&default_id_parser (see below) if not
             set. If you supply your own id_parser
             subroutine, then it should expect a fasta
@@ -265,9 +265,9 @@ sub default_id_parser
   Function: Specialist function to index HMMER report file(s).
             Is provided with a filename and an integer
             by make_index in its SUPER class.
-  Example : 
-  Returns : 
-  Args    : 
+  Example :
+  Returns :
+  Args    :
 
 =cut
 
@@ -276,7 +276,7 @@ sub _index_file {
 	my($self, $file, $i) = @_;
 	my($begin);
 
-	open(my $HMMER, '<', $file) or $self->throw("cannot open file $file");
+	open my $HMMER, '<', $file or $self->throw("Could not read file '$file': $!");
 
 	my $id;
 	my $indexpoint = 0;
@@ -314,7 +314,7 @@ sub _index_file {
  Usage   : $value = $self->write_flag();
            $self->write_flag($value);
  Function: Gets or sets the value of write_flag, which
-           is wether the dbm file should be opened with
+           is whether the dbm file should be opened with
            write access.
  Returns : The current value of write_flag (default 0)
  Args    : Value of write_flag if setting, or none if
@@ -325,11 +325,11 @@ sub _index_file {
  Usage   : $value = $self->dbm_package();
            $self->dbm_package($value);
 
- Function: Gets or sets the name of the Perl dbm module used. 
+ Function: Gets or sets the name of the Perl dbm module used.
            If the value is unset, then it returns the value of
            the package variable $USE_DBM_TYPE or if that is
            unset, then it chooses the best available dbm type,
-           choosing 'DB_File' in preference to 'SDBM_File'. 
+           choosing 'DB_File' in preference to 'SDBM_File'.
            Bio::Abstract::Index may work with other dbm file
            types.
 
@@ -346,10 +346,10 @@ sub _index_file {
            at the approprite place
 
            This provides for a way to get the actual
-           file contents and not an object 
+           file contents and not an object
 
            WARNING: you must parse the record deliminter
-           *yourself*. Abstract wont do this for you 
+           *yourself*. Abstract won't do this for you
            So this code
 
            $fh = $index->get_stream($myid);
@@ -366,7 +366,7 @@ sub _index_file {
 
  Returns : A filehandle object
  Args    : string represents the accession number
- Notes   : This method should not be used without forethought 
+ Notes   : This method should not be used without forethought
 
 
 =head2 open_dbm
@@ -376,7 +376,7 @@ sub _index_file {
             object.  Write access is only given if explicitly
             asked for by calling new(-write => 1) or having set
             the write_flag(1) on the index object.  The type of
-            dbm file opened is that returned by dbm_package(). 
+            dbm file opened is that returned by dbm_package().
             The name of the file to be is opened is obtained by
             calling the filename() method.
 
@@ -392,8 +392,8 @@ sub _index_file {
             index module.  Used to permanently identify an index
             file as having been created by a particular version
             of the index module.  Must be provided by the sub class
-  Example : 
-  Returns : 
+  Example :
+  Returns :
   Args    : none
 
 =head2 _filename
@@ -401,9 +401,9 @@ sub _index_file {
   Title   : _filename
   Usage   : $index->_filename( FILE INT )
   Function: Indexes the file
-  Example : 
-  Returns : 
-  Args    : 
+  Example :
+  Returns :
+  Args    :
 
 =head2 _file_handle
 
@@ -426,7 +426,7 @@ sub _index_file {
             track the number of files indexed.  Sets or gets
             the number of files indexed when called with or
             without an argument.
-  Example : 
+  Example :
   Returns : INT
   Args    : INT
 
@@ -450,7 +450,7 @@ sub _index_file {
   Usage   : $packed_string = $index->pack_record( LIST )
   Function: Packs an array of scalars into a single string
             joined by ASCII 034 (which is unlikely to be used
-            in any of the strings), and returns it. 
+            in any of the strings), and returns it.
   Example : $packed_string = $index->pack_record( $fileNumber, $begin, $end )
   Returns : STRING or undef
   Args    : LIST

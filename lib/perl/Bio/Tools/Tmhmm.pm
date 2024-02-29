@@ -1,4 +1,3 @@
-# $Id: Tmhmm.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Tools::Tmhmm
 #
@@ -61,7 +60,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Torsten Seemann
 
@@ -79,7 +78,7 @@ Internal methods are usually preceded with a _
 =cut
 
 package Bio::Tools::Tmhmm;
-
+$Bio::Tools::Tmhmm::VERSION = '1.7.8';
 use strict;
 
 use Bio::Tools::AnalysisResult;

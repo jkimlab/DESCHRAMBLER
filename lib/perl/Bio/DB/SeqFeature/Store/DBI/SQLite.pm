@@ -121,6 +121,10 @@ additional arguments are as follows:
  -autoindex        Boolean flag. If true, features in the database will be
                    reindexed every time they change. This is the default.
 
+ -fts              Boolean flag. If true, when the -create flag is true, the
+                   attribute table will be created and indexed index for
+                   full-text search using the most recent FTS extension
+                   supported by DBD::SQLite.
 
  -tmpdir           Directory in which to place temporary files during "fast" loading.
                    Defaults to File::Spec->tmpdir(). (synonyms -dump_dir, -dumpdir, -tmp)
@@ -144,21 +148,25 @@ use strict;
 
 use base 'Bio::DB::SeqFeature::Store::DBI::mysql';
 use Bio::DB::SeqFeature::Store::DBI::Iterator;
+use DBD::SQLite;
 use DBI qw(:sql_types);
 use Memoize;
-use Cwd 'abs_path';
+use Cwd qw(abs_path getcwd);
 use Bio::DB::GFF::Util::Rearrange 'rearrange';
 use Bio::SeqFeature::Lite;
 use File::Spec;
 use constant DEBUG=>0;
+use constant EXPERIMENTAL_COVERAGE=>1;
 
 # Using same limits as MySQL adaptor so I don't have to make something up.
 use constant MAX_INT =>  2_147_483_647;
 use constant MIN_INT => -2_147_483_648;
-use constant MAX_BIN =>  1_000_000_000;  # size of largest feature = 1 Gb
-use constant MIN_BIN =>  1000;           # smallest bin we'll make - on a 100 Mb chromosome, there'll be 100,000 of these
-use constant DEBUG_NONSPATIAL=>0;
+use constant SUMMARY_BIN_SIZE =>  1000;  # we checkpoint coverage this often, about 20 meg overhead per feature type on hg
+use constant USE_SPATIAL=>0;
 
+# The binning scheme places each feature into a bin.
+# Bins are variably sized as powers of two. For example,
+# there are 585 bins of size 2**17 (131072 bases)
 my (@BINS,%BINS);
 {
     @BINS = map {2**$_} (17, 20, 23, 26, 29);  # TO DO: experiment with different bin sizes
@@ -225,6 +233,7 @@ sub init {
       $pass,
       $dbi_options,
       $writeable,
+      $fts,
       $create,
      ) = rearrange(['DSN',
 		    ['TEMP','TEMPORARY'],
@@ -235,6 +244,7 @@ sub init {
 		    ['PASS','PASSWD','PASSWORD'],
 		    ['OPTIONS','DBI_OPTIONS','DBI_ATTR'],
 		    ['WRITE','WRITEABLE'],
+		    'FTS',
 		    'CREATE',
 		   ],@_);
   $dbi_options  ||= {};
@@ -251,8 +261,13 @@ sub init {
     $dbh->do("PRAGMA synchronous = OFF;"); # makes writes much faster
     $dbh->do("PRAGMA temp_store = MEMORY;"); # less disk I/O; some speedup
     $dbh->do("PRAGMA cache_size = 20000;"); # less disk I/O; some speedup
+    # Keep track of database file location
+    my $cwd = getcwd;
+    my ($db_file) = ($dsn =~ m/(?:db(?:name)?|database)=(.+)$/);
+    $self->{dbh_file} = "$cwd/$db_file";
   }
   $self->{dbh}       = $dbh;
+  $self->{fts}       = $fts;
   $self->{is_temp}   = $is_temporary;
   $self->{namespace} = $namespace;
   $self->{writeable} = $writeable;
@@ -269,7 +284,7 @@ sub init {
 
 sub table_definitions {
   my $self = shift;
-  my $defs = 
+  my $defs =
       {
 	  feature => <<END,
 (
@@ -292,14 +307,14 @@ END
 	  typelist => <<END,
 (
   id  integer primary key autoincrement,
-  tag text    not null
+  tag text    not null collate nocase
 );
 create index index_typelist on typelist (tag);
 END
 	  name => <<END,
 (
   id           integer not null,
-  name         text    not null,
+  name         text    not null collate nocase,
   display_name integer default 0
 );
 create index index_name_id on name(id);
@@ -310,7 +325,7 @@ END
 (
   id              integer not null,
   attribute_id    integer not null,
-  attribute_value text
+  attribute_value text collate nocase
 );
 create index index_attribute_id    on attribute(attribute_id);
 create index index_attribute_value on attribute(attribute_value);
@@ -318,18 +333,17 @@ END
 
 	  attributelist => <<END,
 (
-  id  integer primary key autoincrement, 
+  id  integer primary key autoincrement,
   tag text    not null
 );
-create index index_attributelist_id  on attributelist(id);
 create index index_attributelist_tag on attributelist(tag);
 END
 	  parent2child => <<END,
 (
-  id    integer not null,
-  child integer not null
-);
-create index index_parent2child_id_child on parent2child(id,child);
+  id    integer,
+  child integer,
+  primary key(id, child)
+) without rowid;
 END
 
 	  meta => <<END,
@@ -348,6 +362,10 @@ END
 END
 	 };
 
+  if ($self->{'fts'}) {
+    delete($defs->{attribute});
+  }
+
   unless ($self->_has_spatial_index) {
     $defs->{feature_location} = <<END;
 (
@@ -360,8 +378,19 @@ END
 create index index_feature_location on feature_location(seqid,bin,start,end);
 END
 
-  }
+    }
 
+  if (EXPERIMENTAL_COVERAGE) {
+    $defs->{interval_stats} = <<END;
+(
+   typeid            integer not null,
+   seqid             integer not null,
+   bin               integer not null,
+   cum_count         integer not null,
+   primary key (typeid,seqid,bin)
+) without rowid;
+END
+  }
   return $defs;
 }
 
@@ -370,13 +399,16 @@ sub _init_database {
 
     # must do this first before calling table_definitions
     $self->_create_spatial_index;
+    $self->_create_attribute_fts;
     $self->SUPER::_init_database(@_);
 }
 
+# FIXME: ensure this works with _create_attribute_fts...
 sub init_tmp_database {
     my $self = shift;
     my $erase = shift;
     $self->_create_spatial_index;
+    $self->_create_attribute_fts;
     $self->SUPER::init_tmp_database(@_);
 }
 
@@ -385,12 +417,45 @@ sub _create_spatial_index{
     my $dbh   = $self->dbh;
     local $dbh->{PrintError} = 0;
     $dbh->do("DROP TABLE IF EXISTS feature_index"); # spatial index
-    if (DEBUG_NONSPATIAL) {
-	warn "DELIBERATELY BREAKING RTREE FUNCTIONALITY";
-	$dbh->do("CREATE VIRTUAL TABLE feature_index USING BTREE(id,seqid,bin,start,end)");
-    } else {
+    if (USE_SPATIAL) {
 	$dbh->do("CREATE VIRTUAL TABLE feature_index USING RTREE(id,seqid,bin,start,end)");
     }
+}
+
+sub _create_attribute_fts{
+    my $self = shift;
+    my $dbh   = $self->dbh;
+    if ($self->{'fts'}) {
+        my @fts_versions;
+        for (@fts_versions = grep(/^ENABLE_FTS[0-9]+$/, DBD::SQLite::compile_options)) { s/ENABLE_// }
+        # use the latest supported FTS version.
+        # DBD::SQLite::compile_options appears to be sorted
+        # alphabetically, so this should work through version FTS9.
+        die 'fts not supported by this version of DBD::SQLite' if (!@fts_versions);
+        $dbh->do("DROP TABLE IF EXISTS attribute");
+        $dbh->do("CREATE VIRTUAL TABLE "
+             . $self->_attribute_table
+             . " USING " . $fts_versions[-1]
+             . "(id, attribute_id, attribute_value)");
+    }
+}
+
+###
+# return 1 if an existing attribute table in the connected database is an FTS
+# table, else 0
+#
+sub _has_fts {
+    my $self = shift;
+    if (!defined($self->{'has_fts'})) {
+        # If the attribute table is a virtual table, assume it is an FTS
+        # table. Per http://www.sqlite.org/fileformat2.html:
+        # For (sqlite_master) rows that define views, triggers, and virtual
+        # tables, the rootpage column is 0 or NULL.
+        ($self->{'has_fts'}) = $self->dbh->selectrow_array("select count(*) from sqlite_master where type = 'table' and name = '"
+                                                           . $self->_attribute_table 
+                                                           . "' and (rootpage = 0 or rootpage is null);");
+    }
+    return $self->{'has_fts'};
 }
 
 sub _has_spatial_index {
@@ -406,13 +471,14 @@ sub _finish_bulk_update {
   my $dbh  = $self->dbh;
   my $dir = $self->{dumpdir} || '.';
 
-  $dbh->begin_work; # making this a transaction greatly improves performance
-  
+  $self->begin_work; # making this a transaction greatly improves performance
+
   for my $table ('feature', $self->index_tables) {
     my $fh = $self->dump_filehandle($table);
     my $path = $self->dump_path($table);
     $fh->close;
-    open($fh, $path);
+
+    open $fh, '<', $path or $self->throw("Could not read file '$path': $!");
     my $qualified_table = $self->_qualify($table);
 
     my $sth;
@@ -436,7 +502,7 @@ sub _finish_bulk_update {
 	} elsif ($table =~ /$feature_index$/) {
 	    $sth = $dbh->prepare(
 		$self->_has_spatial_index ?"REPLACE INTO $qualified_table VALUES (?,?,?,?,?)"
-		                          :"REPLACE INTO $qualified_table VALUES (?,?,?,?,?)"
+		                          :"REPLACE INTO $qualified_table (id,seqid,bin,start,end) VALUES (?,?,?,?,?)"
 		);
 	} else { # attribute or name
 	    $sth = $dbh->prepare("REPLACE INTO $qualified_table VALUES (?,?,?)");
@@ -450,7 +516,7 @@ sub _finish_bulk_update {
     $fh->close();
     unlink $path;
   }
-  $dbh->commit; # commit the transaction
+  $self->commit; # commit the transaction
   delete $self->{bulk_update_in_progress};
   delete $self->{filehandles};
 }
@@ -459,6 +525,21 @@ sub index_tables {
     my $self = shift;
     my @t    = $self->SUPER::index_tables;
     return (@t,$self->_feature_index_table);
+}
+
+sub _enable_keys  { }  # nullop
+sub _disable_keys { }  # nullop
+
+sub _fetch_indexed_features_sql {
+    my $self = shift;
+    my $location_table       = $self->_qualify('feature_location');
+    my $feature_table        = $self->_qualify('feature');
+    return <<END;
+    SELECT typeid,seqid,start-1,end
+  FROM $location_table as l,$feature_table as f
+ WHERE l.id=f.id AND f.\"indexed\"=1
+  ORDER BY typeid,seqid,start
+END
 }
 
 ###
@@ -500,7 +581,7 @@ END
   while (my($frag,$offset) = $sth->fetchrow_array) {
     substr($frag,0,$start-$offset) = '' if defined $start && $start > $offset;
     $seq .= $frag;
-  }  
+  }
   substr($seq,$end-$start+1) = '' if defined $end && $end-$start+1 < length($seq);
   if ($reversed) {
     $seq = reverse $seq;
@@ -593,7 +674,7 @@ sub _features {
     push @group,$group if $group;
     push @args,@a;
   }
-  
+
   if (defined($sources)) {
     my @sources = ref($sources) eq 'ARRAY' ? @{$sources} : ($sources);
     if (defined($types)) {
@@ -681,7 +762,7 @@ sub _location_sql {
 
   # the additional join on the location_list table badly impacts performance
   # so we build a copy of the table in memory
-  my $seqid = $self->_locationid($seq_id) || 0; # zero is an invalid primary ID, so will return empty
+  my $seqid = $self->_locationid_nocreate($seq_id) || 0; # zero is an invalid primary ID, so will return empty
 
   my $feature_index = $self->_feature_index_table;
   my $from  = "$feature_index as fi";
@@ -719,14 +800,14 @@ sub _location_sql {
       AND   $location.id=fi.id
       AND   $range
 END
-;	  
+;
   my $group = '';
-      
+
   my @args  = ($seqid,@range_args);
   return ($from,$where,$group,@args);
 }
 
-sub _feature_index_table          {  
+sub _feature_index_table          {
     my $self = shift;
     return $self->_has_spatial_index ? $self->_qualify('feature_index')
                                      : $self->_qualify('feature_location') }
@@ -740,7 +821,7 @@ sub _name_sql {
   my $from  = "$name_table as n";
   my ($match,$string) = $self->_match_sql($name);
 
-  my $where = "n.id=$join AND lower(n.name) $match";
+  my $where = "n.id=$join AND n.name $match COLLATE NOCASE";
   $where   .= " AND n.display_name>0" unless $allow_aliases;
   return ($from,$where,'',$string);
 }
@@ -755,30 +836,38 @@ sub _search_attributes {
   my $attributelist_table = $self->_attributelist_table;
   my $type_table          = $self->_type_table;
   my $typelist_table      = $self->_typelist_table;
+  my $has_fts             = $self->_has_fts;
 
   my @tags    = @$attribute_names;
   my $tag_sql = join ' OR ',("al.tag=?") x @tags;
 
   my $perl_regexp = join '|',@words;
 
-  my @wild_card_words = map { "%$_%" } @words;
-  my $sql_regexp = join ' OR ',("a.attribute_value LIKE ?")  x @words;
-  # CROSS JOIN disables SQLite's table reordering optimization
+  my $sql_regexp;
+  my @wild_card_words;
+  if ($has_fts) {
+      $sql_regexp = "a.attribute_value MATCH ?";
+      @wild_card_words = join(' OR ', @words);
+  } else {
+      $sql_regexp = join ' OR ',("a.attribute_value LIKE ?")  x @words;
+      @wild_card_words = map { "%$_%" } @words;
+  }
+  # CROSS JOIN hinders performance with FTS attribute table for DBD::SQLite 1.42
   my $sql = <<END;
 SELECT name,attribute_value,tl.tag,n.id
-  FROM $attributelist_table        AS al 
-       CROSS JOIN $attribute_table AS a  ON al.id = a.attribute_id
-       CROSS JOIN $name_table      AS n  ON n.id = a.id
-       CROSS JOIN $type_table      AS t  ON t.id = n.id
-       CROSS JOIN $typelist_table  AS tl ON tl.id = t.typeid
+  FROM $attributelist_table        AS al
+       JOIN $attribute_table AS a  ON al.id = a.attribute_id
+       JOIN $name_table      AS n  ON n.id  = a.id
+       JOIN $type_table      AS t  ON t.id  = n.id
+       JOIN $typelist_table  AS tl ON tl.id = t.typeid
   WHERE ($tag_sql)
     AND ($sql_regexp)
     AND n.display_name=1
 END
   $sql .= "LIMIT $limit" if defined $limit;
-  $self->_print_query($sql,@tags,@words) if DEBUG || $self->debug;
+  $self->_print_query($sql,@tags,@wild_card_words) if DEBUG || $self->debug;
   my $sth = $self->_prepare($sql);
-  $sth->execute(@tags,@wild_card_words) or $self->throw($sth->errstr);
+  $sth->execute(@tags, @wild_card_words) or $self->throw($sth->errstr);
 
   my @results;
   while (my($name,$value,$type,$id) = $sth->fetchrow_array) {
@@ -804,8 +893,8 @@ sub _match_sql {
     $match = "LIKE ?";
     $string  = $name;
   } else {
-    $match = "= lower(?)";
-    $string  = lc($name);
+    $match = "= ? COLLATE NOCASE";
+    $string  = $name;
   }
   return ($match,$string);
 }
@@ -820,11 +909,14 @@ sub _attributes_sql {
   my $attribute_table       = $self->_attribute_table;
   my $attributelist_table   = $self->_attributelist_table;
 
-  my $from = "$attribute_table AS a INDEXED BY index_attribute_id, $attributelist_table AS al";
+  my $from = "$attribute_table AS a" . ($self->_has_fts 
+                                        ? ''
+                                        : " INDEXED BY index_attribute_id") . ", $attributelist_table AS al";
+  my $a_al_join = $self->_has_fts ? 'a.attribute_id MATCH al.id' : 'a.attribute_id=al.id';
 
   my $where = <<END;
   a.id=$join
-  AND   a.attribute_id=al.id
+  AND   $a_al_join
   AND ($wf)
 END
 
@@ -856,8 +948,8 @@ sub _types_sql {
       ($primary_tag,$source_tag) = split ':',$type,2;
     }
 
-    if (defined $source_tag) {
-      push @matches,"lower(tl.tag)=lower(?)";
+    if (length $source_tag) {
+      push @matches,"tl.tag=? COLLATE NOCASE";
       push @args,"$primary_tag:$source_tag";
     } else {
       push @matches,"tl.tag LIKE ?";
@@ -896,7 +988,7 @@ sub replace {
 REPLACE INTO $features (id,object,"indexed",strand,typeid) VALUES (?,?,?,?,?)
 END
 
-  my ($seqid,$start,$end,$strand,$bin) = $index_flag ? $self->_get_location_and_bin($object) : (undef)x5;
+  my ($seqid,$start,$end,$strand,$bin) = $index_flag ? $self->_get_location_and_bin($object) : (undef)x6;
 
   my $primary_tag = $object->primary_tag;
   my $source_tag  = $object->source_tag || '';
@@ -926,9 +1018,9 @@ sub bulk_replace {
     my $self       = shift;
     my $index_flag = shift || undef;
     my @objects    = @_;
-    
+
     my $features = $self->_feature_table;
-    
+
     my @insert_values;
     foreach my $object (@objects) {
         my $id = $object->primary_id;
@@ -937,17 +1029,17 @@ sub bulk_replace {
         my $source_tag  = $object->source_tag || '';
         $primary_tag    .= ":$source_tag";
         my $typeid   = $self->_typeid($primary_tag,1);
-        
+
         push(@insert_values, ($id,0,$index_flag||0,$strand,$typeid));
     }
-    
+
     my @value_blocks;
     for (1..@objects) {
         push(@value_blocks, '(?,?,?,?,?)');
     }
     my $value_blocks = join(',', @value_blocks);
     my $sql = qq{REPLACE INTO $features (id,object,"indexed",strand,typeid) VALUES $value_blocks};
-    
+
     my $sth = $self->_prepare($sql);
     $sth->execute(@insert_values) or $self->throw($sth->errstr);
 }
@@ -955,12 +1047,14 @@ sub bulk_replace {
 sub _get_location_and_bin {
     my $self = shift;
     my $obj  = shift;
-    my $seqid   = $self->_locationid($obj->seq_id);
+    my $seqid   = $self->_locationid($obj->seq_id||'');
     my $start   = $obj->start;
     my $end     = $obj->end;
     my $strand  = $obj->strand;
     return ($seqid,$start,$end,$strand,$self->calculate_bin($start,$end));
 }
+
+
 
 ###
 # Insert one Bio::SeqFeatureI into database. primary_id must be undef
@@ -983,23 +1077,50 @@ END
   $self->flag_for_indexing($dbh->func('last_insert_rowid')) if $self->{bulk_update_in_progress};
 }
 
-=head2 types
+=head2 toplevel_types
 
- Title   : types
- Usage   : @type_list = $db->types
- Function: Get all the types in the database
+ Title   : toplevel_types
+ Usage   : @type_list = $db->toplevel_types
+ Function: Get the toplevel types in the database
  Returns : array of Bio::DB::GFF::Typename objects
  Args    : none
  Status  : public
 
+This is similar to types() but only returns the types of
+INDEXED (toplevel) features.
+
 =cut
+
+sub toplevel_types {
+    my $self = shift;
+    eval "require Bio::DB::GFF::Typename"
+	unless Bio::DB::GFF::Typename->can('new');
+    my $typelist_table      = $self->_typelist_table;
+    my $feature_table       = $self->_feature_table;
+    my $sql = <<END;
+SELECT distinct(tag) from $typelist_table as tl,$feature_table as f
+ WHERE tl.id=f.typeid
+   AND f."indexed"=1
+END
+;
+    $self->_print_query($sql) if DEBUG || $self->debug;
+    my $sth = $self->_prepare($sql);
+    $sth->execute() or $self->throw($sth->errstr);
+
+    my @results;
+    while (my($tag) = $sth->fetchrow_array) {
+	push @results,Bio::DB::GFF::Typename->new($tag);
+    }
+    $sth->finish;
+    return @results;
+}
 
 sub _genericid {
   my $self = shift;
   my ($table,$namefield,$name,$add_if_missing) = @_;
   my $qualified_table = $self->_qualify($table);
   my $sth = $self->_prepare(<<END);
-SELECT id FROM $qualified_table WHERE $namefield=?
+SELECT id FROM $qualified_table WHERE $namefield=? COLLATE NOCASE
 END
   $sth->execute($name) or die $sth->errstr;
   my ($id) = $sth->fetchrow_array;
@@ -1062,6 +1183,23 @@ sub _dump_update_name_index {
   print $fh join("\t",$id,$_,0),"\n" foreach @$aliases;
 }
 
+sub _update_name_index {
+  my $self = shift;
+  my ($obj,$id) = @_;
+  my $name = $self->_name_table;
+  my $primary_id = $obj->primary_id;
+
+  $self->_delete_index($name,$id);
+  my ($names,$aliases) = $self->feature_names($obj);
+
+  my $sth = $self->_prepare("INSERT INTO $name (id,name,display_name) VALUES (?,?,?)");
+
+  $sth->execute($id,$_,1) or $self->throw($sth->errstr)   foreach @$names;
+  $sth->execute($id,$_,0) or $self->throw($sth->errstr) foreach @$aliases;
+  $sth->finish;
+}
+
+
 sub _dump_update_attribute_index {
   my $self = shift;
   my ($obj,$id) = @_;
@@ -1106,7 +1244,7 @@ sub _update_location_index {
 	$sql    = "INSERT INTO $table (id,seqid,bin,start,end) values (?,?,?,?,?)";
 	@args   = ($id,$seqid,$bin,$start,$end);
     }
-	    
+
     my $sth  = $self->_prepare($sql);
     $sth->execute(@args);
     $sth->finish;
@@ -1124,6 +1262,15 @@ sub _dump_update_location_index {
     print $fh join("\t",@args),"\n";
 }
 
+sub DESTROY {
+    my $self = shift;
+    # Remove filehandles, so temporal files can be properly deleted
+    if (%DBI::installed_drh) {
+	DBI->disconnect_all;
+	%DBI::installed_drh = ();
+    }
+    undef $self->{dbh};
+}
 
 1;
 
@@ -1133,8 +1280,11 @@ Nathan Weeks - Nathan.Weeks@ars.usda.gov
 
 Copyright (c) 2009 Nathan Weeks
 
+Modified 2010 to support cumulative statistics by Lincoln Stein
+<lincoln.stein@gmail.com>.
+
 This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself.
+it under the same terms as Perl itself. See the Bioperl license for
+more details.
 
 =cut
-

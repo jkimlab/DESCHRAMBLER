@@ -1,4 +1,3 @@
-# $Id: GraphViz.pm 15635 2009-04-14 19:11:13Z cjfields $
 #
 # Module for Bio::PhyloNetwork::GraphViz
 #
@@ -33,9 +32,9 @@ Bio::PhyloNetwork::GraphViz - Interface between PhyloNetwork and GraphViz
 
   print $gv->as_text;
 
-  open PS, "> net.ps";
-  print PS $gv->as_ps;
-  close PS;
+  open my $PS, '>', "net.ps" or die "Could not write file 'net.ps': $!\n";
+  print $PS $gv->as_ps;
+  close $PS;
 
 =head1 DESCRIPTION
 

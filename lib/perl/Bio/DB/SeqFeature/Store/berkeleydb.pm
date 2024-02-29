@@ -1,7 +1,5 @@
 package Bio::DB::SeqFeature::Store::berkeleydb;
 
-# $Id: berkeleydb.pm 16091 2009-09-15 22:11:15Z cjfields $
-
 use strict;
 use base 'Bio::DB::SeqFeature::Store';
 use Bio::DB::GFF::Util::Rearrange 'rearrange';
@@ -28,19 +26,19 @@ Bio::DB::SeqFeature::Store::berkeleydb -- Storage and retrieval of sequence anno
 
   # Create a database from the feature files located in /home/fly4.3 and store
   # the database index in the same directory:
-  $db =  Bio::DB::SeqFeature::Store->new( -adaptor => 'berkeleydb',
-                                          -dir     => '/home/fly4.3');
+  my $db = Bio::DB::SeqFeature::Store->new( -adaptor => 'berkeleydb',
+                                            -dir     => '/home/fly4.3');
 
   # Create a database that will monitor the files in /home/fly4.3, but store
   # the indexes in /var/databases/fly4.3
-  $db      = Bio::DB::SeqFeature::Store->new( -adaptor    => 'berkeleydb',
-                                              -dsn        => '/var/databases/fly4.3',
-                                              -dir        => '/home/fly4.3');
+  $db    = Bio::DB::SeqFeature::Store->new( -adaptor => 'berkeleydb',
+                                            -dir     => '/home/fly4.3',
+                                            -dsn     => '/var/databases/fly4.3');
 
   # Create a feature database from scratch
-  $db     = Bio::DB::SeqFeature::Store->new( -adaptor => 'berkeleydb',
-                                             -dsn     => '/var/databases/fly4.3',
-                                             -create  => 1);
+  $db    = Bio::DB::SeqFeature::Store->new( -adaptor => 'berkeleydb',
+                                            -dsn     => '/var/databases/fly4.3',
+                                            -create  => 1);
 
   # get a feature from somewhere
   my $feature = Bio::SeqFeature::Generic->new(...);
@@ -349,8 +347,8 @@ sub auto_reindex {
     if ($result && %$result) {
 	$self->flag_autoindexing(1);
 	$self->lock('exclusive');
-	$self->reindex_wigfiles($result->{wig},$autodir)  if $result->{wig};
-	$self->reindex_ffffiles($result->{fff},$autodir)  if $result->{fff};
+	$self->reindex_wigfiles($result->{wig},$autodir) if $result->{wig};
+	$self->reindex_ffffiles($result->{fff},$autodir) if $result->{fff};
 	$self->reindex_gfffiles($result->{gff},$autodir) if $result->{gff};
 	$self->dna_db(Bio::DB::Fasta::Subdir->new($autodir));
 	$self->unlock;
@@ -371,7 +369,7 @@ sub auto_index_in_process {
     return unless -e $flag_file;
 
     # if flagfile exists, then check that PID still exists
-    open my $fh,$flag_file or die "Couldn't open $flag_file: $!";
+    open my $fh, '<', $flag_file or $self->throw("Could not read file '$flag_file': $!");
     my $pid = <$fh>;
     close $fh;
     return 1 if kill 0=>$pid;
@@ -395,7 +393,7 @@ sub flag_autoindexing {
     my $doit = shift;
     my $flag_file = $self->autoindex_flagfile;
     if ($doit) {
-	open my $fh,'>',$flag_file or die "Couldn't open $flag_file: $!";
+	open my $fh, '>', $flag_file or $self->throw("Could not write file '$flag_file': $!");
 	print $fh $$;
 	close $fh;
     } else {
@@ -623,6 +621,7 @@ sub _open_databases {
     return if $ignore_errors;  # autoindex set, so defer this
     $self->throw("Couldn't tie: ".$self->_features_path . " $!");
   }
+
   if ($create) {
     %h = ();
     $h{'.next_id'} = 1;
@@ -646,8 +645,9 @@ sub open_index_dbs {
     for my $idx ($self->_index_files) {
 	my $path = $self->_qualify("$idx.idx");
 	my %db;
-	tie(%db,'DB_File',$path,$flags,0666,$DB_BTREE)
-	    or $self->throw("Couldn't tie $path: $!");
+	my $result = tie(%db,'DB_File',$path,$flags,0666,$DB_BTREE);
+	# for backward compatibility, allow a failure when trying to open the is_indexed index.
+	$self->throw("Couldn't tie $path: $!") unless $result || $idx eq 'is_indexed';
 	%db = () if $create;
 	$self->index_db($idx=>\%db);
     }
@@ -673,7 +673,8 @@ sub open_notes_db {
 	                : $create ? "+>"
 	                : "<";
 
-    open (my $F,$mode,$self->_notes_path) or $self->throw($self->_notes_path.": $!");
+    my $notes_file = $self->_notes_path;
+    open my $F, $mode, $notes_file or $self->throw("Could not open file '$notes_file': $!");
     $self->notes_db($F);
 }
 
@@ -702,6 +703,7 @@ sub _close_databases {
   $self->db(undef);
   $self->dna_db(undef);
   $self->notes_db(undef);
+  $self->parentage_db(undef);
   $self->index_db($_=>undef) foreach $self->_index_files;
 }
 
@@ -723,21 +725,23 @@ sub _delete_databases {
 sub _touch_timestamp {
   my $self = shift;
   my $tsf = $self->_mtime_path;
-  open (F,">$tsf") or $self->throw("Couldn't open $tsf: $!");
-  print F scalar(localtime);
-  close F;
+  open my $F, '>', $tsf or $self->throw("Could not write file '$tsf': $!");
+  print $F scalar(localtime);
+  close $F;
 }
 
 sub _store {
   my $self    = shift;
   my $indexed = shift;
   my $db   = $self->db;
+  my $is_indexed = $self->index_db('is_indexed');
   my $count = 0;
   for my $obj (@_) {
     my $primary_id = $obj->primary_id;
     $self->_delete_indexes($obj,$primary_id)  if $indexed && $primary_id;
     $primary_id    = $db->{'.next_id'}++      unless defined $primary_id;
     $db->{$primary_id} = $self->freeze($obj);
+    $is_indexed->{$primary_id} = $indexed if $is_indexed;
     $obj->primary_id($primary_id);
     $self->_update_indexes($obj)              if $indexed;
     $count++;
@@ -775,8 +779,9 @@ sub _add_SeqFeature {
   for my $child (@children) {
     my $child_id = ref $child ? $child->primary_id : $child;
     defined $child_id or $self->throw("no primary ID known for $child");
-    $p->{$parent_id} = $child_id;
+    $p->{$parent_id} = $child_id if tied(%$p)->find_dup($parent_id,$child_id);
   }
+  return scalar @children;
 }
 
 sub _fetch_SeqFeatures {
@@ -791,10 +796,19 @@ sub _fetch_SeqFeatures {
   my @children      = map {$self->fetch($_)} @children_ids;
 
   if (@types) {
-    my $regexp = join '|',map {quotemeta($_)} $self->find_types(@types);
-    return grep {($_->primary_tag.':'.$_->source_tag) =~ /^$regexp$/i} @children;
+      foreach (@types) { 
+	  my ($a,$b) = split ':',$_,2;
+	  $_  = quotemeta($a);
+	  if (length $b) {
+	      $_ .= ":".quotemeta($b).'$';
+	  } else {
+	      $_ .= ':';
+	  }
+      }
+      my $regexp = join '|', @types;
+      return grep {($_->primary_tag.':'.$_->source_tag) =~ /^($regexp)/i} @children;
   } else {
-    return @children;
+      return @children;
   }
 }
 
@@ -934,6 +948,14 @@ sub notes_db {
   $d;
 }
 
+# the is_indexed_db 
+sub is_indexed_db {
+  my $self = shift;
+  my $d = $self->setting('is_indexed_db');
+  $self->setting(is_indexed_db=>shift) if @_;
+  $d;
+}
+
 # The indicated index berkeley db
 sub index_db {
   my $self = shift;
@@ -952,7 +974,7 @@ sub _mtime {
 
 # return names of all the indexes
 sub _index_files {
-  return qw(names types locations attributes);
+  return qw(names types locations attributes is_indexed);
 }
 
 # the directory in which we store our indexes
@@ -1045,7 +1067,9 @@ sub _features {
 
   my @result;
   unless (defined $name or defined $seq_id or defined $types or defined $attributes) {
-    @result = grep {!/^\./} keys %{$self->db};
+      my $is_indexed = $self->index_db('is_indexed');
+      @result = $is_indexed ? grep {$is_indexed->{$_}} keys %{$self->db}
+                            : grep { !/^\./ }keys %{$self->db};
   }
 
   my %found = ();
@@ -1428,7 +1452,8 @@ sub db_version {
 sub DESTROY {
   my $self = shift;
   $self->_close_databases();
-  rmtree($self->directory,0,1) if $self->temporary;
+  $self->private_fasta_file->close;
+  rmtree($self->directory,0,1) if $self->temporary && -e $self->directory;
 }
 
 # TIE interface -- a little annoying because we are storing magic ".variable"
@@ -1467,6 +1492,7 @@ sub _deleteid {
   my $obj  = $self->fetch($id) or return;
   $self->_delete_indexes($obj,$id);
   delete $self->db->{$id};
+  1;
 }
 
 sub _clearall {
@@ -1501,19 +1527,26 @@ sub next_seq {
   return $store->fetch($id);
 }
 
+
 package Bio::DB::Fasta::Subdir;
 
 use base 'Bio::DB::Fasta';
 
-# alter calling arguments so that the fasta file is placed in a subdirectory
+# alter calling arguments so that the index file is placed in a subdirectory
 # named "indexes"
 
-sub index_name {
-    my $self = shift;
-    my ($path,$isdir) = @_;
-    return $self->SUPER::index_name($path,$isdir)
-	unless $isdir;
-    return File::Spec->catfile($path,'indexes','fasta.index');
+sub new {
+    my ($class, $path, %opts) = @_;
+    if (-d $path) {
+        $opts{-index_name} = File::Spec->catfile($path,'indexes','fasta.index');
+    }
+    return Bio::DB::Fasta->new($path, %opts);
+}
+
+
+sub _calculate_offsets {
+    my ($self, @args) = @_;
+    return $self->SUPER::_calculate_offsets(@args);
 }
 
 
@@ -1546,4 +1579,3 @@ This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
-

@@ -1,8 +1,7 @@
-# $Id: InstanceSite.pm 16123 2009-09-17 12:57:27Z cjfields $
 
 =head1 NAME
 
-Bio::Matrix::PSM::InstanceSite - A PSM site occurance
+Bio::Matrix::PSM::InstanceSite - A PSM site occurrence
 
 =head1 SYNOPSIS
 
@@ -68,7 +67,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head2 Description
 
@@ -86,6 +85,7 @@ Email skirov@utk.edu
 
 # Let the code begin...
 package Bio::Matrix::PSM::InstanceSite;
+$Bio::Matrix::PSM::InstanceSite::VERSION = '1.7.8';
 use strict;
 
 use base qw(Bio::LocatableSeq Bio::Matrix::PSM::InstanceSiteI);

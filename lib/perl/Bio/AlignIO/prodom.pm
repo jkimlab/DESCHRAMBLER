@@ -1,4 +1,3 @@
-# $Id: prodom.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::AlignIO::prodom
 
@@ -47,7 +46,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHORS - Peter Schattner
 
@@ -64,6 +63,7 @@ methods. Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::AlignIO::prodom;
+$Bio::AlignIO::prodom::VERSION = '1.7.8';
 use strict;
 
 
@@ -100,10 +100,11 @@ sub next_aln {
 
 	   $names{'fake_id'} = $fake_id;
 
-	   $add = Bio::LocatableSeq->new('-seq'=>$seq,
-			       '-id'=>$acc,
-			       '-start'=>$start,
-			       '-end'=>$end,
+	   $add = Bio::LocatableSeq->new('-seq'      => $seq,
+					 '-id'       => $acc,
+					 '-start'    => $start,
+					 '-end'      => $end,
+					 '-alphabet' => $self->alphabet,
 			       );
 
 	   $aln->add_seq($add);

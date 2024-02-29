@@ -67,7 +67,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Sendu Bala
 
@@ -83,9 +83,10 @@ Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::Tools::Match;
+$Bio::Tools::Match::VERSION = '1.7.8';
 use strict;
 
-use Bio::SeqFeature::Annotated;
+use Bio::SeqFeature::Generic;
 use Bio::Annotation::SimpleValue;
 
 use base qw(Bio::Root::Root Bio::Root::IO);
@@ -164,7 +165,7 @@ sub next_result {
     # Frequency of sites per nucleotide=32.347243
     
     my ($matrix_id, $start, $strand, $core_score, $matrix_score, $seq) = $line =~ /^\s(\S+)\s+\|\s+(\d+)\s+\(([+-])\)\s+\|\s+(\S+)\s+\|\s+(\S+)\s+\|\s+(\S+)/;
-    my $feat = Bio::SeqFeature::Annotated->new(
+    my $feat = Bio::SeqFeature::Generic->new(
         -seq_id => $self->{found_seq_id},
         -start  => $start, 
         -end    => $start + length($seq) - 1,

@@ -1,8 +1,7 @@
-# $Id: PhyloNetwork.pm 15635 2009-04-14 19:11:13Z cjfields $
 #
 # Module for Bio::PhyloNetwork
 #
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Gabriel Cardona <gabriel(dot)cardona(at)uib(dot)es>
 #
@@ -153,7 +152,7 @@ If the first approach is taken, we get the forest:
     U     V
    / \   / \
   1   H H   3
-       |  
+       |
        H
        |
        2
@@ -188,7 +187,7 @@ Robinson-Foulds on phylogenetic trees. This package allows testing for a
 phylogenetic network if it is TC and computes mu-distances between networks
 over the same set of leaves.
 
-Moreover, the mu-data allows to define the optimal
+Moreover, the mu-data allows one to define the optimal
 (in some precise sense) alignment between networks
 over the same set of leaves. This package also computes this optimal alignment.
 
@@ -1368,7 +1367,7 @@ sub contract_elementary {
  Function: returns the total weight of an optimal alignment,
            the alignment itself, and partial weights
            between the networks $net1 and $net2 on the same set of leaves.
-           An optional argument allows to use the Manhattan (default) or the
+           An optional argument allows one to use the Manhattan (default) or the
            Hamming distance between mu-vectors.
  Returns : scalar,reference to hash,reference to hash
  Args    : Bio::PhyloNetwork,
@@ -1429,7 +1428,7 @@ sub optimal_alignment_noelementary {
     push @matrix,\@row;
   }
   my @alignment=();
-  assign(\@matrix,\@alignment);
+  Algorithm::Munkres::assign(\@matrix,\@alignment);
   my %alignmenthash;
   my %weighthash;
   my $totalw=0;
@@ -1454,7 +1453,7 @@ sub optimal_alignment_noelementary {
  Function: returns the wieght of an optimal alignment, and the alignment itself,
            between the topological restriction of the networks $net1 and $net2
            on the set of common leaves.
-           An optional argument allows to use the Manhattan (default) or the
+           An optional argument allows one to use the Manhattan (default) or the
            Hamming distance between mu-vectors.
  Returns : scalar,hash
  Args    : Bio::PhyloNetwork,

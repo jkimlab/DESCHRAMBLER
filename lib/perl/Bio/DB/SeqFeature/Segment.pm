@@ -1,6 +1,5 @@
 package Bio::DB::SeqFeature::Segment;
 
-# $Id: Segment.pm 15635 2009-04-14 19:11:13Z cjfields $
 
 =head1 NAME
 
@@ -100,7 +99,7 @@ second argument.
 #
 sub new {
   my $class = shift;
-  my ($store,$seqid,$start,$end,$strand);
+  my ($store,$seqid,$start,$end,$strand,$id);
   if (ref $_[0] && UNIVERSAL::isa($_[0],'Bio::SeqFeatureI')) {
     my $seqfeature = shift;
     $store      = shift;
@@ -110,9 +109,10 @@ sub new {
     $start = $seqfeature->start;
     $end   = $seqfeature->end;
     $strand= $seqfeature->strand;
+    $id    = eval{$seqfeature->primary_id};
   }
   else {
-    ($store,$seqid,$start,$end,$strand) = @_;
+    ($store,$seqid,$start,$end,$strand,$id) = @_;
   }
   return bless {
 		store => $store,
@@ -120,6 +120,7 @@ sub new {
 		start => $start,
 		end   => $end,
 		strand => $strand,
+		primary_id => $id,
 	       },ref($class) || $class;
 }
 
@@ -472,10 +473,9 @@ sub location {
   my $self = shift;
   require Bio::Location::Simple unless Bio::Location::Simple->can('new');  
   my $loc = Bio::Location::Simple->new(-start  => $self->start,
-				    -end    => $self->end,
+				       -end    => $self->end,
 				       -strand => $self->strand);
   $loc->strand($self->strand);
-  warn("strand will be ", $self->strand, "\n") if $self->strand < 0;
   return $loc;
 }
 sub primary_id   {

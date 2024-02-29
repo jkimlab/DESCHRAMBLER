@@ -48,7 +48,7 @@ element
 
 =head1 DESCRIPTION
 
-A transcription factor modelled as a mappable element. It can have mulitple
+A transcription factor modelled as a mappable element. It can have multiple
 binding sites (positions) near multiple genes (maps).
 
 =head1 FEEDBACK
@@ -79,7 +79,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Sendu Bala
 

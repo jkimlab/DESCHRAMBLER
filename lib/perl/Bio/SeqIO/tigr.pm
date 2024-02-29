@@ -1,4 +1,3 @@
-# $Id: tigr.pm 16123 2009-09-17 12:57:27Z cjfields $
 # BioPerl module for Bio::SeqIO::tigr
 #
 # Please direct questions and support issues to <bioperl-l@bioperl.org> 
@@ -52,7 +51,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.
 Bug reports can be submitted via the web:
 
-  http://bugzilla.bioperl.org
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHORS - Josh Lauricha
 
@@ -72,6 +71,7 @@ methods. Internal methods are usually preceded with a _
 
 # Let the code begin...
 package Bio::SeqIO::tigr;
+$Bio::SeqIO::tigr::VERSION = '1.7.8';
 use strict;
 
 use Bio::Seq::RichSeq;
@@ -264,7 +264,7 @@ sub _process_pseudochromosome
 		return;
 	}
 
-	$self->throw("Reached end of _process_psuedochromosome");
+	$self->throw("Reached end of _process_pseudochromosome");
 }
 
 sub _process_assembly
@@ -365,7 +365,7 @@ sub _process_assembly_seq()
 			     "with no <ASSEMBLY_SEQUENCE> in the stream");
 	}
 
-	# Protect agains lots of smaller lines
+	# Protect against lots of smaller lines
 	my @chunks;
 
 	do {

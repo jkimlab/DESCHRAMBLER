@@ -1,8 +1,7 @@
-# $Id: SearchIO.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::SearchIO
 #
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Jason Stajich <jason-at-bioperl.org>
 #
@@ -14,7 +13,7 @@
 
 =head1 NAME
 
-Bio::SearchIO - Driver for parsing Sequence Database Searches 
+Bio::SearchIO - Driver for parsing Sequence Database Searches
 (BLAST, FASTA, ...)
 
 =head1 SYNOPSIS
@@ -26,7 +25,7 @@ Bio::SearchIO - Driver for parsing Sequence Database Searches
    while ( my $result = $searchio->next_result() ) {
        while( my $hit = $result->next_hit ) {
         # process the Bio::Search::Hit::HitI object
-           while( my $hsp = $hit->next_hsp ) { 
+           while( my $hsp = $hit->next_hsp ) {
             # process the Bio::Search::HSP::HSPI object
            }
        }
@@ -47,7 +46,7 @@ represents one Blast/Fasta/HMMER whatever report.
 
 A list of module names and formats is below:
 
-  blast      BLAST (WUBLAST, NCBIBLAST,bl2seq)   
+  blast      BLAST (WUBLAST, NCBIBLAST,bl2seq)
   fasta      FASTA -m9 and -m0
   blasttable BLAST -m9 or -m8 output (both NCBI and WUBLAST tabular)
   megablast  MEGABLAST
@@ -55,13 +54,13 @@ A list of module names and formats is below:
   waba       WABA output
   axt        AXT format
   sim4       Sim4
-  hmmer      HMMER hmmpfam and hmmsearch
+  hmmer      HMMER2 hmmpfam and hmmsearch or HMMER3 hmmscan and hmmsearch
   exonerate  Exonerate CIGAR and VULGAR format
   blastxml   NCBI BLAST XML
   wise       Genewise -genesf format
 
 Also see the SearchIO HOWTO:
-http://bioperl.open-bio.org/wiki/HOWTO:SearchIO
+http://bioperl.org/howtos/SearchIO_HOWTO.html
 
 =head1 FEEDBACK
 
@@ -74,15 +73,15 @@ the Bioperl mailing list.  Your participation is much appreciated.
   bioperl-l@bioperl.org                  - General discussion
   http://bioperl.org/wiki/Mailing_lists  - About the mailing lists
 
-=head2 Support 
+=head2 Support
 
 Please direct usage questions or support issues to the mailing list:
 
 I<bioperl-l@bioperl.org>
 
-rather than to the module maintainer directly. Many experienced and 
-reponsive experts will be able look at the problem and quickly 
-address it. Please include a thorough description of the problem 
+rather than to the module maintainer directly. Many experienced and
+reponsive experts will be able look at the problem and quickly
+address it. Please include a thorough description of the problem
 with code and data examples if at all possible.
 
 =head2 Reporting Bugs
@@ -91,7 +90,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich & Steve Chervitz
 
@@ -110,7 +109,9 @@ Internal methods are usually preceded with a _
 
 
 package Bio::SearchIO;
+$Bio::SearchIO::VERSION = '1.7.8';
 use strict;
+use warnings;
 
 # Object preamble - inherits from Bio::Root::IO
 
@@ -129,16 +130,33 @@ use base qw(Bio::Root::IO Bio::Event::EventGeneratorI Bio::AnalysisParserI);
 
  Title   : new
  Usage   : my $obj = Bio::SearchIO->new();
- Function: Builds a new Bio::SearchIO object 
+ Function: Builds a new Bio::SearchIO object
  Returns : Bio::SearchIO initialized with the correct format
  Args    : -file           => $filename
            -format         => format
            -fh             => filehandle to attach to
-           -result_factory => Object implementing Bio::Factory::ObjectFactoryI
-           -hit_factory    => Object implementing Bio::Factory::ObjectFactoryI
-           -hsp_factory    => Object implementing Bio::Factory::ObjectFactoryI
-           -writer         => Object implementing Bio::SearchIO::SearchWriterI
+           -result_factory => object implementing Bio::Factory::ObjectFactoryI
+           -hit_factory    => object implementing Bio::Factory::ObjectFactoryI
+           -hsp_factory    => object implementing Bio::Factory::ObjectFactoryI
+           -writer         => object implementing Bio::SearchIO::SearchWriterI
            -output_format  => output format, which will dynamically load writer
+           -inclusion_threshold => e-value threshold for inclusion in the
+                                   PSI-BLAST score matrix model
+           -signif         => float or scientific notation number to be used
+                              as a P- or Expect value cutoff
+           -check_all_hits => boolean. Check all hits for significance against
+                              significance criteria.  Default = false.
+                              If false, stops processing hits after the first
+                              non-significant hit or the first hit that fails
+                              the hit_filter call. This speeds parsing,
+                              taking advantage of the fact that the hits are
+                              processed in the order they appear in the report.
+           -min_query_len  => integer to be used as a minimum for query sequence
+                              length. Reports with query sequences below this
+                              length will not be processed.
+                              default = no minimum length.
+           -best           => boolean. Only process the best hit of each report;
+                              default = false.
 
 See L<Bio::Factory::ObjectFactoryI>, L<Bio::SearchIO::SearchWriterI>
 
@@ -148,17 +166,27 @@ default ones if none are supplied as arguments.
 
 =cut
 
+# TODO: The below don't seem to be implemented (e.g. in Bio::SearchIO::blast)
+#
+# -score          => integer or scientific notation number to be used
+#                    as a blast score value cutoff
+# -bits           => integer or scientific notation number to be used
+#                    as a bit score value cutoff
+# -overlap        => integer. The amount of overlap to permit between
+#                    adjacent HSPs when tiling HSPs. A reasonable value is 2.
+#                    default = $Bio::SearchIO::blast::MAX_HSP_OVERLAP.
+
 sub new {
   my($caller,@args) = @_;
   my $class = ref($caller) || $caller;
-    
+
   # or do we want to call SUPER on an object if $caller is an
   # object?
   if( $class =~ /Bio::SearchIO::(\S+)/ ) {
-    my ($self) = $class->SUPER::new(@args);        
+    my ($self) = $class->SUPER::new(@args);
     $self->_initialize(@args);
     return $self;
-  } else { 
+  } else {
     my %param = @args;
     @param{ map { lc $_ } keys %param } = values %param; # lowercase keys
     my $format = $param{'-format'} ||
@@ -185,10 +213,37 @@ sub new {
 
     # normalize capitalization to lower case
     $format = "\L$format";
-    
+
     return unless( $class->_load_format_module($format) );
     return "Bio::SearchIO::${format}"->new(@args);
   }
+}
+
+sub _initialize {
+    my($self, @args) = @_;
+    $self->{'_handler'} = undef;
+    # not really necessary unless we put more in RootI
+    #$self->SUPER::_initialize(@args);
+
+    # initialize the IO part
+    $self->_initialize_io(@args);
+    $self->attach_EventHandler(Bio::SearchIO::SearchResultEventBuilder->new(@args));
+    $self->{'_reporttype'} = '';
+    $self->{_notfirsttime} = 0;
+    my ($min_qlen, $check_all, $overlap, $best, $it, $writer ) =
+        $self->_rearrange([qw(
+              MIN_LENGTH
+              CHECK_ALL_HITS
+              OVERLAP
+              BEST
+              INCLUSION_THRESHOLD
+              WRITER)], @args);    # note: $overlap isn't used for some reason
+
+    $writer            && $self->writer( $writer );
+    defined $it        && $self->inclusion_threshold($it);
+    defined $min_qlen  && $self->min_query_length($min_qlen);
+    defined $best      && $self->best_hit_only($best);
+    defined $check_all && $self->check_all_hits($check_all);
 }
 
 =head2 newFh
@@ -234,6 +289,20 @@ sub fh {
   return $s;
 }
 
+
+=head2 format
+
+ Title   : format
+ Usage   : $format = $obj->format()
+ Function: Get the search format
+ Returns : search format
+ Args    : none
+
+=cut
+
+# format() method inherited from Bio::Root::IO
+
+
 =head2 attach_EventHandler
 
  Title   : attach_EventHandler
@@ -273,22 +342,6 @@ sub _eventHandler{
    return $self->{'_handler'};
 }
 
-sub _initialize {
-    my($self, @args) = @_;
-    $self->{'_handler'} = undef;
-    # not really necessary unless we put more in RootI
-    #$self->SUPER::_initialize(@args);
-
-    # initialize the IO part
-    $self->_initialize_io(@args);
-    $self->attach_EventHandler(Bio::SearchIO::SearchResultEventBuilder->new(@args));
-    $self->{'_reporttype'} = '';
-    $self->{_notfirsttime} = 0;
-    my ( $writer ) = $self->_rearrange([qw(WRITER)], @args);
-
-    $self->writer( $writer ) if $writer;
-}
-
 =head2 next_result
 
  Title   : next_result
@@ -322,7 +375,7 @@ sub next_result {
  Title   : write_result
  Usage   : $stream->write_result($result_result, @other_args)
  Function: Writes data from the $result_result object into the stream.
-         : Delegates to the to_string() method of the associated 
+         : Delegates to the to_string() method of the associated
          : WriterI object.
  Returns : 1 for success and 0 for error
  Args    : Bio::Search:Result::ResultI object,
@@ -344,7 +397,7 @@ sub write_result {
    my $str = $self->writer->to_string( $result, @args);
    $self->{'_notfirsttime'} = 1;
    $self->_print( "$str" ) if defined $str;
-   
+
    $self->flush if $self->_flush_on_write && defined $self->_fh;
    return 1;
 }
@@ -377,11 +430,10 @@ sub write_report {
    my $str = $self->writer->to_string( $result, @args);
    $self->{'_notfirsttime'} = 1;
    $self->_print( "$str" ) if defined $str;
-   
+
    $self->flush if $self->_flush_on_write && defined $self->_fh;
    return 1;
 }
-
 
 =head2 writer
 
@@ -406,7 +458,6 @@ sub writer {
     return $self->{'_result_writer'};
 }
 
-
 =head2 result_count
 
  Title   : result_count
@@ -425,15 +476,138 @@ sub result_count {
     $self->throw_not_implemented;
 }
 
+=head2 inclusion_threshold
+
+ Title   : inclusion_threshold
+ Usage   : my $incl_thresh = $isreb->inclusion_threshold;
+         : $isreb->inclusion_threshold(1e-5);
+ Function: Get/Set the e-value threshold for inclusion in the PSI-BLAST
+           score matrix model (blastpgp) that was used for generating the reports
+           being parsed.
+ Returns : number (real)
+           Default value: $Bio::SearchIO::IteratedSearchResultEventBuilder::DEFAULT_INCLUSION_THRESHOLD
+ Args    : number (real)  (e.g., 0.0001 or 1e-4 )
+
+=cut
+
+# Delegates to the event handler.
+sub inclusion_threshold {
+    shift->_eventHandler->inclusion_threshold(@_);
+}
+
+=head2 max_significance
+
+ Usage     : $obj->max_significance();
+ Purpose   : Set/Get the P or Expect value used as significance screening cutoff.
+             This is the value of the -signif parameter supplied to new().
+             Hits with P or E-value above this are skipped.
+ Returns   : Scientific notation number with this format: 1.0e-05.
+ Argument  : Scientific notation number or float (when setting)
+ Comments  : Screening of significant hits uses the data provided on the
+           : description line. For NCBI BLAST1 and WU-BLAST, this data
+           : is P-value. for NCBI BLAST2 it is an Expect value.
+
+=cut
+
+sub max_significance { shift->{'_handler_cache'}->max_significance(@_) }
+
+=head2 signif
+
+Synonym for L<max_significance()|max_significance>
+
+=cut
+
+sub signif { shift->max_significance(@_) }
+
+=head2 min_score
+
+ Usage     : $obj->min_score();
+ Purpose   : Set/Get the Blast score used as screening cutoff.
+             This is the value of the -score parameter supplied to new().
+             Hits with scores below this are skipped.
+ Returns   : Integer or scientific notation number.
+ Argument  : Integer or scientific notation number (when setting)
+ Comments  : Screening of significant hits uses the data provided on the
+           : description line.
+
+=cut
+
+sub min_score { shift->{'_handler_cache'}->min_score(@_) }
+
+=head2 min_query_length
+
+ Usage     : $obj->min_query_length();
+ Purpose   : Gets the query sequence length used as screening criteria.
+             This is the value of the -min_query_len parameter supplied to new().
+             Hits with sequence length below this are skipped.
+ Returns   : Integer
+ Argument  : n/a
+
+=cut
+
+sub min_query_length {
+    my $self = shift;
+    if (@_) {
+        my $min_qlen = shift;
+        if ( $min_qlen =~ /\D/ or $min_qlen <= 0 ) {
+            $self->throw(
+                -class => 'Bio::Root::BadParameter',
+                -text  => "Invalid minimum query length value: $min_qlen\n"
+                  . "Value must be an integer > 0. Value not set.",
+                -value => $min_qlen
+            );
+        }
+        $self->{'_confirm_qlength'}  = 1;
+        $self->{'_min_query_length'} = $min_qlen;
+    }
+
+    return $self->{'_min_query_length'};
+}
+
+=head2 best_hit_only
+
+ Title     : best_hit_only
+ Usage     : print "only getting best hit.\n" if $obj->best_hit_only;
+ Purpose   : Set/Get the indicator for whether or not to process only
+           : the best BlastHit.
+ Returns   : Boolean (1 | 0)
+ Argument  : Boolean (1 | 0) (when setting)
+
+=cut
+
+sub best_hit_only {
+    my $self = shift;
+    if (@_) { $self->{'_best'} = shift; }
+    $self->{'_best'};
+}
+
+=head2 check_all_hits
+
+ Title     : check_all_hits
+ Usage     : print "checking all hits.\n" if $obj->check_all_hits;
+ Purpose   : Set/Get the indicator for whether or not to process all hits.
+           : If false, the parser will stop processing hits after the
+           : the first non-significance hit or the first hit that fails
+           : any hit filter.
+ Returns   : Boolean (1 | 0)
+ Argument  : Boolean (1 | 0) (when setting)
+
+=cut
+
+sub check_all_hits {
+    my $self = shift;
+    if (@_) { $self->{'_check_all'} = shift; }
+    $self->{'_check_all'};
+}
 
 =head2 _load_format_module
 
  Title   : _load_format_module
  Usage   : *INTERNAL SearchIO stuff*
  Function: Loads up (like use) a module at run time on demand
- Example : 
- Returns : 
- Args    : 
+ Example :
+ Returns :
+ Args    :
 
 =cut
 
@@ -441,7 +615,7 @@ sub _load_format_module {
   my ($self,$format) = @_;
   my $module = "Bio::SearchIO::" . $format;
   my $ok;
-  
+
   eval {
       $ok = $self->_load_module($module);
   };
@@ -530,8 +704,8 @@ sub _guess_format {
    return 'exonerate' if ( /\.exon(erate)?/i );
 }
 
-sub close { 
-    my $self = shift;    
+sub close {
+    my $self = shift;
 
     if( $self->writer ) {
         $self->_print($self->writer->end_report());
@@ -553,7 +727,7 @@ sub TIEHANDLE {
 
 sub READLINE {
   my $self = shift;
-  return $self->{'processor'}->next_result() unless wantarray;
+  return $self->{'processor'}->next_result() || undef unless wantarray;
   my (@list, $obj);
   push @list, $obj while $obj = $self->{'processor'}->next_result();
   return @list;

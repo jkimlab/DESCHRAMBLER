@@ -1,4 +1,3 @@
-# $Id: DescribableI.pm 16123 2009-09-17 12:57:27Z cjfields $
 
 #
 # This module is licensed under the same terms as Perl itself. You use,
@@ -56,7 +55,7 @@ with code and data examples if at all possible.
 Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Ewan Birney
 
@@ -65,6 +64,7 @@ Email birney@sanger.ac.uk
 =cut
 
 package Bio::DescribableI;
+$Bio::DescribableI::VERSION = '1.7.8';
 use strict;
 
 
@@ -81,7 +81,7 @@ define.
  Usage   : $string    = $obj->display_name()
  Function: A string which is what should be displayed to the user
            the string should have no spaces (ideally, though a cautious
-           user of this interface would not assumme this) and should be
+           user of this interface would not assume this) and should be
            less than thirty characters (though again, double checking 
            this is a good idea)
  Returns : A scalar

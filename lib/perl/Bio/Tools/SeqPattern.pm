@@ -1,4 +1,3 @@
-# $Id: SeqPattern.pm 16139 2009-09-18 21:11:23Z cjfields $
 #
 # bioperl module for Bio::Tools::SeqPattern
 #
@@ -30,7 +29,8 @@ Bio::Tools::SeqPattern - represent a sequence pattern or motif
 
 L<Bio::Tools::SeqPattern> module encapsulates generic data and
 methods for manipulating regular expressions describing nucleic or
-amino acid sequence patterns (a.k.a, "motifs").
+amino acid sequence patterns (a.k.a, "motifs"), such as the ones produced by
+L<Bio::Tools::IUPAC>.
 
 L<Bio::Tools::SeqPattern> is a concrete class that inherits from L<Bio::Seq>.
 
@@ -150,6 +150,9 @@ directory of the central Bioperl distribution.
 
 L<Bio::Seq> - Lightweight sequence object.
 
+L<Bio::Tools::IUPAC> - The IUPAC code for degenerate residues and their
+conversion to a regular expression.
+
 =head1 FEEDBACK
 
 =head2 Mailing Lists
@@ -178,7 +181,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -203,7 +206,7 @@ modify it under the same terms as Perl itself.
 
 
 package Bio::Tools::SeqPattern;
-
+$Bio::Tools::SeqPattern::VERSION = '1.7.8';
 use base qw(Bio::Root::Root);
 use strict;
 use vars qw ($ID);
@@ -515,7 +518,7 @@ sub revcom {
 
 #    $self->{'_rev'} = $fixrev;
 
-     return new Bio::Tools::SeqPattern(-seq =>$fixrev, -type =>$self->type);
+     return Bio::Tools::SeqPattern->new(-seq =>$fixrev, -type =>$self->type);
 }
 
 =head1 backtranslate

@@ -1,4 +1,3 @@
-# $Id: FeatureHolderI.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::FeatureHolderI
 #
@@ -69,7 +68,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Hilmar Lapp
 
@@ -78,6 +77,7 @@ Email hlapp at gmx.net
 =head1 CONTRIBUTORS
 
 Steffen Grossmann [SG], grossman-at-molgen.mpg.de
+Mark A. Jensen, maj -at- fortinbras -dot- us
 
 =head1 APPENDIX
 
@@ -92,6 +92,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::FeatureHolderI;
+$Bio::FeatureHolderI::VERSION = '1.7.8';
 use strict;
 use Carp;
 
@@ -99,14 +100,12 @@ use base qw(Bio::Root::RootI);
 
 =head2 get_SeqFeatures()
 
- Usage   :
+ Usage   : @feats = $obj->get_SeqFeatures()
  Function: Get the feature objects held by this feature holder.
  Example :
  Returns : an array of Bio::SeqFeatureI implementing objects
- Args    : none
-
-At some day we may want to expand this method to allow for a feature
-filter to be passed in.
+           if tag specified, return features having that tag
+ Args    : [optional] scalar string (feature tag)
 
 =cut
 
@@ -118,14 +117,14 @@ sub get_SeqFeatures {
 
  Usage   : $feat->add_SeqFeature($subfeat);
            $feat->add_SeqFeature($subfeat,'EXPAND')
- Function: adds a SeqFeature into the subSeqFeature array.
+ Function: Add a SeqFeature into the subSeqFeature array.
            with no 'EXPAND' qualifer, subfeat will be tested
            as to whether it lies inside the parent, and throw
            an exception if not.
 
-           If EXPAND is used, the parent''s start/end/strand will
-           be adjusted so that it grows to accommodate the new
-           subFeature
+           If EXPAND is used and the object implements Bio::RangeI
+           (which is not guaranteed), the parent''s start/end/strand
+           will be extended so that the new subFeature can be accomodated.
  Example :
  Returns : nothing
  Args    : a Bio::SeqFeatureI object

@@ -1,4 +1,3 @@
-# $Id: NodeI.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Tree::NodeI
 #
@@ -65,7 +64,7 @@ length of the branch between the node and its ancestor, thus a root
 node in a Tree will not typically have a valid branch length.
 
 Various implementations of NodeI may extend the basic functions and
-allow storing of other information (like attatching a species object
+allow storing of other information (like attaching a species object
 or full sequences used to build a tree or alternative sequences).  If
 you don't know how to extend a Bioperl object please ask, happy to
 help, we would also greatly appreciate contributions with improvements
@@ -101,7 +100,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -121,6 +120,7 @@ Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::Tree::NodeI;
+$Bio::Tree::NodeI::VERSION = '1.7.8';
 use strict;
 no warnings 'recursion';
 

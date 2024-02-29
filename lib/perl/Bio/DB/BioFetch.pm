@@ -1,4 +1,3 @@
-# $Id: BioFetch.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::DB::BioFetch
 #
@@ -27,14 +26,14 @@ Bio::DB::BioFetch - Database object interface to BioFetch retrieval
 
  $bf = Bio::DB::BioFetch->new();
 
- $seq = $bf->get_Seq_by_id('BUM');  # EMBL or SWALL ID
+ $seq = $bf->get_Seq_by_id('HSFOS');  # EMBL or SWALL ID
 
  # change formats, storage procedures
  $bf = Bio::DB::BioFetch->new(-format        => 'fasta',
  			     -retrievaltype => 'tempfile',
   			     -db            => 'EMBL');
 
- $stream = $bf->get_Stream_by_id(['BUM','J00231']);
+ $stream = $bf->get_Stream_by_id(['HSFOS','J00231']);
  while (my $s = $stream->next_seq) {
     print $s->seq,"\n";
  }
@@ -50,7 +49,7 @@ Bio::DB::BioFetch - Database object interface to BioFetch retrieval
 
 Bio::DB::BioFetch is a guaranteed best effort sequence entry fetching
 method.  It goes to the Web-based dbfetch server located at the EBI
-(http://www.ebi.ac.uk/cgi-bin/dbfetch) to retrieve sequences in the
+(http://www.ebi.ac.uk/Tools/dbfetch/dbfetch) to retrieve sequences in the
 EMBL or GenBank sequence repositories.
 
 This module implements all the Bio::DB::RandomAccessI interface, plus
@@ -86,7 +85,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Lincoln Stein
 
@@ -107,7 +106,7 @@ use vars qw(%FORMATMAP);
 use base qw(Bio::DB::WebDBSeqI Bio::Root::Root);
 
 # warning: names used here must map into Bio::SeqIO::* space
-use constant DEFAULT_LOCATION => 'http://www.ebi.ac.uk/cgi-bin/dbfetch';
+use constant DEFAULT_LOCATION => 'http://www.ebi.ac.uk/Tools/dbfetch/dbfetch';
 
 BEGIN {
     
@@ -136,7 +135,7 @@ BEGIN {
 	    fasta     => 'fasta',
 	    namespace => 'uniprot',
 	},
-    'uniprot' => {
+	'uniprot' => {
 	    default   => 'swiss',
 	    swissprot => 'swiss',
 	    fasta     => 'fasta',
@@ -177,7 +176,7 @@ defaults.
   Option         Value                            Default
   ------         -----                            -------
 
-  -baseaddress   location of dbfetch server       http://www.ebi.ac.uk/cgi-bin/dbfetch
+  -baseaddress   location of dbfetch server       http://www.ebi.ac.uk/Tools/dbfetch/dbfetch
   -retrievaltype "tempfile" or "io_string"        io_string
   -format        "embl", "fasta", "swissprot",    embl
                   or "genbank"
@@ -432,14 +431,14 @@ sub postprocess_data {
   }
 
   elsif ($args{'type'} eq 'file') {
-    open (F,$args{'location'}) or $self->throw("Couldn't open $args{location}: $!");
+    open my $F, '<', $args{'location'} or $self->throw("Could not read file '$args{location}': $!");
     # this is dumb, but the error may be anywhere on the first three lines because the
     # CGI headers are sometimes printed out by the server...
-    my @data = grep {defined $_} (scalar <F>,scalar <F>,scalar <F>);
+    my @data = grep {defined $_} (scalar <$F>, scalar <$F>, scalar <$F>);
+    close $F;
     if (join('',@data) =~ /^ERROR (\d+) (.+)/m) {
       $self->throw("BioFetch Error $1: $2");
     }
-    close F;
   }
 
   else {

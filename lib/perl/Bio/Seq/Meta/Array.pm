@@ -1,4 +1,3 @@
-# $Id: Array.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Seq::Meta::Array
 #
@@ -27,7 +26,7 @@ sequence class with residue-based meta information
                                    -start=>2434,
                                    -start=>2443,
                                    -strand=>1,
-                                   -varbose=>1, # to see warnings
+                                   -verbose=>1, # to see warnings
                                   );
 
   # to test this is a meta seq object
@@ -43,7 +42,7 @@ sequence class with residue-based meta information
                                     -start=>2443,
                                     -strand=>1,
                                     -meta=>'1 2 3 4 5 6 7 8 9 10',
-                                    -varbose=>1, # to see warnings
+                                    -verbose=>1, # to see warnings
                                    );
 
 
@@ -112,7 +111,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Heikki Lehvaslaiho
 
@@ -135,19 +134,14 @@ Internal methods are usually preceded with a _
 
 
 package Bio::Seq::Meta::Array;
-use vars qw(@ISA $DEFAULT_NAME $GAP $META_GAP);
+$Bio::Seq::Meta::Array::VERSION = '1.7.8';
 use strict;
-
-#use overload '""' => \&to_string;
 
 use base qw(Bio::LocatableSeq Bio::Seq Bio::Seq::MetaI);
 
-BEGIN {
-
-    $DEFAULT_NAME = 'DEFAULT';
-    $GAP = '-';
-    $META_GAP = 0;
-}
+our $DEFAULT_NAME = 'DEFAULT';
+our $GAP = '-';
+our $META_GAP = 0;
 
 =head2 new
 
@@ -166,14 +160,19 @@ BEGIN {
 
 sub new {
     my ($class, %args) = @_;
+    
+    # run-time modification of @ISA is extremely evil (you should't pick your
+    # interface on the fly); this has no obvious effect on any tests so
+    # commenting out - cjfields 2011-4-6
+    
 	#defined inheritance according to stated baseclass,
 	#if undefined then will be PrimarySeq
-	if (defined($args{'-baseclass'})) {
-		@ISA = ($args{'-baseclass'},"Bio::Seq::MetaI");
-		}
-	else {
-		@ISA = qw( Bio::LocatableSeq Bio::Seq Bio::Seq::MetaI );
-		}
+	#if (defined($args{'-baseclass'})) {
+	#	@ISA = ($args{'-baseclass'},"Bio::Seq::MetaI");
+	#	}
+	#else {
+	#	@ISA = qw( Bio::LocatableSeq Bio::Seq Bio::Seq::MetaI );
+	#	}
 
     my $self = $class->SUPER::new(%args);
 
@@ -345,7 +344,7 @@ sub named_meta_text {
            should extend to the end of the sequence.
 
            The return value may be a string or an array reference,
-           depending on the implentation. If in doubt, use
+           depending on the implementation. If in doubt, use
            submeta_text() which is a variant guarantied to return a
            string.  See L<submeta_text>.
 
@@ -471,7 +470,7 @@ sub named_submeta_text {
 
  Title   : meta_names
  Usage   : @meta_names  = $obj->meta_names()
- Function: Retrives an array of meta data set names. The default
+ Function: Retrieves an array of meta data set names. The default
            (unnamed) set name is guarantied to be the first name if it
            contains any data.
  Returns : an array of names
@@ -550,6 +549,7 @@ sub force_flush {
             $self->{force_flush} = 0;
         }
     }
+
     return $self->{force_flush};
 }
 
@@ -585,7 +585,6 @@ sub _do_flush {
 }
 
 
-
 =head2 is_flush
 
  Title   : is_flush
@@ -613,7 +612,7 @@ sub is_flush {
         $sticky .= "$name " if $self->length != $self->named_meta_length($name);
     } else {
         foreach my $m ($self->meta_names) {
-            $sticky .= "$m " if $self->length != $self->named_meta_length($m);
+            $sticky .= "$m " if ($self->named_meta_length($m) > 0) && ($self->length != $self->named_meta_length($m)) ;
         }
     }
 

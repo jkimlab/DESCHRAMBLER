@@ -1,4 +1,3 @@
-# $Id: Ontology.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Ontology::Ontology
 #
@@ -92,7 +91,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Hilmar Lapp
 
@@ -110,6 +109,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::Ontology::Ontology;
+$Bio::Ontology::Ontology::VERSION = '1.7.8';
 use strict;
 
 # Object preamble - inherits from Bio::Root::Root

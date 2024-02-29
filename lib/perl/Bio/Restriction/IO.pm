@@ -1,4 +1,3 @@
-# $Id: IO.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Restriction::IO
 #
@@ -92,7 +91,7 @@ report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -159,6 +158,19 @@ sub new {
    return unless $class->_load_format_module($format);
    return "Bio::Restriction::IO::$format"->new(%param);
 }
+
+
+=head2 format
+
+ Title   : format
+ Usage   : $format = $stream->format()
+ Function: Get the restriction format
+ Returns : restriction format
+ Args    : none
+
+=cut
+
+# format() method inherited from Bio::Root::IO
 
 
 sub _load_format_module {

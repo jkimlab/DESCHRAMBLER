@@ -1,4 +1,3 @@
-# $Id: RichSeq.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Seq::RichSeq
 #
@@ -29,21 +28,26 @@ like EMBL, GenBank, and SwissProt. Methods added to the Bio::SeqI
 interface therefore focus on databank-specific information. Note that
 not every rich databank format may use all of the properties provided.
 
+For more information, please see the relevant 
+
 =head1 Implemented Interfaces
 
 This class implementes the following interfaces.
 
 =over 4
 
-=item Bio::Seq::RichSeqI
+=item L<Bio::Seq::RichSeqI>
 
-Note that this includes implementing Bio::PrimarySeqI and Bio::SeqI.
+Note that this includes implementing L<Bio::PrimarySeqI> and L<Bio::SeqI>,
+specifically via L<Bio::Seq> and L<Bio::PrimarySeq>. Please review the
+documentation for those modules on implementation details relevant to those
+interfaces, as well as the ones below.
 
-=item Bio::IdentifiableI
+=item L<Bio::IdentifiableI>
 
-=item Bio::DescribableI
+=item L<Bio::DescribableI>
 
-=item Bio::AnnotatableI
+=item L<Bio::AnnotatableI>
 
 =back
 
@@ -76,7 +80,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Ewan Birney
 
@@ -94,6 +98,7 @@ methods. Internal methods are usually preceded with a _
 
 
 package Bio::Seq::RichSeq;
+$Bio::Seq::RichSeq::VERSION = '1.7.8';
 use vars qw($AUTOLOAD);
 use strict;
 
@@ -338,7 +343,9 @@ sub get_secondary_accessions{
  Function: Get/set the sequence version
  Returns : value of seq_version (a scalar)
  Args    : on set, new value (a scalar or undef, optional)
-
+ Note    : this differs from Bio::PrimarySeq version() in that this explicitly
+           refers to the sequence record version one would find in a typical
+           sequence file.  
 
 =cut
 

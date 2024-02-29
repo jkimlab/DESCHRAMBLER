@@ -87,7 +87,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -178,8 +178,9 @@ sub _get_oligos {
 	    my $target = $2;
 
 	    # check for too many Gs (or Cs on the other strand)
-	    next if ( $target =~ /G{ $self->gstring,}/io );
-	    next if ( $target =~ /C{ $self->gstring,}/io );
+	    my $max_g = $self->gstring;
+	    next if ( $target =~ /G{$max_g,}/io );
+	    next if ( $target =~ /C{$max_g,}/io );
 # 	skip Ns (for filtering)
 	    next if ( $target =~ /N/i);
 

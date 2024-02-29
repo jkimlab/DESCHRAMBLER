@@ -1,4 +1,3 @@
-# $Id: Atomic.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Location::Atomic
 # Please direct questions and support issues to <bioperl-l@bioperl.org> 
@@ -58,7 +57,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -75,6 +74,7 @@ methods. Internal methods are usually preceded with a _
 
 
 package Bio::Location::Atomic;
+$Bio::Location::Atomic::VERSION = '1.7.8';
 use strict;
 
 use Bio::Location::WidestCoordPolicy;
@@ -85,20 +85,20 @@ our $coord_policy = Bio::Location::WidestCoordPolicy->new();
 
 sub new { 
     my ($class, @args) = @_;
+    $class = ref $class || $class;
     my $self = {};
     # This is for the case when we've done something like this
     # get a 2 features from somewhere (like Bio::Tools::GFF)
     # Do
     # my $location = $f1->location->union($f2->location);
     # We get an error without the following code which 
-    # explictly loads the Bio::Location::Simple class
-    eval {
-	($class) = ref($class) if ref($class);
-	Bio::Root::Root->_load_module($class);
-      };
-    if ( $@ ) {
-	Bio::Root::Root->throw("$class cannot be found\nException $@");
-      }
+    # explicitly loads the Bio::Location::Simple class
+    unless( $class->can('start') ) {
+        eval { Bio::Root::Root->_load_module($class) };
+        if ( $@ ) {
+            Bio::Root::Root->throw("$class cannot be found\nException $@");
+        }
+    }
     bless $self,$class;
 
     my ($v,$start,$end,$strand,$seqid) = $self->_rearrange([qw(VERBOSE
@@ -133,7 +133,7 @@ sub new {
   Usage   : $start = $loc->start();
   Function: get/set the start of this range
   Returns : the start of this range
-  Args    : optionaly allows the start to be set
+  Args    : optionally allows the start to be set
           : using $loc->start($start)
 
 =cut
@@ -150,7 +150,7 @@ sub start {
   Usage   : $end = $loc->end();
   Function: get/set the end of this range
   Returns : the end of this range
-  Args    : optionaly allows the end to be set
+  Args    : optionally allows the end to be set
           : using $loc->end($start)
 
 =cut
@@ -168,7 +168,7 @@ sub end {
   Usage   : $strand = $loc->strand();
   Function: get/set the strand of this range
   Returns : the strandidness (-1, 0, +1)
-  Args    : optionaly allows the strand to be set
+  Args    : optionally allows the strand to be set
           : using $loc->strand($strand)
 
 =cut
@@ -206,6 +206,10 @@ sub strand {
 
 sub flip_strand {
     my $self= shift;
+    # Initialize strand if necessary to flip it
+    if (not defined $self->strand) {
+	$self->strand(1)
+    }
     $self->strand($self->strand * -1);
 }
 
@@ -376,11 +380,25 @@ sub location_type {
 =head2 is_remote
 
  Title   : is_remote
- Usage   : $self->is_remote($newval)
- Function: Getset for is_remote value
- Returns : value of is_remote
- Args    : newvalue (optional)
+ Usage   : $is_remote_loc = $loc->is_remote()
+ Function: Whether or not a location is a remote location.
 
+           A location is said to be remote if it is on a different
+           'object' than the object which 'has' this
+           location. Typically, features on a sequence will sometimes
+           have a remote location, which means that the location of
+           the feature is on a different sequence than the one that is
+           attached to the feature. In such a case, $loc->seq_id will
+           be different from $feat->seq_id (usually they will be the
+           same).
+
+           While this may sound weird, it reflects the location of the
+           kind of AL445212.9:83662..166657 which can be found in GenBank/EMBL
+           feature tables.
+
+ Example : 
+ Returns : TRUE if the location is a remote location, and FALSE otherwise
+ Args    : Value to set to
 
 =cut
 
@@ -391,7 +409,6 @@ sub is_remote {
        $self->{'is_remote'} = $value;
    }
    return $self->{'is_remote'};
-
 }
 
 =head2 each_Location
@@ -464,7 +481,7 @@ sub valid_Location {
 
             The interface *does not* require implementing classes to
             accept setting of a different policy. The implementation
-            provided here does, however, allow to do so.
+            provided here does, however, allow one to do so.
 
             Implementors of this interface are expected to initialize
             every new instance with a
@@ -546,4 +563,3 @@ sub trunc {
 }
 
 1;
-

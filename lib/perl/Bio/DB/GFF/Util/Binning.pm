@@ -24,14 +24,13 @@ are exported by default, but must be imported explicitly.
 =cut
 
 package Bio::DB::GFF::Util::Binning;
-
+$Bio::DB::GFF::Util::Binning::VERSION = '1.7.8';
 use strict;
 require Exporter;
 use vars qw(@EXPORT @EXPORT_OK);
 use base qw(Exporter);
 @EXPORT_OK = qw(bin bin_bot bin_top);
 @EXPORT = @EXPORT_OK;
-use Bio::Root::Version;
 
 =item $bin_name = bin($start,$stop,$bin_size)
 

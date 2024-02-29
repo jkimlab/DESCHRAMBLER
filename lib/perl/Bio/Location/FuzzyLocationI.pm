@@ -1,4 +1,3 @@
-# $Id: FuzzyLocationI.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Location::FuzzyLocationI
 # Please direct questions and support issues to <bioperl-l@bioperl.org> 
@@ -57,7 +56,7 @@ with code and data examples if at all possible.
 Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -74,6 +73,7 @@ methods. Internal methods are usually preceded with a _
 
 
 package Bio::Location::FuzzyLocationI;
+$Bio::Location::FuzzyLocationI::VERSION = '1.7.8';
 use strict;
 
 use base qw(Bio::LocationI);
@@ -183,7 +183,7 @@ Bio::LocationI methods follow
 
             The interface *does not* require implementing classes to accept
             setting of a different policy. The implementation provided here
-            does, however, allow to do so.
+            does, however, allow one to do so.
 
             Implementors of this interface are expected to initialize every
             new instance with a CoordinatePolicyI object. The implementation

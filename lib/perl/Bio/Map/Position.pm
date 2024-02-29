@@ -1,4 +1,3 @@
-# $Id: Position.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Map::Position
 #
@@ -74,7 +73,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -230,7 +229,7 @@ sub absolute {
 
  Title   : value
  Usage   : my $pos = $position->value;
- Function: Get/Set the value for this postion
+ Function: Get/Set the value for this position
  Returns : scalar, value
  Args    : [optional] new value to set
 

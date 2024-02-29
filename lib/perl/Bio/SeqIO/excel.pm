@@ -1,4 +1,3 @@
-# $Id: excel.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::SeqIO::excel
 #
@@ -89,7 +88,7 @@ the bugs and their resolution.
 
 Bug reports can be submitted via email or the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Hilmar Lapp
 

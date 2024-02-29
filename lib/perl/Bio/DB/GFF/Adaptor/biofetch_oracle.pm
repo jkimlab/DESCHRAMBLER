@@ -1,6 +1,6 @@
 package Bio::DB::GFF::Adaptor::biofetch_oracle;
 
-#$Id: biofetch_oracle.pm 10525 2006-09-26 22:03:22Z sendu $
+#$Id$
 
 =head1 NAME
 

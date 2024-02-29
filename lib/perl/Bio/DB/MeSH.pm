@@ -1,8 +1,7 @@
-# $Id: MeSH.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::DB::MeSH
 #
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Heikki Lehvaslaiho, heikki-at-bioperl-dot-org
 #
@@ -23,16 +22,17 @@ Bio::DB::MeSH - Term retrieval from a Web MeSH database
 =head1 DESCRIPTION
 
 This class retrieves a term from the Medical Subject Headings database
-by the National Library of Medicine of USA. 
-See L<http://www.nlm.nih.gov/mesh/meshhome.html>.
+by the National Library of Medicine of USA. See
+L<http://www.nlm.nih.gov/mesh/meshhome.html>. It uses the latest
+data available (updates happen on weekdays). If it fails, an archive
+cgi scripts accessing older data from previous year is used.
 
 This class implements L<Bio::SimpleAnalysisI> and wraps its methods under
 L<get_exact_term>.
 
-By default, web access uses L<WWW::Mechanize>, but in its absense
+By default, web access uses L<WWW::Mechanize>, but in its absence
 falls back to bioperl module L<Bio::WebAgent> which is a subclass of
-L<LWP::UserAgent>. If not even that is not installed, it uses
-L<Bio::Root::HTTPget>.
+L<LWP::UserAgent>.
 
 =head1 SEE ALSO
 
@@ -49,15 +49,15 @@ Bioperl mailing lists Your participation is much appreciated.
   bioperl-l@bioperl.org                  - General discussion
   http://bioperl.org/wiki/Mailing_lists  - About the mailing lists
 
-=head2 Support 
+=head2 Support
 
 Please direct usage questions or support issues to the mailing list:
 
 I<bioperl-l@bioperl.org>
 
-rather than to the module maintainer directly. Many experienced and 
-reponsive experts will be able look at the problem and quickly 
-address it. Please include a thorough description of the problem 
+rather than to the module maintainer directly. Many experienced and
+reponsive experts will be able look at the problem and quickly
+address it. Please include a thorough description of the problem
 with code and data examples if at all possible.
 
 =head2 Reporting Bugs
@@ -66,7 +66,7 @@ report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -111,26 +111,35 @@ my  $RESULT_SPEC =
 
 
 sub _init {
+    # Note: Base URL is now set in _webmodule(), depending on which is selected
     my $self = shift;
-    $self->url($URL);
-    $self->{'_ANALYSIS_SPEC'} =$ANALYSIS_SPEC;
-    $self->{'_INPUT_SPEC'} =$INPUT_SPEC;
-    $self->{'_RESULT_SPEC'} =$RESULT_SPEC;
+    $self->{'_ANALYSIS_SPEC'} = $ANALYSIS_SPEC;
+    $self->{'_INPUT_SPEC'}    = $INPUT_SPEC;
+    $self->{'_RESULT_SPEC'}   = $RESULT_SPEC;
     $self->{'_ANALYSIS_NAME'} = $ANALYSIS_SPEC->{'name'};
     $self->_webmodule;
     return $self;
 }
 
+
 sub _webmodule {
     my ($self) = shift;
     $self->{'_webmodule'} = '';
+
+    # Prefer WWW::Mechanize if available and use $URL
     eval {
         require WWW::Mechanize;
     };
     unless ($@) {
         $self->{'_webmodule'} = 'WWW::Mechanize';
+        $self->url($URL);
         return;
     }
+
+    # Bio::WebAgent uses cgi alternative URL
+    $self->_set_cgi_base_url;
+
+    # Use Bio::WebAgent alternative
     eval {
         require LWP::UserAgent;
     };
@@ -138,16 +147,44 @@ sub _webmodule {
         $self->{'_webmodule'} = 'Bio::WebAgent';
         return;
     }
-    require Bio::Root::HTTPget;
-    $self->{'_webmodule'} = 'Bio::Root::HTTPget';
-    1;
+
+    $self->throw("Bio::DB::MeSH needs either WWW::Mechanize or Bio::WebAgent");
+}
+
+
+sub _set_cgi_base_url {
+    my ($self) = shift;
+
+    # Try to get webpage corresponding to current year.
+    # If it fails, try to get previous years until success or 2003
+    my $year = 1900 + (localtime)[5];
+    my $pass = 0;
+    while ($pass == 0 and $year > 2003) {
+        my $response;
+        eval {
+            $response = $self->get( "http://www.nlm.nih.gov/cgi/mesh/$year/MB_cgi" )
+        };
+        # Note: error 404 is acceptable because it can mean that webpage is not yet
+        # implemented for current year. Absence of internet generates error 500.
+        if ($@ or $response->{'_rc'} > 404) {
+            $self->warn("Could not connect to the server\n") and return;
+        }
+        # Success closes the loop, fail makes it try with the another year
+        if ($response->is_success) {
+            $pass = 1;
+        }
+        else {
+            $year -= 1;
+        }
+    }
+    $self->url("http://www.nlm.nih.gov/cgi/mesh/$year/MB_cgi");
 }
 
 =head2 get_exact_term
 
   Title   : get_exact_term
   Usage   : $s = $db->get_exact_term($value);
-  Function: Retrive a single MeSH term using a unique ID or exact name.
+  Function: Retrieve a single MeSH term using a unique ID or exact name.
   Example :
   Returns : a Bio::Phenotype::MeSH::Term object
   Args    : scalar, UID or name of a MeSH term
@@ -181,9 +218,11 @@ sub run {
 
 
 sub _cgi_url {
-  my($self, $field, $term) = @_;
-  # we don't bother to URI::Escape $field and $term as this is an untainted private sub
-  return 'http://www.nlm.nih.gov/cgi/mesh/2003/MB_cgi?field='.$field.'&term='.$term;
+    my($self, $field, $term) = @_;
+
+    # we don't bother to URI::Escape $field and $term as this is an untainted private sub
+    my $base_url = $self->url;
+    return "$base_url?field=$field&term=$term";
 }
 
 
@@ -240,32 +279,14 @@ sub  _run {
             $self->status('COMPLETED');
         }
         return;
-    } else {
-        $self->debug("using Bio::Root::HTTPget...\n");
-        my $agent = Bio::Root::HTTPget->new();
-        if ($value =~ /\w\d{6}/) {
-            $self->{'_content'} =
-                eval {
-                    $agent->get( $self->_cgi_url('uid', $value) )
-                };
-            $self->warn("Could not connect to the server\n") and return
-                if $@;
-        } else {
-            $self->{'_content'} =
-                eval {
-                    $agent->get( $self->_cgi_url('entry', $value) )
-                };
-            $self->debug("Could not connect to the server\n") and return
-                if $@;
-        }
-        $self->status('COMPLETED');
     }
 }
+
 
 sub result {
     my ($self,$value) = @_;
 
-    $self->throw("Could not retrive results") unless $self->status('COMPLETED');
+    $self->throw("Could not retrieve results") unless $self->status('COMPLETED');
 
     # no processing
     return $self->{'_content'} if $value && $value eq 'raw';
@@ -274,12 +295,23 @@ sub result {
     # create a MeSH::Term object
     $_ = $self->{'_content'};
     $self->debug( substr($_, 0, 100) . "\n");
-    my ($id) = m|Unique ID</TH><TD>(.*?)</TD>|i;
-    my ($name) = m|MeSH Heading</TH><TD>([^<]+)|i;
-    my ($desc) = m|Scope Note</TH><TD>(.*?)</TD>|is;
+    my ($id)   = m|Unique \s+ ID </TH>
+                   <TD (?: \s+ [^>]+ )? >
+                   (.*?)                    # id
+                   </TD> |ix;
+    my ($name) = m|MeSH \s+ Heading </TH>
+                   <TD (?: \s+ [^>]+ )? >
+                   (.*?)                    # name
+                   </TD> |ix;
+    my ($desc) = m|Scope \s+ Note </TH>
+                   <TD (?: \s+ [^>]+ )? >
+                   (.*?)                    # desc
+                   </TD>|isx;
     $self->throw("No description returned: $_") unless defined $desc;
     $desc =~ s/<.*?>//sg;
-	$desc =~ s/\n/ /g;
+    $desc =~ s/(?:\r)?\n/ /g;
+    $desc =~ s/\( +/\(/g;
+    $desc =~ s/ {2,}/ /g;
 
     my $term = Bio::Phenotype::MeSH::Term->new(-id => $id,
                                                -name => $name,
@@ -287,7 +319,7 @@ sub result {
                                               );
     my ($trees) = $self->{'_content'} =~ /MeSH Tree Structures(.*)/s;
 
-    while (m|Entry Term</TH><TD>([^<]+)|ig) {
+    while (m|Entry Term</TH><TD(?: [^>]+)?>(.*?)</TD>|ig) {
         $term->add_synonym($1);
         $self->debug("Synonym: |$1|\n");
     }

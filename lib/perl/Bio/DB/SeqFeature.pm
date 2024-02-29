@@ -1,6 +1,5 @@
 package Bio::DB::SeqFeature;
 
-# $Id: SeqFeature.pm 16091 2009-09-15 22:11:15Z cjfields $
 
 =head1 NAME
 

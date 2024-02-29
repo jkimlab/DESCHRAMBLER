@@ -1,4 +1,3 @@
-# $Id: EnzymeI.pm 16123 2009-09-17 12:57:27Z cjfields $
 #------------------------------------------------------------------
 #
 # BioPerl module Bio::Restriction::EnzymeI
@@ -53,7 +52,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -174,7 +173,7 @@ sub cuts_after {  shift->throw_not_implemented; }
 
 Note that the common notation ACCTGC(4/8) means that the forward
 strand cut is four nucleotides after the END of the recognition
-site. The forwad cut in the coordinates used here in Acc36I
+site. The forward cut in the coordinates used here in Acc36I
 ACCTGC(4/8) is at 6+4 i.e. 10.
 
 Note that REBASE uses notation where cuts within symmetic sites are

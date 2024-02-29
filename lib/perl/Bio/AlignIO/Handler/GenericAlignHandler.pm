@@ -1,7 +1,7 @@
 # Let the code begin...
 
 package Bio::AlignIO::Handler::GenericAlignHandler;
-
+$Bio::AlignIO::Handler::GenericAlignHandler::VERSION = '1.7.8';
 use strict;
 use warnings;
 
@@ -119,6 +119,7 @@ sub build_alignment {
     if (defined $param->{-seqs}) {
         return Bio::SimpleAlign->new(%$param, -source => $self->format);
     }
+    return;
 }
 
 sub annotation_collection {
@@ -468,7 +469,7 @@ to disambiguate between the two in some cases. Here I use the ALIGNMENT tag as a
 boolean flag: it must be present and set to 0 for the data to be tagged for
 Bio::LocatableSeq or similar (in all other cases it is assumed to be for the
 alignment). In some cases this will not matter (the actual sequence data, for
-instance) but it is highly recommmended adding this tag in to prevent possible
+instance) but it is highly recommended adding this tag in to prevent possible
 ambiguities.
 
 This is the current Annotation data chunk (via Data::Dumper):
@@ -562,7 +563,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Chris Fields
 

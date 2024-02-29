@@ -1,4 +1,3 @@
-# $Id: itype2.pm 16123 2009-09-17 12:57:27Z cjfields $
 # BioPerl module for Bio::Restriction::IO::itype2
 #
 # Please direct questions and support issues to <bioperl-l@bioperl.org> 
@@ -52,7 +51,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR
 
@@ -117,7 +116,7 @@ sub read {
         chomp $line;
 
         my ($name, $prototype, $site, $meth, $vendor, $refs) = split /\t/, $line;
-        # we need mininum name and site
+        # we need minimum name and site
         unless ($site) {
             $self->warn("Can not parse line with name [$name]") if $self->verbose > 0;
             next;

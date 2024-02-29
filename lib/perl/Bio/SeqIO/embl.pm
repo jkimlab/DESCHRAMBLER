@@ -1,4 +1,3 @@
-# $Id: embl.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::SeqIO::EMBL
 #
@@ -101,7 +100,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Ewan Birney
 
@@ -119,6 +118,7 @@ methods. Internal methods are usually preceded with a _
 
 
 package Bio::SeqIO::embl;
+$Bio::SeqIO::embl::VERSION = '1.7.8';
 use vars qw(%FTQUAL_NO_QUOTE);
 use strict;
 use Bio::SeqIO::FTHelper;
@@ -132,19 +132,25 @@ use Bio::Annotation::DBLink;
 
 use base qw(Bio::SeqIO);
 
+# Note that a qualifier that exceeds one line (i.e. a long label) will
+# automatically be quoted regardless:
 %FTQUAL_NO_QUOTE=(
                   'anticodon'=>1,
                   'citation'=>1,
                   'codon'=>1,
                   'codon_start'=>1,
+                  'compare'=>1,
                   'cons_splice'=>1,
                   'direction'=>1,
+                  'estimated_length'=>1,
                   'evidence'=>1,
                   'label'=>1,
                   'mod_base'=> 1,
                   'number'=> 1,
                   'rpt_type'=> 1,
                   'rpt_unit'=> 1,
+                  'rpt_unit_range'=>1,
+                  'tag_peptide'=>1,
                   'transl_except'=> 1,
                   'transl_table'=> 1,
                   'usedin'=> 1,
@@ -213,27 +219,27 @@ sub next_seq {
 
         # ID   DQ299383; SV 1; linear; mRNA; STD; MAM; 431 BP.
         # This regexp comes from the new2old.pl conversion script, from EBI
-        if ($line =~ m/^ID   (\w+);\s+SV (\d+); (\w+); ([^;]+); (\w{3}); (\w{3}); (\d+) BP./) {
-        ($name, $sv, $topology, $mol, $div) = ($1, $2, $3, $4, $6);
+        if ($line =~ m/^ID   (\S+);\s+SV (\d+); (\w+); ([^;]+); (\w{3}); (\w{3}); (\d+) BP./) {
+            ($name, $sv, $topology, $mol, $div) = ($1, $2, $3, $4, $6);
         }
-        if (defined($sv)) {
-        $params{'-seq_version'} = $sv;
-        $params{'-version'} = $sv;
+        if (defined $sv) {
+            $params{'-seq_version'} = $sv;
+            $params{'-version'} = $sv;
         }
 
-        if ($topology eq "circular") {
-        $params{'-is_circular'} = 1;
+        if (defined $topology && $topology eq 'circular') {
+            $params{'-is_circular'} = 1;
         }
     
-    if (defined $mol ) {
-        if ($mol =~ /DNA/) {
-        $alphabet='dna';
-        } elsif ($mol =~ /RNA/) {
-        $alphabet='rna';
-        } elsif ($mol =~ /AA/) {
-        $alphabet='protein';
+        if (defined $mol ) {
+            if ($mol =~ /DNA/) {
+                $alphabet = 'dna';
+            } elsif ($mol =~ /RNA/) {
+                $alphabet = 'rna';
+            } elsif ($mol =~ /AA/) {
+                $alphabet = 'protein';
+            }
         }
-    }
     } else {
     
         # Old style header (EMBL Release < 87, before June 2006)
@@ -266,6 +272,7 @@ sub next_seq {
     my $buffer = $line;
     local $_;
     BEFORE_FEATURE_TABLE :
+          my $ncbi_taxid;
           until ( !defined $buffer ) {
               $_ = $buffer;
               # Exit at start of Feature table
@@ -299,13 +306,14 @@ sub next_seq {
                   my $line = $1;
                   my ($date, $version) = split(' ', $line, 2);
                   $date =~ tr/,//d; # remove comma if new version
-                  if ($version =~ /\(Rel\. (\d+), Created\)/xms ) {
+                  if ($version) {
+                  if ($version =~ /\(Rel\. (\d+), Created\)/ms ) {
                       my $release = Bio::Annotation::SimpleValue->new(
                                                                       -tagname    => 'creation_release',
                                                                       -value      => $1
                                                                      );
                       $annotation->add_Annotation($release);
-                  } elsif ($version =~ /\(Rel\. (\d+), Last updated, Version (\d+)\)/xms ) {
+                  } elsif ($version =~ /\(Rel\. (\d+), Last updated, Version (\d+)\)/ms ) {
                       my $release = Bio::Annotation::SimpleValue->new(
                                                                       -tagname    => 'update_release',
                                                                       -value      => $1
@@ -317,6 +325,7 @@ sub next_seq {
                                                                      -value      => $2
                                                                     );
                       $annotation->add_Annotation($update);
+                  }
                   }
                   push @{$params{'-dates'}}, $date;
               }
@@ -336,6 +345,10 @@ sub next_seq {
 
               # NCBI TaxID Xref
               elsif (/^OX/) {
+                  if (/NCBI_TaxID=(\d+)/) {
+                      $ncbi_taxid=$1;
+                  }
+
                   my @links = $self->_read_EMBL_TaxID_DBLink(\$buffer);
                   foreach my $dblink ( @links ) {
                       $annotation->add_Annotation('dblink',$dblink);
@@ -396,6 +409,9 @@ sub next_seq {
                 $ftunit->_generic_seqfeature($self->location_factory(), $name);
 
             # add taxon_id from source if available
+            # Notice, this will override what is found in the OX line.
+            # this is by design as this seems to be the official way
+            # of specifying a TaxID
             if ($params{'-species'} && ($feat->primary_tag eq 'source')
                 && $feat->has_tag('db_xref')
                 && (! $params{'-species'}->ncbi_taxid())) {
@@ -415,25 +431,30 @@ sub next_seq {
             }
         }
     }
+    # Set taxid found in OX line
+    if ($params{'-species'} && defined $ncbi_taxid
+        && (! $params{'-species'}->ncbi_taxid())) {
+        $params{'-species'}->ncbi_taxid($ncbi_taxid);
+    }
+
     # skip comments
     while ( defined ($buffer) && $buffer =~ /^XX/ ) {
         $buffer = $self->_readline();
     }
-
+    
     if ( $buffer =~ /^CO/  ) {
-        until ( !defined ($buffer) ) {
-            my $ftunit = $self->_read_FTHelper_EMBL(\$buffer);
-            # process ftunit
-            push(@features,
-                 $ftunit->_generic_seqfeature($self->location_factory(),
-                                              $name));
-
-            if ( $buffer !~ /^CO/ ) {
+	# bug#2982
+	# special : create contig as annotation
+        while ( defined ($buffer) ) {
+	    $annotation->add_Annotation($_) for $self->_read_EMBL_Contig(\$buffer);
+            if ( !$buffer || $buffer !~ /^CO/ ) {
                 last;
-            }
+	    }
         }
+        $buffer ||= '';
     }
-    if ( $buffer !~ /^SQ/  ) {
+    if ($buffer !~ /^\/\//) { # if no SQ lines following CO (bug#2958)
+    if ( $buffer !~ /^SQ/ ) {
         while ( defined ($_ = $self->_readline) ) {
             /^SQ/ && last;
         }
@@ -445,6 +466,7 @@ sub next_seq {
         s/[^A-Za-z]//g;
         $seqc .= $_;
     }
+}
     my $seq = $self->sequence_factory->create
         (-verbose => $self->verbose(),
          -division => $div,
@@ -488,11 +510,11 @@ sub _write_ID_line {
 
         # The sequence name is supposed to be the primary accession number,
         my $name = $seq->accession_number();
-        if (!$name) {
-            # but if it is not present, use the sequence ID.
-            $name = $seq->id();
+        if ( not(defined $name) || $name eq 'unknown') {
+            # but if it is not present, use the sequence ID or the empty string
+            $name = $seq->id() || '';
         }
-
+ 
         $self->warn("No whitespace allowed in EMBL id [". $name. "]") if $name =~ /\s/;
 
         # Use the sequence version, or default to 1.
@@ -537,8 +559,8 @@ sub _write_ID_line {
 
         $mol ||= '';            # 'unassigned'; ?
         $id_line = "ID   $name; SV $version; $topology; $mol; STD; $div; $len BP.\nXX\n";
-        $self->_print($id_line);
     }
+    $self->_print($id_line);
 }
 
 =head2 _is_valid_division
@@ -660,7 +682,7 @@ sub write_seq {
             my @dates =  $seq->get_dates();
             my $ct = 1;
             my $date_flag = 0;
-            my ($cr) = $seq->annotation->get_Annotations("creation_release");
+	    my ($cr) = $seq->annotation->get_Annotations("creation_release");
             my ($ur) = $seq->annotation->get_Annotations("update_release");
             my ($uv) = $seq->annotation->get_Annotations("update_version");
 
@@ -671,10 +693,10 @@ sub write_seq {
             foreach my $dt (@dates) {
                 if (!$date_flag) {
                     $self->_write_line_EMBL_regex("DT   ","DT   ",
-                                                  $dt." (Rel. $cr, Created)",
+                                                  $dt." (Rel. ".($cr->value()).", Created)",
                                                   '\s+|$',80) if $ct == 1;
                     $self->_write_line_EMBL_regex("DT   ","DT   ",
-                                                  $dt." (Rel. $ur, Last updated, Version $uv)",
+                                                  $dt." (Rel. ".($ur->value()).", Last updated, Version ".($uv->value()).")",
                                                   '\s+|$',80) if $ct == 2;
                 } else {        # other formats?
                     $self->_write_line_EMBL_regex("DT   ","DT   ",
@@ -724,9 +746,12 @@ sub write_seq {
             if ($spec->organelle) {
                 $self->_write_line_EMBL_regex("OG   ","OG   ",$spec->organelle,'; |$',80) || return;
             }
+            my $ncbi_taxid = $spec->ncbi_taxid;
+            if ($ncbi_taxid) {
+                $self->_print("OX   NCBI_TaxID=$ncbi_taxid\n") || return;
+            }
             $self->_print("XX\n") || return;
         }
-
         # Reference lines
         my $t = 1;
         if ( $seq->can('annotation') && defined $seq->annotation ) {
@@ -839,52 +864,64 @@ sub write_seq {
 
         # finished printing features.
 
-        $str =~ tr/A-Z/a-z/;
+	# print contig if present : bug#2982
+	if ( $seq->can('annotation') && defined $seq->annotation) {
+	    foreach my $ctg ( $seq->annotation->get_Annotations('contig') ) {
+		if ($ctg->value) {
+		    $self->_write_line_EMBL_regex("CO   ","CO   ", $ctg->value,
+						  '[,]|$', 80) || return;
+		}
+	    }
+	}
+	# print sequence lines only if sequence is present! bug#2982
+	if (length($str)) {
+	    $str =~ tr/A-Z/a-z/;
 
-        # Count each nucleotide
-        my $alen = $str =~ tr/a/a/;
-        my $clen = $str =~ tr/c/c/;
-        my $glen = $str =~ tr/g/g/;
-        my $tlen = $str =~ tr/t/t/;
+	    # Count each nucleotide
+	    my $alen = $str =~ tr/a/a/;
+	    my $clen = $str =~ tr/c/c/;
+	    my $glen = $str =~ tr/g/g/;
+	    my $tlen = $str =~ tr/t/t/;
+	    
+	    my $len = $seq->length();
+	    my $olen = $seq->length() - ($alen + $tlen + $clen + $glen);
+	    if ( $olen < 0 ) {
+		$self->warn("Weird. More atgc than bases. Problem!");
+	    }
+	    
+	    $self->_print("SQ   Sequence $len BP; $alen A; $clen C; $glen G; $tlen T; $olen other;\n") || return;
 
-        my $len = $seq->length();
-        my $olen = $seq->length() - ($alen + $tlen + $clen + $glen);
-        if ( $olen < 0 ) {
-            $self->warn("Weird. More atgc than bases. Problem!");
-        }
+	    my $nuc = 60;       # Number of nucleotides per line
+	    my $whole_pat = 'a10' x 6; # Pattern for unpacking a whole line
+	    my $out_pat   = 'A11' x 6; # Pattern for packing a line
+	    my $length = length($str);
+	    
+	    # Calculate the number of nucleotides which fit on whole lines
+	    my $whole = int($length / $nuc) * $nuc;
 
-        $self->_print("SQ   Sequence $len BP; $alen A; $clen C; $glen G; $tlen T; $olen other;\n") || return;
-
-        my $nuc = 60;       # Number of nucleotides per line
-        my $whole_pat = 'a10' x 6; # Pattern for unpacking a whole line
-        my $out_pat   = 'A11' x 6; # Pattern for packing a line
-        my $length = length($str);
-
-        # Calculate the number of nucleotides which fit on whole lines
-        my $whole = int($length / $nuc) * $nuc;
-
-        # Print the whole lines
-        my( $i );
-        for ($i = 0; $i < $whole; $i += $nuc) {
-            my $blocks = pack $out_pat,
+	    # Print the whole lines
+	    my( $i );
+	    for ($i = 0; $i < $whole; $i += $nuc) {
+		my $blocks = pack $out_pat,
                 unpack $whole_pat,
-                    substr($str, $i, $nuc);
-            $self->_print(sprintf("     $blocks%9d\n", $i + $nuc)) || return;
-        }
+		substr($str, $i, $nuc);
+		$self->_print(sprintf("     $blocks%9d\n", $i + $nuc)) || return;
+	    }
 
-        # Print the last line
-        if (my $last = substr($str, $i)) {
-            my $last_len = length($last);
-            my $last_pat = 'a10' x int($last_len / 10) .'a'. $last_len % 10;
-            my $blocks = pack $out_pat,
+	    # Print the last line
+	    if (my $last = substr($str, $i)) {
+		my $last_len = length($last);
+		my $last_pat = 'a10' x int($last_len / 10) .'a'. $last_len % 10;
+		my $blocks = pack $out_pat,
                 unpack($last_pat, $last);
-            $self->_print(sprintf("     $blocks%9d\n", $length)) ||
-                return;         # Add the length to the end
-        }
-
-        $self->_print( "//\n") || return;
-
-        $self->flush if $self->_flush_on_write && defined $self->_fh;
+		$self->_print(sprintf("     $blocks%9d\n", $length)) ||
+		    return;         # Add the length to the end
+	    }
+	}
+	    
+	$self->_print( "//\n") || return;
+	
+	$self->flush if $self->_flush_on_write && defined $self->_fh;
     }
     return 1;
 }
@@ -894,7 +931,7 @@ sub write_seq {
  Title   : _print_EMBL_FTHelper
  Usage   :
  Function: Internal function
- Returns : 1 if writing suceeded, otherwise undef
+ Returns : 1 if writing succeeded, otherwise undef
  Args    :
 
 
@@ -921,7 +958,7 @@ sub _print_EMBL_FTHelper {
     $self->_write_line_EMBL_regex(sprintf("FT   %-15s ",$fth->key),
                                   "FT                   ",$fth->loc,
                                   '\,|$',80) || return; #'
-    foreach my $tag ( keys %{$fth->field} ) {
+    foreach my $tag (sort keys %{$fth->field} ) {
         if ( ! defined $fth->field->{$tag} ) {
             next;
         }
@@ -934,8 +971,10 @@ sub _print_EMBL_FTHelper {
             }
             # there are almost 3x more quoted qualifier values and they
             # are more common too so we take quoted ones first
-            elsif (!$FTQUAL_NO_QUOTE{$tag}) {
-                my $pat = $value =~ /\s/ ? '\s|\-|$' : '.|\-|$';
+            #
+            # Long qualifiers, that will be line wrapped, are always quoted
+            elsif (!$FTQUAL_NO_QUOTE{$tag} or length("/$tag=$value")>=60) {
+                my $pat = $value =~ /\s+/ ? '\s+|\-|$' : '.|\-|$';
                 $self->_write_line_EMBL_regex("FT                   ",
                                               "FT                   ",
                                               "/$tag=\"$value\"",$pat,80) || return;
@@ -950,6 +989,36 @@ sub _print_EMBL_FTHelper {
         return 1;
     }
 
+
+
+=head2 _read_EMBL_Contig()
+
+ Title   : _read_EMBL_Contig
+ Usage   : 
+ Function: convert CO lines into annotations
+ Returns : 
+ Args    : 
+
+=cut
+
+sub _read_EMBL_Contig {
+    my ($self, $buffer) = @_;
+    my @ret;
+    if ( $$buffer !~ /^CO/ ) {
+        warn("Not parsing line '$$buffer' which maybe important");
+    }
+    $self->_pushback($$buffer);
+    while ( defined ($_ = $self->_readline) ) {
+	/^C/ || last;
+	/^CO\s+(.*)/ && do {
+	push @ret, Bio::Annotation::SimpleValue->new( -tagname => 'contig',
+						      -value => $1);
+	};
+    }
+    $$buffer = $_;
+    return @ret;
+
+}
 #'
 =head2 _read_EMBL_References
 
@@ -1107,9 +1176,12 @@ sub _read_EMBL_Species {
     foreach my $i (0..$#class) {
         my $name = $class[$i];
         $names{$name}++;
-        if ($names{$name} > 1 && $name ne $class[$i - 1]) {
-            $self->throw("$acc seems to have an invalid species classification.");
-        }
+        # this code breaks examples like: Xenopus (Silurana) tropicalis
+        # commenting out, see bug 3158
+        
+        #if ($names{$name} > 1 && ($name ne $class[$i - 1])) {
+        #    $self->warn("$acc seems to have an invalid species classification:$name ne $class[$i - 1]");
+        #}
     }
     my $make = Bio::Species->new();
     $make->scientific_name($sci_name);
@@ -1289,11 +1361,33 @@ sub _read_FTHelper_EMBL {
 
     # Now parse and add any qualifiers.  (@qual is kept
     # intact to provide informative error messages.)
-  QUAL: for (my $i = 0; $i < @qual; $i++) {
-        $_ = $qual[$i];
-        my( $qualifier, $value ) = m{^/([^=]+)(?:=(.+))?}
-            or $self->throw("Can't see new qualifier in: $_\nfrom:\n"
+    my $last_unquoted_qualifier;
+  QUAL:
+    for (my $i = 0; $i < @qual; $i++) {
+        my $data = $qual[$i];
+        my ( $qualifier, $value );
+	
+	unless (( $qualifier, $value ) = ($data =~ m{^/([^=]+)(?:=\s*(.*))?})) {
+	   if ( defined $last_unquoted_qualifier ) {
+	      # handle case of unquoted multiline - read up everything until the next qualifier
+	      do {
+                 # Protein sequence translations need to be joined without spaces,
+                 # other qualifiers need those.
+		 $value .= ' ' if $qualifier ne "translation";
+                 $value .= $data;
+	      } while defined($data = $qual[++$i]) && $data !~ m[^/];
+	      $i--;
+              $out->field->{$last_unquoted_qualifier}->[-1] .= $value;
+              $last_unquoted_qualifier = undef;
+	      next QUAL;
+	   } else {
+              $self->throw("Can't see new qualifier in: $_\nfrom:\n"
                             . join('', map "$_\n", @qual));
+	   }
+	}
+        $qualifier = '' if not defined $qualifier;
+
+        $last_unquoted_qualifier = undef;
         if (defined $value) {
             # Do we have a quoted value?
             if (substr($value, 0, 1) eq '"') {
@@ -1311,14 +1405,21 @@ sub _read_FTHelper_EMBL {
                         last QUOTES;
                     }
 
-                    # Join to value with space if value or next line contains a space
-                    $value .= (grep /\s/, ($value, $next)) ? " $next" : $next;
+                    # Protein sequence translations need to be joined without spaces,
+                    # other qualifiers need those.
+                    if ($qualifier eq "translation") {
+                        $value .= $next;
+                    } else {
+                        $value .= " $next";
+                    }
                 }
                 # Trim leading and trailing quotes
                 $value =~ s/^"|"$//g;
                 # Undouble internal quotes
                 $value =~ s/""/"/g; #"
-            }
+            } else {
+              $last_unquoted_qualifier = $qualifier;
+	    }
         } else {
             $value = '_no_value';
         }
@@ -1337,7 +1438,7 @@ sub _read_FTHelper_EMBL {
  Usage   :
  Function: internal function
  Example :
- Returns : 1 if writing suceeded, else undef
+ Returns : 1 if writing succeeded, else undef
  Args    :
 
 
@@ -1400,6 +1501,7 @@ sub _write_line_EMBL_regex {
                 # be strict about not padding spaces according to
                 # genbank format
                 $l =~ s/\s+$//;
+                next CHUNK if ($l eq '');
                 push(@lines, $l);
                 next CHUNK;
             }

@@ -1,8 +1,7 @@
-# $Id: GenBank.pm 16139 2009-09-18 21:11:23Z cjfields $
 #
 # BioPerl module for Bio::DB::GenBank
 #
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Aaron Mackey <amackey@virginia.edu>
 #
@@ -11,7 +10,7 @@
 # You may distribute this module under the same terms as perl itself
 #
 # POD documentation - main docs before the code
-# 
+#
 # Added LWP support - Jason Stajich 2000-11-6
 # completely reworked by Jason Stajich 2000-12-8
 # to use WebDBSeqI
@@ -33,7 +32,7 @@ Bio::DB::GenBank - Database object interface to GenBank
     use Bio::DB::GenBank;
     $gb = Bio::DB::GenBank->new();
 
-    $seq = $gb->get_Seq_by_id('MUSIGHBA1'); # Unique ID
+    $seq = $gb->get_Seq_by_id('J00522'); # Unique ID, *not always the LOCUS ID*
 
     # or ...
 
@@ -55,13 +54,13 @@ Bio::DB::GenBank - Database object interface to GenBank
     # or ... best when downloading very large files, prevents
     # keeping all of the file in memory
 
-    # also don't want features, just sequence so let's save bandwith
+    # also don't want features, just sequence so let's save bandwidth
     # and request Fasta sequence
-    $gb = Bio::DB::GenBank->new(-retrievaltype => 'tempfile' , 
+    $gb = Bio::DB::GenBank->new(-retrievaltype => 'tempfile' ,
 			                      -format => 'Fasta');
     my $seqio = $gb->get_Stream_by_acc(['AC013798', 'AC021953'] );
     while( my $clone =  $seqio->next_seq ) {
-      print "cloneid is ", $clone->display_id, " ", 
+      print "cloneid is ", $clone->display_id, " ",
              $clone->accession_number, "\n";
     }
     # note that get_Stream_by_version is not implemented
@@ -99,7 +98,7 @@ evaluating to TRUE.
 =head2 Running
 
 Alternate methods are described at
-L<http://www.ncbi.nlm.nih.gov/entrez/query/static/efetchseq_help.html>
+L<https://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter4.EFetch>
 
 NOTE: strand should be 1 for plus or 2 for minus.
 
@@ -131,15 +130,15 @@ of the Bioperl mailing lists. Your participation is much appreciated.
   bioperl-l@bioperl.org                  - General discussion
   http://bioperl.org/wiki/Mailing_lists  - About the mailing lists
 
-=head2 Support 
+=head2 Support
 
 Please direct usage questions or support issues to the mailing list:
 
 I<bioperl-l@bioperl.org>
 
-rather than to the module maintainer directly. Many experienced and 
-reponsive experts will be able look at the problem and quickly 
-address it. Please include a thorough description of the problem 
+rather than to the module maintainer directly. Many experienced and
+reponsive experts will be able look at the problem and quickly
+address it. Please include a thorough description of the problem
 with code and data examples if at all possible.
 
 =head2 Reporting Bugs
@@ -148,7 +147,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Aaron Mackey, Jason Stajich
 
@@ -170,11 +169,11 @@ use strict;
 use vars qw(%PARAMSTRING $DEFAULTFORMAT $DEFAULTMODE);
 
 use base qw(Bio::DB::NCBIHelper);
-BEGIN {    
+BEGIN {
     $DEFAULTMODE   = 'single';
     $DEFAULTFORMAT = 'gbwithparts';
     %PARAMSTRING = (
-			 'batch' => { 'db'     => 'nucleotide',
+		    'batch' => { 'db'     => 'nucleotide',
 				  'usehistory' => 'n',
 				  'tool'   => 'bioperl'},
 		     'query' => { 'usehistory' => 'y',
@@ -192,7 +191,7 @@ BEGIN {
 				   'usehistory' => 'n',
 				   'tool'   => 'bioperl',
 				   'retmode' => 'text'},
-			 'webenv' => {    
+		      'webenv' => {
 				  'query_key'  => 'querykey',
 				  'WebEnv'  => 'cookie',
 				  'db'     => 'nucleotide',
@@ -211,7 +210,7 @@ BEGIN {
  Title   : new
  Usage   : $gb = Bio::DB::GenBank->new(@options)
  Function: Creates a new genbank handle
- Returns : New genbank handle
+ Returns : a new Bio::DB::Genbank object
  Args    : -delay   number of seconds to delay between fetches (3s)
 
 NOTE:  There are other options that are used internally.  By NCBI policy, this
@@ -353,7 +352,7 @@ instead.
  Title   : get_request
  Usage   : my $url = $self->get_request
  Function: HTTP::Request
- Returns : 
+ Returns :
  Args    : %qualifiers = a hash of qualifiers (ids, format, etc)
 
 =cut

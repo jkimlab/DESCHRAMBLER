@@ -141,9 +141,9 @@ sub next_map{
 
     if ($map->core_exists()) {
         $corfile = substr($filename,0,length($filename)-3)."cor";
-        if (open(CORE,$corfile)) {
-            while(read(CORE,$BUFFER,2)) {
-                push(@cordata,unpack('n*', $BUFFER));
+        if (open my $CORE, '<', $corfile) {
+            while( read($CORE, $BUFFER, 2) ) {
+                push @cordata, unpack('n*', $BUFFER);
             }
         }
         else {
@@ -510,7 +510,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Gaurav Gupta
 

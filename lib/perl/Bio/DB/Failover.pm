@@ -1,4 +1,3 @@
-# $Id: Failover.pm 16123 2009-09-17 12:57:27Z cjfields $
 
 # POD documentation - main docs before the code
 
@@ -46,7 +45,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 APPENDIX
 
@@ -58,7 +57,7 @@ methods. Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::DB::Failover;
-
+$Bio::DB::Failover::VERSION = '1.7.8';
 use strict;
 
 use base qw(Bio::Root::Root Bio::DB::RandomAccessI);

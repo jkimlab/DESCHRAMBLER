@@ -1,4 +1,3 @@
-# $Id: FeatureNamer.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # bioperl module for Bio::SeqFeature::Tools::FeatureNamer
 #
@@ -87,7 +86,7 @@ report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Chris Mungall
 
@@ -104,6 +103,7 @@ methods. Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::SeqFeature::Tools::FeatureNamer;
+$Bio::SeqFeature::Tools::FeatureNamer::VERSION = '1.7.8';
 use strict;
 
 # Object preamble - inherits from Bio::Root::Root

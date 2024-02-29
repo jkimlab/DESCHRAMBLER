@@ -1,4 +1,3 @@
-# $Id: QRNA.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Tools::QRNA
 #
@@ -51,7 +50,7 @@ string in the tag 'entry' it is accessible via:
 
 The winning model for any given alignment test will be the name stored
 in the primary_tag field of feature.  The bit score will stored in the
-score field.  The logoddpost is availble via the a tag/value pair.
+score field.  The logoddpost is available via the a tag/value pair.
 This example code will show how to print out the score and log odds
 post for each model.
 
@@ -107,7 +106,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -125,6 +124,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::Tools::QRNA;
+$Bio::Tools::QRNA::VERSION = '1.7.8';
 use vars qw(@Models);
 use strict;
 

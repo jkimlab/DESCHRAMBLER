@@ -1,4 +1,3 @@
-# $Id: SeqBuilder.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Seq::SeqBuilder
 #
@@ -108,7 +107,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Hilmar Lapp
 
@@ -126,6 +125,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::Seq::SeqBuilder;
+$Bio::Seq::SeqBuilder::VERSION = '1.7.8';
 use strict;
 
 # Object preamble - inherits from Bio::Root::Root
@@ -356,7 +356,7 @@ sub make_object{
 
 =head1 Implementation specific methods
 
-These methods allow to conveniently configure this sequence object
+These methods allow one to conveniently configure this sequence object
 builder as to which slots are desired, and under which circumstances a
 sequence object should be abandoned altogether. The default mode is
 want_all(1), which means the builder will report all slots as wanted
@@ -565,7 +565,7 @@ sub want_all{
            Conditions in this implementation are closures (anonymous
            functions) which are passed one parameter, a hash reference
            the keys of which are equal to initialization
-           paramaters. The closure must return TRUE to make the object
+           parameters. The closure must return TRUE to make the object
            'wanted.'
 
            Conditions will be implicitly ANDed.
@@ -592,7 +592,7 @@ sub get_object_conditions{
            Conditions in this implementation must be closures
            (anonymous functions). These will be passed one parameter,
            which is a hash reference with the sequence object
-           initialization paramters being the keys.
+           initialization parameters being the keys.
 
            Conditions are implicitly ANDed. If you want other
            operators, perform those tests inside of one closure

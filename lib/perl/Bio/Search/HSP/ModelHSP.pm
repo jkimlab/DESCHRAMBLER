@@ -1,4 +1,3 @@
-# $Id: ModelHSP.pm 16147 2009-09-22 01:26:32Z cjfields $
 #
 # BioPerl module for Bio::Search::HSP::ModelHSP
 #
@@ -58,7 +57,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Chris Fields
 
@@ -74,6 +73,7 @@ Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::Search::HSP::ModelHSP;
+$Bio::Search::HSP::ModelHSP::VERSION = '1.7.8';
 use strict;
 use Bio::Seq::Meta;
 
@@ -98,7 +98,7 @@ Plus Bio::Seach::HSP::ModelHSP methods
            -hsp_length=> Length of the HSP (including gaps)
            -identical => # of residues that that matched identically
            -conserved => # of residues that matched conservatively 
-                           (only protein comparisions; 
+                           (only protein comparisons;
 			    conserved == identical in nucleotide comparisons)
            -hsp_gaps   => # of gaps in the HSP
            -query_gaps => # of gaps in the query in the alignment
@@ -138,6 +138,25 @@ sub meta {
     my $previous = $self->{'META'};
     if( defined $value  ) {
         $self->{'META'} = $value;
+    }
+    return $previous;
+}
+
+=head2 noncanonical_string
+
+ Title   : noncanonical_string
+ Usage   : my $nc_seq = $hsp->noncanonical_string();
+ Function: Returns noncanonical string (NC) data for this HSP or undef
+ Returns : string of noncanonical data or undef
+ Args    : [optional] string to set value
+
+=cut
+
+sub noncanonical_string {
+    my ($self,$value) = @_;
+    my $previous = $self->{'NC_SEQ'};
+    if( defined $value  ) {
+        $self->{'NC_SEQ'} = $value;
     }
     return $previous;
 }

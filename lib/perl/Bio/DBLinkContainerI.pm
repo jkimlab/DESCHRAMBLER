@@ -1,8 +1,7 @@
-# $Id: DBLinkContainerI.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::DBLinkContainerI
 #
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Heikki Lehvaslaiho <heikki-at-bioperl-dot-org>
 #
@@ -33,7 +32,7 @@ Bio::DBLinkContainerI - Abstract interface for any object wanting to use
 
 This interface defines the functions one can expect for any object
 wanting to use database cross-references. This class does not actually
-provide any implemention, it just provides the definitions of what
+provide any implementation, it just provides the definitions of what
 methods one can call.
 
 The database cross-references are implemented as L<Bio::Annotation::DBLink>
@@ -50,15 +49,15 @@ of the Bioperl mailing lists.  Your participation is much appreciated.
   bioperl-l@bioperl.org                  - General discussion
   http://bioperl.org/wiki/Mailing_lists  - About the mailing lists
 
-=head2 Support 
+=head2 Support
 
 Please direct usage questions or support issues to the mailing list:
 
 I<bioperl-l@bioperl.org>
 
-rather than to the module maintainer directly. Many experienced and 
-reponsive experts will be able look at the problem and quickly 
-address it. Please include a thorough description of the problem 
+rather than to the module maintainer directly. Many experienced and
+reponsive experts will be able look at the problem and quickly
+address it. Please include a thorough description of the problem
 with code and data examples if at all possible.
 
 =head2 Reporting Bugs
@@ -67,7 +66,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Heikki Lehvaslaiho
 
@@ -83,6 +82,7 @@ methods. Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::DBLinkContainerI;
+$Bio::DBLinkContainerI::VERSION = '1.7.8';
 use strict;
 
 use Carp;

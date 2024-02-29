@@ -1,4 +1,3 @@
-# $Id: FTLocationFactory.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Factory::FTLocationFactory
 #
@@ -68,7 +67,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Hilmar Lapp
 
@@ -90,6 +89,7 @@ Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::Factory::FTLocationFactory;
+$Bio::Factory::FTLocationFactory::VERSION = '1.7.8';
 use vars qw($LOCREG);
 use strict;
 
@@ -159,7 +159,6 @@ sub from_string {
     }
     
     if ($locstr =~ m{(.*?)\(($LOCREG)\)(.*)}o) { # any matching parentheses?
-
         my ($beg, $mid, $end) = ($1, $2, $3);
         my (@sublocs) = (split(q(,),$beg), $mid, split(q(,),$end));
         
@@ -181,17 +180,56 @@ sub from_string {
                     my @splitlocs = split(q(,), $sub);
                     $loc_obj = Bio::Location::Split->new(-verbose => 1,
                                                          -splittype => $oparg);
-                    while (my $splitloc = shift @splitlocs) {
+                    # Store strand values for later consistency check
+                    my @subloc_strands;
+                    my @s_objs;
+                    foreach my $splitloc (@splitlocs) {
                         next unless $splitloc;
                         my $sobj;
                         if ($splitloc =~ m{\(($LOCREG)\)}) {
                             my $comploc = $1;
                             $sobj = $self->_parse_location($comploc);
                             $sobj->strand(-1);
+                            push @subloc_strands, -1;
                         } else {
                             $sobj = $self->_parse_location($splitloc);
+                            push @subloc_strands, 1;
                         }
-                        $loc_obj->add_sub_Location($sobj);
+                        push @s_objs, $sobj;
+                    }
+
+                    # Sublocations strand values consistency check to set
+                    # Guide Strand and sublocations adding order
+                    if (scalar @s_objs > 0) {
+                        my $identical    = 0;
+
+                        my $first_value = $subloc_strands[0];
+                        foreach my $strand (@subloc_strands) {
+                            $identical++ if ($strand == $first_value);
+                        }
+
+                        if ($identical == scalar @subloc_strands) {
+                            # Set guide_strand if all sublocations have the same strand
+                            $loc_obj->guide_strand($first_value);
+
+                            # Reverse sublocation order for negative strand locations, e.g.:
+                            # Common (CAA24672.1):
+                            #   join(complement(4918..5163),complement(2691..4571))
+                            # Trans-splicing (NP_958375.1):
+                            #   join(32737..32825,complement(174205..174384),complement(69520..71506))
+                            if ($first_value  == -1) {
+                                @s_objs = reverse @s_objs;
+                            }
+                        }
+                        else {
+                            # Mixed strand values
+                            $loc_obj->guide_strand(undef);
+                        }
+
+                        # Add sublocations
+                        foreach my $s_obj (@s_objs) {
+                            $loc_obj->add_sub_Location($s_obj);
+                        }
                     }
                 } else {
                     $loc_obj = $self->from_string($sub, $oparg);
@@ -204,8 +242,28 @@ sub from_string {
             else {
                 $loc_obj = $self->from_string($subloc,1);
             }
-            $loc_obj->strand(-1) if ($op && $op eq 'complement');
-            push @loc_objs, $loc_obj;
+            if ($op && $op eq 'complement') {
+                $loc_obj->strand(-1);
+            }
+
+            # For Split-type $loc_obj, if guide strand is set (meaning consistent strand for
+            # all sublocs) and guide strand is the same than the last location from @loc_objs,
+            # then recover the sublocations and add them to @loc_objs. This way,
+            # "join(10..20,join(30..40,50..60))" becomes "join(10..20,30..40,50..60)"
+            my $guide_strand = ($loc_obj->isa('Bio::Location::SplitLocationI')) ? ($loc_obj->guide_strand || 0) : 0;
+            my $last_strand  = (scalar @loc_objs > 0) ? $loc_objs[-1]->strand : 0;
+            if (    $guide_strand   != 0
+                and $guide_strand   == $last_strand
+                and $oparg          eq $op # join(,join()) OK, order(join()) NOT OK
+                ) {
+                my @subloc_objs = $loc_obj->sub_Location(0);
+                foreach my $subloc_obj (@subloc_objs) {
+                    push @loc_objs, $subloc_obj;
+                }
+            }
+            else {
+                push @loc_objs, $loc_obj;
+            }
         }
         my $ct = @loc_objs;
         if ($op && !($op eq 'join' || $op eq 'order' || $op eq 'bond')

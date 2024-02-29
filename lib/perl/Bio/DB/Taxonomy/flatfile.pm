@@ -1,4 +1,3 @@
-# $Id: flatfile.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::DB::Taxonomy::flatfile
 #
@@ -14,24 +13,23 @@
 
 =head1 NAME
 
-Bio::DB::Taxonomy::flatfile - An implementation of Bio::DB::Taxonomy
-which uses local flat files
+Bio::DB::Taxonomy::flatfile - Use the NCBI taxonomy from local indexed flat files
 
 =head1 SYNOPSIS
 
   use Bio::DB::Taxonomy;
 
-  my $db = Bio::DB::Taxonomy->new(-source => 'flatfile'
-                                 -nodesfile => $nodesfile,
-                                 -namesfile => $namefile);
+  my $db = Bio::DB::Taxonomy->new(-source    => 'flatfile' ,
+                                  -nodesfile => 'nodes.dmp',
+                                  -namesfile => 'names.dmp');
 
 =head1 DESCRIPTION
 
-This is an implementation which uses local flat files and the DB_File
-module RECNO data structures to manage a local copy of the NCBI
-Taxonomy database.
+This is an implementation of Bio::DB::Taxonomy which stores and accesses the
+NCBI taxonomy using flat files stored locally on disk and indexed using the
+DB_File module RECNO data structure for fast retrieval.
 
-Required database files can be obtained from
+The required database files, nodes.dmp and names.dmp can be obtained from
 ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
 
 =head1 FEEDBACK
@@ -62,7 +60,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -82,24 +80,27 @@ Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::DB::Taxonomy::flatfile;
-use vars qw($DEFAULT_INDEX_DIR $DEFAULT_NODE_INDEX 	    $DEFAULT_NAME2ID_INDEX $DEFAULT_ID2NAME_INDEX
-	    $NCBI_TAXONOMY_HOSTNAME $DEFAULT_PARENT_INDEX
-	    $NCBI_TAXONOMY_FILE @DIVISIONS);
+$Bio::DB::Taxonomy::flatfile::VERSION = '1.7.8';
+use vars qw($DEFAULT_INDEX_DIR $DEFAULT_NODE_INDEX $DEFAULT_NAME2ID_INDEX
+            $DEFAULT_ID2NAME_INDEX $DEFAULT_PARENT_INDEX @DIVISIONS);
+
 use strict;
-use Bio::Taxon;
 use DB_File;
+use Bio::Taxon;
+use File::Spec::Functions;
 
 use constant SEPARATOR => ':';
 
-$DEFAULT_INDEX_DIR = '/tmp';
-$DEFAULT_NODE_INDEX = 'nodes';
+$DEFAULT_INDEX_DIR     = $Bio::Root::IO::TEMPDIR; # /tmp
+$DEFAULT_NODE_INDEX    = 'nodes';
 $DEFAULT_NAME2ID_INDEX = 'names2id';
 $DEFAULT_ID2NAME_INDEX = 'id2names';
-$DEFAULT_PARENT_INDEX = 'parents';
-$NCBI_TAXONOMY_HOSTNAME = 'ftp.ncbi.nih.gov';
-$NCBI_TAXONOMY_FILE = '/pub/taxonomy/taxdump.tar.gz';
+$DEFAULT_PARENT_INDEX  = 'parents';
 
 $DB_BTREE->{'flags'} = R_DUP; # allow duplicate values in DB_File BTREEs
+
+# 8192 bytes; this seems to work to keep OS X from complaining
+$DB_HASH->{'bsize'} = 0x2000;
 
 @DIVISIONS =   ([qw(BCT Bacteria)],
                 [qw(INV Invertebrates)],
@@ -125,29 +126,51 @@ use base qw(Bio::DB::Taxonomy);
  Args    : -directory => name of directory where index files should be created
            -nodesfile => name of file containing nodes (nodes.dmp from NCBI)
            -namesfile => name of the file containing names(names.dmp from NCBI)
-           -force     => 1 replace current indexes even if they exist
+           -force     => 1 to replace current indexes even if they exist
 
 =cut
 
 sub new {
-  my($class,@args) = @_;
+  my($class, @args) = @_;
 
   my $self = $class->SUPER::new(@args);
-  my ($dir,$nodesfile,$namesfile,$force) = $self->_rearrange([qw
-	  (DIRECTORY NODESFILE NAMESFILE FORCE)], @args);
+  my ($dir,$nodesfile,$namesfile,$force) =
+      $self->_rearrange([qw(DIRECTORY NODESFILE NAMESFILE FORCE)], @args);
   
   $self->index_directory($dir || $DEFAULT_INDEX_DIR);
   if ( $nodesfile ) {
-	  $self->_build_index($nodesfile,$namesfile,$force);
+          $self->_build_index($nodesfile,$namesfile,$force);
   }
 
   $self->_db_connect;
   return $self;
 }
 
-=head2 Bio::DB::Taxonomy Interface implementation
+
+=head2 Bio::DB::Taxonomy interface implementation
+
+=head2 get_num_taxa
+
+ Title   : get_num_taxa
+ Usage   : my $num = $db->get_num_taxa();
+ Function: Get the number of taxa stored in the database.
+ Returns : A number
+ Args    : None
 
 =cut
+
+sub get_num_taxa {
+    my ($self) = @_;
+    if (not exists $self->{_num_taxa}) {
+        my $num = 0;
+        while ( my ($parent, undef) = each %{$self->{_parent2children}} ) {
+           $num++;
+        }
+        $self->{_num_taxa} = $num;
+    }
+    return $self->{_num_taxa};
+}
+
 
 =head2 get_taxon
 
@@ -178,6 +201,8 @@ sub get_taxon {
         $taxonid = shift;
     }
     
+    return unless $taxonid;
+    
     $taxonid =~ /^\d+$/ || return;
     my $node = $self->{'_nodes'}->[$taxonid] || return;
     length($node) || return;
@@ -204,6 +229,7 @@ sub get_taxon {
 }
 
 *get_Taxonomy_Node = \&get_taxon;
+
 
 =head2 get_taxonids
 
@@ -234,6 +260,7 @@ sub get_taxonids {
 
 *get_taxonid = \&get_taxonids;
 
+
 =head2 get_Children_Taxids
 
  Title   : get_Children_Taxids
@@ -246,22 +273,23 @@ sub get_taxonids {
 =cut
 
 sub get_Children_Taxids {
-   my ($self,$node) = @_;
+   my ($self, $node) = @_;
    $self->warn("get_Children_Taxids is deprecated, use each_Descendent instead");
    my $id;
    if( ref($node) ) {
        if( $node->can('object_id') ) {
-	   $id = $node->object_id;
+           $id = $node->object_id;
        } elsif( $node->can('ncbi_taxid') ) {
-	   $id = $node->ncbi_taxid;
+           $id = $node->ncbi_taxid;
        } else { 
-	   $self->warn("Don't know how to extract a taxon id from the object of type ".ref($node)."\n");
-	   return;
+           $self->warn("Don't know how to extract a taxon id from the object of type ".ref($node)."\n");
+           return;
        }
    } else { $id = $node }
    my @vals = $self->{'_parentbtree'}->get_dup($id);
    return @vals;
 }
+
 
 =head2 ancestor
 
@@ -284,11 +312,12 @@ sub ancestor {
     if (length($node)) {
         my (undef, $parent_id) = split(SEPARATOR,$node);
         $parent_id || return;
-		$parent_id eq $id && return; # one of the roots
+        $parent_id eq $id && return; # one of the roots
         return $self->get_taxon($parent_id);
     }
     return;
 }
+
 
 =head2 each_Descendent
 
@@ -306,14 +335,15 @@ sub each_Descendent {
     $self->throw("Must supply a Bio::Taxon") unless ref($taxon) && $taxon->isa('Bio::Taxon');
     $self->throw("The supplied Taxon must belong to this database") unless $taxon->db_handle && $taxon->db_handle eq $self;
     my $id = $taxon->id || $self->throw("The supplied Taxon is missing its id!");
-	
+
     my @desc_ids = $self->{'_parentbtree'}->get_dup($id);
     my @descs;
     foreach my $desc_id (@desc_ids) {
         push(@descs, $self->get_taxon($desc_id) || next);
     }
-	return @descs;
+    return @descs;
 }
+
 
 =head2 Helper methods 
 
@@ -321,44 +351,45 @@ sub each_Descendent {
 
 # internal method which does the indexing
 sub _build_index {
-    my ($self,$nodesfile,$namesfile,$force) = @_;
+    my ($self, $nodesfile, $namesfile, $force) = @_;
     
-    my ($dir) = ($self->index_directory);
-    my $nodeindex = "$dir/$DEFAULT_NODE_INDEX";
-    my $name2idindex = "$dir/$DEFAULT_NAME2ID_INDEX";
-    my $id2nameindex = "$dir/$DEFAULT_ID2NAME_INDEX";
-    my $parent2childindex = "$dir/$DEFAULT_PARENT_INDEX";
-    $self->{'_nodes'}    = [];
-    $self->{'_id2name'} = [];
-    $self->{'_name2id'} = {};
+    my $dir = $self->index_directory;
+    my $nodeindex         = catfile($dir, $DEFAULT_NODE_INDEX);
+    my $name2idindex      = catfile($dir, $DEFAULT_NAME2ID_INDEX);
+    my $id2nameindex      = catfile($dir, $DEFAULT_ID2NAME_INDEX);
+    my $parent2childindex = catfile($dir, $DEFAULT_PARENT_INDEX);
+    $self->{'_nodes'}           = [];
+    $self->{'_id2name'}         = [];
+    $self->{'_name2id'}         = {};
     $self->{'_parent2children'} = {};
     
     if (! -e $nodeindex || $force) {
         my (%parent2children,@nodes);
-        open(NODES,$nodesfile) || 
-            $self->throw("Cannot open node file '$nodesfile' for reading");
+        open my $NODES, '<', $nodesfile
+            or $self->throw("Could not read node file '$nodesfile': $!");
         
         unlink $nodeindex;
         unlink $parent2childindex;
         my $nh = tie ( @nodes, 'DB_File', $nodeindex, O_RDWR|O_CREAT, 0644, $DB_RECNO) || 
-            $self->throw("Cannot open file '$nodeindex': $!");	
+            $self->throw("Cannot open file '$nodeindex': $!");
         my $btree = tie( %parent2children, 'DB_File', $parent2childindex, O_RDWR|O_CREAT, 0644, $DB_BTREE) || 
-            $self->throw("Cannot open file '$parent2childindex': $!");	
+            $self->throw("Cannot tie to file '$parent2childindex': $!");
         
-        while (<NODES>) {
+        while (<$NODES>) {
+            next if /^$/;
             chomp;
             my ($taxid,$parent,$rank,$code,$divid,undef,$gen_code,undef,$mito) = split(/\t\|\t/,$_);
-			# don't include the fake root node 'root' with id 1; we essentially have multiple roots here
-			next if $taxid == 1;
-			if ($parent == 1) {
-				$parent = $taxid;
-			}
-			
+            # don't include the fake root node 'root' with id 1; we essentially have multiple roots here
+            next if $taxid == 1;
+            if ($parent == 1) {
+                $parent = $taxid;
+            }
+
             # keep this stringified
             $nodes[$taxid] = join(SEPARATOR, ($taxid,$parent,$rank,$code,$divid,$gen_code,$mito));
             $btree->put($parent,$taxid);
         }
-        close(NODES);
+        close $NODES;
         
         $nh = $btree = undef;
         untie @nodes ;
@@ -366,23 +397,24 @@ sub _build_index {
     }
     
     if ((! -e $name2idindex || -z $name2idindex) || (! -e $id2nameindex || -z $id2nameindex) || $force) { 
-        open(NAMES,$namesfile) || 
-            $self->throw("Cannot open names file '$namesfile' for reading");
+        open my $NAMES, '<', $namesfile
+            or $self->throw("Could not read names file '$namesfile': $!");
         
         unlink $name2idindex;
         unlink $id2nameindex;
         my (@id2name,%name2id);
         my $idh = tie (@id2name, 'DB_File', $id2nameindex, O_RDWR|O_CREAT, 0644, $DB_RECNO) || 
-            $self->throw("Cannot open file '$id2nameindex': $!");
+            $self->throw("Cannot tie to file '$id2nameindex': $!");
         my $nameh = tie ( %name2id, 'DB_File', $name2idindex, O_RDWR|O_CREAT, 0644, $DB_HASH) || 
-            $self->throw("Cannot open file '$name2idindex': $!");
+            $self->throw("Cannot tie to file '$name2idindex': $!");
         
-        while (<NAMES>) {
-            chomp;	    
+        while (<$NAMES>) {
+            next if /^$/;
+            chomp; 
             my ($taxid, $name, $unique_name, $class) = split(/\t\|\t/,$_);
-			# don't include the fake root node 'root' or 'all' with id 1
-			next if $taxid == 1;
-			
+            # don't include the fake root node 'root' or 'all' with id 1
+            next if $taxid == 1;
+
             $class =~ s/\s+\|\s*$//;
             my $lc_name = lc($name);
             my $orig_name = $name;
@@ -426,7 +458,7 @@ sub _build_index {
             }
             $id2name[$taxid] = join(SEPARATOR, @names);
         }
-        close(NAMES);
+        close $NAMES;
         
         $idh = $nameh = undef;
         untie( %name2id);
@@ -434,45 +466,47 @@ sub _build_index {
     }
 }
 
+
 # connect the internal db handle
 sub _db_connect {
     my $self = shift;
     return if $self->{'_initialized'};
-    
-    $self->{'_nodes'}   = [];
-    $self->{'_id2name'} = [];
-    $self->{'_name2id'} = {};
-    
-    my ($dir) = ($self->index_directory);
-    my $nodeindex = "$dir/$DEFAULT_NODE_INDEX";
-    my $name2idindex = "$dir/$DEFAULT_NAME2ID_INDEX";
-    my $id2nameindex = "$dir/$DEFAULT_ID2NAME_INDEX";
-    my $parent2childindex = "$dir/$DEFAULT_PARENT_INDEX";
+
+    my $dir = $self->index_directory;
+    my $nodeindex         = catfile($dir, $DEFAULT_NODE_INDEX);
+    my $name2idindex      = catfile($dir, $DEFAULT_NAME2ID_INDEX);
+    my $id2nameindex      = catfile($dir, $DEFAULT_ID2NAME_INDEX);
+    my $parent2childindex = catfile($dir, $DEFAULT_PARENT_INDEX);
+    $self->{'_nodes'}           = [];
+    $self->{'_id2name'}         = [];
+    $self->{'_name2id'}         = {};
+    $self->{'_parent2children'} = {};
     
     if( ! -e $nodeindex ||
-	! -e $name2idindex || 
-	! -e $id2nameindex ) {
-	$self->warn("Index files have not been created");
-	return 0;
+        ! -e $name2idindex || 
+        ! -e $id2nameindex ) {
+        $self->warn("Index files have not been created");
+        return 0;
     }
-    tie ( @{$self->{'_nodes'}}, 'DB_File', $nodeindex, O_RDWR,undef, $DB_RECNO) 
-	|| $self->throw("$! $nodeindex");
-    tie (@{$self->{'_id2name'}}, 'DB_File', $id2nameindex,O_RDWR, undef, 
-	 $DB_RECNO) || $self->throw("$! $id2nameindex");
+    tie ( @{$self->{'_nodes'}}, 'DB_File', $nodeindex, O_RDONLY,undef, $DB_RECNO) 
+        || $self->throw("$! $nodeindex");
+    tie (@{$self->{'_id2name'}}, 'DB_File', $id2nameindex,O_RDONLY, undef, 
+        $DB_RECNO) || $self->throw("$! $id2nameindex");
     
-    tie ( %{$self->{'_name2id'}}, 'DB_File', $name2idindex, O_RDWR,undef, 
-	  $DB_HASH) || $self->throw("$! $name2idindex");
+    tie ( %{$self->{'_name2id'}}, 'DB_File', $name2idindex, O_RDONLY,undef, 
+        $DB_HASH) || $self->throw("$! $name2idindex");
     $self->{'_parentbtree'} = tie( %{$self->{'_parent2children'}},
-				   'DB_File', $parent2childindex, 
-				   O_RDWR, 0644, $DB_BTREE);
-    $self->{'_initialized'}  = 1;
+                                   'DB_File', $parent2childindex, 
+                                   O_RDONLY, 0644, $DB_BTREE);
+
+    $self->{'_initialized'} = 1;
 }
 
 
 =head2 index_directory
 
  Title   : index_directory
- Funtion : Get/set the location that index files are stored. (this module
+ Function : Get/set the location that index files are stored. (this module
            will index the supplied database)
  Usage   : $obj->index_directory($newval)
  Returns : value of index_directory (a scalar)
@@ -480,10 +514,35 @@ sub _db_connect {
 
 =cut
 
+
 sub index_directory {
     my $self = shift;
     return $self->{'index_directory'} = shift if @_;
     return $self->{'index_directory'};
+}
+
+
+sub DESTROY {
+    my $self = shift;
+    # Destroy all filehandle references
+    # to be able to remove temporary files
+    undef $self->{_id2name};
+    undef $self->{_name2id};
+    undef $self->{_nodes};
+    undef $self->{_parent2children};
+    undef $self->{_parentbtree};
+
+    # Treat index files as temporary and delete them now if
+    # 'index_directory' match $DEFAULT_INDEX_DIR (which means
+    # that no "-directory" was specified or is an explicit
+    # temporary file)
+    my $default_temp = quotemeta $DEFAULT_INDEX_DIR;
+    if ($self->{index_directory} =~ m/^$default_temp/) {
+        unlink catfile($self->{index_directory},'id2names');
+        unlink catfile($self->{index_directory},'names2id');
+        unlink catfile($self->{index_directory},'nodes');
+        unlink catfile($self->{index_directory},'parents');
+    }
 }
 
 1;

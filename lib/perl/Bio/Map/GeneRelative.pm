@@ -21,7 +21,7 @@ Bio::Map::GeneRelative - Represents being relative to named sub-regions of a
 
     use Bio::Map::GeneRelative;
 
-    # say that a somthing will have a position relative to the start of the
+    # say that a something will have a position relative to the start of the
     # gene on map
     my $rel = Bio::Map::GeneRelative->new(-gene => 0);
 
@@ -67,7 +67,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Sendu Bala
 
@@ -202,7 +202,7 @@ sub absolute_conversion {
         return $self->SUPER::absolute_conversion($pos);
     }
     if (ref($value)) {
-        # psuedo-recurse
+        # pseudo-recurse
         my $rel = $value->relative;
         $value = $rel->absolute_conversion($value);
     }

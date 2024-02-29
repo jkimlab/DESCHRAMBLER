@@ -1,4 +1,3 @@
-# $Id: ProtMatrix.pm 16123 2009-09-17 12:57:27Z cjfields $
 #---------------------------------------------------------
 
 =head1 NAME
@@ -110,7 +109,7 @@ example A matrix is given as array, C - as string).  The position
 vector is (0,0,0,0).  One of the probability vectors is shorter than
 the rest.
 
-Summary of the methods I use most frequently (details bellow):
+Summary of the methods I use most frequently (details below):
 
    iupac - return IUPAC compliant consensus as a string
    score - Returns the score as a real number
@@ -175,7 +174,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - James Thompson
 
@@ -188,6 +187,7 @@ Email tex@biosysadmin.com
 
 # Let the code begin...
 package Bio::Matrix::PSM::ProtMatrix;
+$Bio::Matrix::PSM::ProtMatrix::VERSION = '1.7.8';
 use strict;
 
 use base qw(Bio::Root::Root Bio::Matrix::PSM::SiteMatrixI);
@@ -317,7 +317,7 @@ sub _calculate_consensus {
 
  Title    : next_pos
  Usage    :
- Function : Retrives the next position features: frequencies for all 20 amino
+ Function : Retrieves the next position features: frequencies for all 20 amino
             acids, log-odds scores for all 20 amino acids at this position,
             the main (consensus) letter at this position, the probability
             for the consensus letter to occur at this position and the relative
@@ -721,7 +721,7 @@ sub _uncompress_string {
  Usage    :
  Function:   A method to provide a compressed frequency vector. It uses one byte to
              code the frequence for one of the probability vectors for one position.
-             Useful for relational database. Improvment of the previous 0..a coding.
+             Useful for relational database. Improvement of the previous 0..a coding.
  Throws   :
  Example  :   my $strA=$self->get_compressed_freq('A');
  Returns  :   String

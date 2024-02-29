@@ -1,4 +1,3 @@
-# $Id: IO.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Structure::IO
 #
@@ -195,7 +194,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.
 Bug reports can be submitted via the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHORS - Ewan Birney, Lincoln Stein, Kris Boulez
 
@@ -299,6 +298,19 @@ sub fh {
   tie $$s,$class,$self;
   return $s;
 }
+
+
+=head2 format
+
+ Title   : format
+ Usage   : $format = $obj->format()
+ Function: Get the structure format
+ Returns : structure format
+ Args    : none
+
+=cut
+
+# format() method inherited from Bio::Root::IO
 
 
 # _initialize is chained for all SeqIO classes
@@ -524,7 +536,7 @@ sub TIEHANDLE {
 
 sub READLINE {
   my $self = shift;
-  return $self->{'structio'}->next_seq() unless wantarray;
+  return $self->{'structio'}->next_seq() || undef unless wantarray;
   my (@list, $obj);
   push @list, $obj while $obj = $self->{'structio'}->next_seq();
   return @list;

@@ -1,4 +1,3 @@
-# $Id: interpro.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for interpro
 # You may distribute this module under the same terms as perl itself
@@ -60,7 +59,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jared Fox
 
@@ -121,7 +120,7 @@ sub next_seq {
 		my $wingwhere = index($line, $wing);
 
 		# the interpro XML is not fully formed, so we need to convert the 
-		# extra double quotes and ampersands into appropriate XML chracter codes
+		# extra double quotes and ampersands into appropriate XML character codes
 		if($where > 0){
 			my @linearray = split /$zinc/, $line;
 			$finishedline = join "&quot;zincins&quot;", $linearray[0], $linearray[2];
@@ -138,8 +137,8 @@ sub next_seq {
 		$xml_fragment .= $finishedline;
 		last if $finishedline =~ m!</protein>!;
 	}
-
-	return unless $xml_fragment =~ /<protein/;
+	# Match <protein> but not other similar elements like <protein-matches>
+	return unless $xml_fragment =~ /<protein[\s>]/;
 
 	$self->_parse_xml($xml_fragment);
 
@@ -167,6 +166,8 @@ sub next_seq {
                   -seq_id => $protein_node->getAttribute('id') ),
 					} @locNodes;
 			foreach my $seqFeature (@seqFeatures){
+				$bioSeq->add_SeqFeature($seqFeature);
+
 				my $annotation1 = Bio::Annotation::DBLink->new;
 				$annotation1->database($matchNodes[$match]->getAttribute('dbname'));
 				$annotation1->primary_id($matchNodes[$match]->getAttribute('id'));
@@ -196,7 +197,6 @@ sub next_seq {
                                      $seqFeature->annotation->add_Annotation('dblink', $go_annotation);
                                  }
 			}
-			$bioSeq->add_SeqFeature(@seqFeatures);
 		}
 	}
 	my $accession = $protein_node->getAttribute('id');
@@ -229,7 +229,8 @@ sub _initialize {
   my $line = undef;
   # fast forward to first <protein/> record.
   while($line = $self->_readline()){
-    if($line =~ /<protein/){
+    # Match <protein> but not other similar elements like <protein-matches>
+    if($line =~ /<protein[\s>]/){
       $self->_pushback($line);
       last;
     }

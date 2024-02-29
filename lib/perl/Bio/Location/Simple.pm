@@ -1,4 +1,3 @@
-# $Id: Simple.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Location::Simple
 # Please direct questions and support issues to <bioperl-l@bioperl.org> 
@@ -18,13 +17,16 @@ Bio::Location::Simple - Implementation of a Simple Location on a Sequence
 
     use Bio::Location::Simple;
 
-    my $location = Bio::Location::Simple->new(-start => 1, -end => 100,
-                         -strand => 1 );
+    my $location = Bio::Location::Simple->new(
+        -start  => 1,
+        -end    => 100,
+        -strand => 1,
+    );
 
     if( $location->strand == -1 ) {
-    printf "complement(%d..%d)\n", $location->start, $location->end;
+        printf "complement(%d..%d)\n", $location->start, $location->end;
     } else {
-    printf "%d..%d\n", $location->start, $location->end;
+        printf "%d..%d\n", $location->start, $location->end;
     }
 
 =head1 DESCRIPTION
@@ -63,7 +65,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Heikki Lehvaslaiho
 
@@ -80,15 +82,16 @@ methods. Internal methods are usually preceded with a _
 
 
 package Bio::Location::Simple;
+$Bio::Location::Simple::VERSION = '1.7.8';
 use strict;
 
 use base qw(Bio::Location::Atomic);
 
 our %RANGEENCODE  = ('\.\.' => 'EXACT',
-             '\^'   => 'IN-BETWEEN' );
+                     '\^'   => 'IN-BETWEEN' );
 
 our %RANGEDECODE  = ('EXACT'      => '..',
-             'IN-BETWEEN' => '^' );
+                     'IN-BETWEEN' => '^' );
 
 sub new { 
     my ($class, @args) = @_;
@@ -107,13 +110,13 @@ sub new {
   Usage   : $start = $loc->start();
   Function: get/set the start of this range
   Returns : the start of this range
-  Args    : optionaly allows the start to be set
-          : using $loc->start($start)
+  Args    : optionally allows the start to be set
+            using $loc->start($start)
 
 =cut
 
 sub start {
-  my ($self, $value) = @_;
+    my ($self, $value) = @_;
     $self->{'_start'} = $value if defined $value ;
   
     $self->throw("Only adjacent residues when location type ".
@@ -132,37 +135,37 @@ sub start {
   Usage   : $end = $loc->end();
   Function: get/set the end of this range
   Returns : the end of this range
-  Args    : optionaly allows the end to be set
+  Args    : optionally allows the end to be set
           : using $loc->end($start)
   Note    : If start is set but end is undefined, this now assumes that start
-		    is the same as end but throws a warning (i.e. it assumes this is
-			a possible error). If start is undefined, this now throws an
-			exception.
+            is the same as end but throws a warning (i.e. it assumes this is
+            a possible error). If start is undefined, this now throws an
+            exception.
 
 =cut
 
 sub end {
-	my ($self, $value) = @_;
+    my ($self, $value) = @_;
   
-	$self->{'_end'} = $value if defined $value ;
-	
-	#assume end is the same as start if not defined
-	if (!defined $self->{'_end'}) {
-		if (!defined $self->{'_start'}) {
-			$self->warn('Calling end without a defined start position');
-			return;
-		}
-		$self->warn('Setting start equal to end');
-		$self->{'_end'} = $self->{'_start'};
-	}
-	$self->throw("Only adjacent residues when location type ".
-			"is IN-BETWEEN. Not [". $self->{'_start'}. "] and [".
-			 $self->{'_end'}. "]" )
-		if defined $self->{'_start'} && defined $self->{'_end'} && 
-		$self->location_type eq 'IN-BETWEEN' &&
-		($self->{'_end'} - 1 != $self->{'_start'});
+    $self->{'_end'} = $value if defined $value ;
+    
+    # Assume end is the same as start if not defined
+    if (!defined $self->{'_end'}) {
+        if (!defined $self->{'_start'}) {
+            $self->warn('Can not set Bio::Location::Simple::end() equal to start; start not set');
+            return;
+        }
+        $self->warn('Setting end to equal start['. $self->{'_start'}. ']');
+        $self->{'_end'} = $self->{'_start'};
+    }
+    $self->throw("Only adjacent residues when location type ".
+            "is IN-BETWEEN. Not [". $self->{'_start'}. "] and [".
+             $self->{'_end'}. "]" )
+        if defined $self->{'_start'} && defined $self->{'_end'} && 
+        $self->location_type eq 'IN-BETWEEN' &&
+        ($self->{'_end'} - 1 != $self->{'_start'});
   
-	return $self->{'_end'};
+    return $self->{'_end'};
 }
 
 =head2 strand
@@ -171,7 +174,7 @@ sub end {
   Usage   : $strand = $loc->strand();
   Function: get/set the strand of this range
   Returns : the strandedness (-1, 0, +1)
-  Args    : optionaly allows the strand to be set
+  Args    : optionally allows the strand to be set
           : using $loc->strand($strand)
 
 =cut
@@ -188,14 +191,14 @@ sub end {
 =cut
 
 sub length {
-   my ($self) = @_;
-   if ($self->location_type eq 'IN-BETWEEN' ) {
-       return 0;
-   } else {
-       return abs($self->end - $self->start) + 1;
-   }
-
+    my ($self) = @_;
+    if ($self->location_type eq 'IN-BETWEEN' ) {
+        return 0;
+    } else {
+        return abs($self->end - $self->start) + 1;
+    }
 }
+
 
 =head2 min_start
 
@@ -282,21 +285,21 @@ sub location_type {
     my ($self, $value) = @_;
 
     if( defined $value || ! defined $self->{'_location_type'} ) {
-    $value = 'EXACT' unless defined $value;
-    $value = uc $value;
-    if (! defined $RANGEDECODE{$value}) {
-        $value = '\^' if $value eq '^';
-        $value = '\.\.' if $value eq '..';
-        $value = $RANGEENCODE{$value};
-    }
-    $self->throw("Did not specify a valid location type. [$value] is no good")
-        unless defined $value;
-    $self->{'_location_type'} = $value;
+        $value = 'EXACT' unless defined $value;
+        $value = uc $value;
+        if (! defined $RANGEDECODE{$value}) {
+            $value = '\^' if $value eq '^';
+            $value = '\.\.' if $value eq '..';
+            $value = $RANGEENCODE{$value};
+        }
+        $self->throw("Did not specify a valid location type. [$value] is no good")
+            unless defined $value;
+        $self->{'_location_type'} = $value;
     }
     $self->throw("Only adjacent residues when location type ".
-         "is IN-BETWEEN. Not [". $self->{'_start'}. "] and [".
-         $self->{'_end'}. "]" )
-    if $self->{'_location_type'} eq 'IN-BETWEEN' &&
+            "is IN-BETWEEN. Not [". $self->{'_start'}. "] and [".
+            $self->{'_end'}. "]" )
+        if $self->{'_location_type'} eq 'IN-BETWEEN' &&
         defined $self->{'_start'} &&
         defined $self->{'_end'} &&
             ($self->{'_end'} - 1 != $self->{'_start'});
@@ -307,11 +310,25 @@ sub location_type {
 =head2 is_remote
 
  Title   : is_remote
- Usage   : $self->is_remote($newval)
- Function: Getset for is_remote value
- Returns : value of is_remote
- Args    : newvalue (optional)
+ Usage   : $is_remote_loc = $loc->is_remote()
+ Function: Whether or not a location is a remote location.
 
+           A location is said to be remote if it is on a different
+           'object' than the object which 'has' this
+           location. Typically, features on a sequence will sometimes
+           have a remote location, which means that the location of
+           the feature is on a different sequence than the one that is
+           attached to the feature. In such a case, $loc->seq_id will
+           be different from $feat->seq_id (usually they will be the
+           same).
+
+           While this may sound weird, it reflects the location of the
+           kind of AL445212.9:83662..166657 which can be found in GenBank/EMBL
+           feature tables.
+
+ Example : 
+ Returns : TRUE if the location is a remote location, and FALSE otherwise
+ Args    : Value to set to
 
 =cut
 
@@ -330,19 +347,20 @@ sub to_FTstring {
 
     my $str;
     if( $self->start == $self->end ) {
-    $str =  $self->start;
+        $str =  $self->start;
     } else {
         $str = $self->start . $RANGEDECODE{$self->location_type} . $self->end;
     }
     if($self->is_remote() && $self->seq_id()) {
-    $str = $self->seq_id() . ":" . $str;
+        $str = $self->seq_id() . ":" . $str;
     }
     if( defined $self->strand &&
-    $self->strand == -1 ) {
-    $str = "complement(".$str.")";
+        $self->strand == -1 ) {
+        $str = "complement(".$str.")";
     }
     return $str;
 }
+
 
 =head2 valid_Location
 
@@ -359,7 +377,7 @@ sub to_FTstring {
 #
 # trunc is untested, and as of now unannounced method for truncating a
 # location.  This is to eventually be part of the procedure to
-# truncate a sequence with annotatioin and properly remap the location
+# truncate a sequence with annotation and properly remap the location
 # of all the features contained within the truncated segment.
 
 # presumably this might do things a little differently for the case 
@@ -368,28 +386,28 @@ sub to_FTstring {
 # in short- you probably don't want to use  this method.
 
 sub trunc {
-  my ($self,$start,$end,$relative_ori) = @_;
-  my $newstart  = $self->start - $start+1;
-  my $newend    = $self->end   - $start+1;
-  my $newstrand = $relative_ori * $self->strand;
+    my ($self,$start,$end,$relative_ori) = @_;
+    my $newstart  = $self->start - $start+1;
+    my $newend    = $self->end   - $start+1;
+    my $newstrand = $relative_ori * $self->strand;
 
-  my $out;
-  if( $newstart < 1 || $newend > ($end-$start+1) ) {
-    $out = Bio::Location::Simple->new();
-    $out->start($self->start);
-    $out->end($self->end);
-    $out->strand($self->strand);
-    $out->seq_id($self->seqid);
-    $out->is_remote(1);
-  } else {
-    $out = Bio::Location::Simple->new();
-    $out->start($newstart);
-    $out->end($newend);
-    $out->strand($newstrand);
-    $out->seq_id();
-  }
+    my $out;
+    if( $newstart < 1 || $newend > ($end-$start+1) ) {
+        $out = Bio::Location::Simple->new();
+        $out->start($self->start);
+        $out->end($self->end);
+        $out->strand($self->strand);
+        $out->seq_id($self->seqid);
+        $out->is_remote(1);
+    } else {
+        $out = Bio::Location::Simple->new();
+        $out->start($newstart);
+        $out->end($newend);
+        $out->strand($newstrand);
+       $out->seq_id();
+    }
 
-  return $out;
+    return $out;
 }
 
 1;

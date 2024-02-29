@@ -1,4 +1,3 @@
-## $Id: pSW.pm 16123 2009-09-17 12:57:27Z cjfields $
 
 #
 # BioPerl module for Bio::Tools::pSW
@@ -107,7 +106,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/           
+  https://github.com/bioperl/bioperl-live/issues           
 
 =head1 AUTHOR
 
@@ -255,14 +254,14 @@ sub pairwise_alignment{
 	if( $alc->alu(0)->text_label eq 'SEQUENCE' ) {
 	    push(@ostr1,$str1[$alc->alu(0)->start+1]);
 	} else {
-	    # assumme it is in insert!
+	    # assume it is in insert!
 	    push(@ostr1,'-');
 	}
 
 	if( $alc->alu(1)->text_label eq 'SEQUENCE' ) {
 	    push(@ostr2,$str2[$alc->alu(1)->start+1]);
 	} else {
-	    # assumme it is in insert!
+	    # assume it is in insert!
 	    push(@ostr2,'-');
 	}
 	$alctemp = $alc;

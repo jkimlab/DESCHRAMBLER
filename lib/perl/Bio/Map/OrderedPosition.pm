@@ -73,7 +73,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Chad Matsalla
 
@@ -176,7 +176,7 @@ sub equals {
 
 # admittedly these aren't really the best comparisons in the world
 # but it is a first pass we'll need to refine the algorithm or not 
-# provide general comparisions and require these to be implemented
+# provide general comparisons and require these to be implemented
 # by objects closer to the specific type of data
 
 =head2 less_than

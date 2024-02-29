@@ -1,4 +1,3 @@
-# $Id: Prints.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Tools::Prints
 #
@@ -55,7 +54,7 @@ with code and data examples if at all possible.
  of the bugs and their resolution. Bug reports can be submitted via
  the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Balamurugan Kumarasamy
 
@@ -71,6 +70,7 @@ with code and data examples if at all possible.
 =cut
 
 package Bio::Tools::Prints;
+$Bio::Tools::Prints::VERSION = '1.7.8';
 use strict;
 
 use Bio::SeqFeature::FeaturePair;

@@ -1,5 +1,4 @@
 #-----------------------------------------------------------------
-# $Id: HSPI.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Search::HSP::HSPI
 #
@@ -94,7 +93,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Steve Chervitz, Jason Stajich
 
@@ -121,7 +120,7 @@ Internal methods are usually preceded with a _
 
 
 package Bio::Search::HSP::HSPI;
-
+$Bio::Search::HSP::HSPI::VERSION = '1.7.8';
 
 use strict;
 use Carp;
@@ -455,28 +454,31 @@ These methods come from L<Bio::SeqFeature::SimilarityPair>
  Returns : +1 or -1 (0 if unknown)
  Args    : 'hit' or 'subject' or 'sbjct' to retrieve the strand of the subject
            'query' to retrieve the query strand (default)
-           'list' or 'array' to retreive both query and hit together
+           'list' or 'array' to retrieve both query and hit together
 
 =cut
 
 sub strand {
     my $self = shift;
-    my $val = shift;
+    my $val  = shift;
     $val = 'query' unless defined $val;
     $val =~ s/^\s+//;
 
-    if( $val =~ /^q/i ) {
-	return $self->query->strand(@_);
-    } elsif( $val =~ /^hi|^s/i ) {
-	return $self->hit->strand(@_);
-    } elsif (  $val =~ /^list|array/i ) {
-	# do we really need to pass on additional arguments here? HL
-	# (formerly this was strand(shift) which is really bad coding because
-	# it breaks if the callee allows setting to undef)
-	return ($self->query->strand(@_), 
-		$self->hit->strand(@_) );
-    } else { 
-	$self->warn("unrecognized component '$val' requested\n");
+    if ( $val =~ /^q/i ) {
+        return $self->query->strand(@_);
+    }
+    elsif ( $val =~ /^hi|^s/i ) {
+        return $self->hit->strand(@_);
+    }
+    elsif ( $val =~ /^list|array/i ) {
+
+        # Do we really need to pass on additional arguments here? HL
+        # (formerly this was strand(shift) which is really bad coding because
+        # it breaks if the callee allows setting to undef)
+        return ( $self->query->strand(@_), $self->hit->strand(@_) );
+    }
+    else {
+        $self->warn("unrecognized component '$val' requested\n");
     }
     return 0;
 }

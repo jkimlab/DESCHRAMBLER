@@ -71,7 +71,6 @@ it under the same terms as Perl itself.
 =cut
 
 use strict;
-# $Id: memory.pm 15635 2009-04-14 19:11:13Z cjfields $
 # AUTHOR: Shulamit Avraham
 # This module needs to be cleaned up and documented
 

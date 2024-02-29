@@ -1,4 +1,3 @@
-# $Id: UniGene.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Cluster::UniGene.pm
 #
@@ -162,7 +161,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Andrew Macgregor
 
@@ -837,7 +836,7 @@ sub annotation{
  Usage   :
  Function: Adds a member object to the list of members.
  Example :
- Returns : TRUE if the new member was successfuly added, and FALSE
+ Returns : TRUE if the new member was successfully added, and FALSE
            otherwise.
  Args    : The member to add.
 
@@ -1170,7 +1169,7 @@ sub namespace {
  Usage   : $string    = $obj->display_name()
  Function: A string which is what should be displayed to the user
            the string should have no spaces (ideally, though a cautious
-           user of this interface would not assumme this) and should be
+           user of this interface would not assume this) and should be
            less than thirty characters (though again, double checking 
            this is a good idea)
 

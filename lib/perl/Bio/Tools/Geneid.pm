@@ -1,4 +1,3 @@
-# $Id: Geneid.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # Please direct questions and support issues to <bioperl-l@bioperl.org> 
 #
@@ -9,6 +8,9 @@
 # You may distribute this module under the same terms as Perl itself
 
 # POD documentation - main docs before the code
+
+
+=encoding utf-8
 
 =head1 NAME
 
@@ -35,7 +37,7 @@ Bio::Tools::Geneid - Results of one geneid run
 =head1 DESCRIPTION
 
 This is the parser for the output of geneid by Enrique Blanco and
-Roderic Guigó (IMIM-UPF). See http://www1.imim.es/software/geneid. It
+Roderic GuigE<243> (IMIM-UPF). See http://www1.imim.es/software/geneid. It
 relies on native geneid output format internally and will work with
 geneid versions 1.0 and 1.1. Currently this module supports only the
 default mode of operation which is to predict exons and assemble an
@@ -72,7 +74,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Keith James
 
@@ -86,7 +88,7 @@ Internal methods are usually preceded with a _
 =cut
 
 package Bio::Tools::Geneid;
-
+$Bio::Tools::Geneid::VERSION = '1.7.8';
 use vars qw($SOURCE_TAG);
 use strict;
 

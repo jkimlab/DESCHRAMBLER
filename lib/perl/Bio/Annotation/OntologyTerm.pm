@@ -1,4 +1,3 @@
-# $Id: OntologyTerm.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Annotation::OntologyTerm
 #
@@ -86,7 +85,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Hilmar Lapp
 
@@ -105,7 +104,10 @@ Internal methods are usually preceded with a _
 
 
 package Bio::Annotation::OntologyTerm;
+$Bio::Annotation::OntologyTerm::VERSION = '1.7.8';
 use strict;
+
+use Carp;
 
 # Object preamble - inherits from Bio::Root::Root
 
@@ -342,7 +344,7 @@ sub definition {
            another Term (e.g. the top level of the ontology).
  Returns : The ontology of this Term [TermI].
  Args    : The ontology of this Term [TermI or scalar -- which
-           becomes the name of the catagory term] (optional).
+           becomes the name of the category term] (optional).
 
 =cut
 
@@ -441,7 +443,7 @@ sub remove_synonyms {
 
 sub get_dblinks {
     my $self = shift;
-    $self->deprecated('get_dblinks() is deprecated; use get_dbxrefs()');
+    Carp::carp('get_dblinks() is deprecated; use get_dbxrefs()');
     return $self->term->get_dbxrefs(@_);
 } # get_dblinks
 
@@ -477,7 +479,7 @@ sub get_dbxrefs {
 
 sub add_dblink {
     my $self = shift;
-    $self->deprecated('add_dblink() is deprecated; use add_dbxref()');
+    Carp::carp('add_dblink() is deprecated; use add_dbxref()');
     return $self->term->add_dbxref(@_);
 } # add_dblink
 
@@ -512,7 +514,7 @@ sub add_dbxref {
 
 sub remove_dblinks {
     my $self = shift;
-    $self->deprecated('remove_dblinks() is deprecated; use remove_dbxrefs()');
+    Carp::carp('remove_dblinks() is deprecated; use remove_dbxrefs()');
     return $self->term->remove_dbxrefs(@_);
 } # remove_dblinks
 

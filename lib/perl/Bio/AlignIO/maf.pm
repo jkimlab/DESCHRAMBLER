@@ -1,4 +1,3 @@
-# $Id: maf.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::AlignIO::maf
 #
@@ -65,7 +64,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHORS - Allen Day
 
@@ -81,6 +80,7 @@ methods. Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::AlignIO::maf;
+$Bio::AlignIO::maf::VERSION = '1.7.8';
 use strict;
 
 use Bio::SimpleAlign;
@@ -170,11 +170,13 @@ sub next_aln {
 	    split /\s+/, $sline;
 	# adjust coordinates to be one-based inclusive
         $start = $start + 1;
-	my $seq = Bio::LocatableSeq->new('-seq'    => $text,
-					'-id'     => $src,
-					'-start'  => $start,
-					'-end'    => $start + $size - 1,
-					'-strand' => $strand,
+    $strand = $strand eq '+' ? 1 : $strand eq '-' ? -1 : 0;
+	my $seq = Bio::LocatableSeq->new('-seq'          => $text,
+					 '-display_id'   => $src,
+					 '-start'        => $strand > 0 ? $start                : ($srcsize-($start+$size-2)),
+					 '-end'          => $strand > 0 ? ($start + $size - 1)  : ($srcsize-($start-1)) ,
+					 '-strand'       => $strand,
+					 '-alphabet'     => $self->alphabet,
 					);
 	$aln->add_seq($seq);
     }

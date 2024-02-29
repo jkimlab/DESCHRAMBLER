@@ -1,4 +1,3 @@
-# $Id: gameWriter.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::SeqIO::game::gameWriter
 #
@@ -66,7 +65,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Sheldon McKay
 
@@ -80,7 +79,7 @@ methods. Internal methods are usually preceded with a _
 =cut
 
 package Bio::SeqIO::game::gameWriter;
-
+$Bio::SeqIO::game::gameWriter::VERSION = '1.7.8';
 use strict;
 use IO::String;
 use XML::Writer;
@@ -178,7 +177,7 @@ sub write_to_game {
     # $self->_rearrange_hierarchies($seq, @gene_containers);
 
     # add back nested feats
-    $seq->add_SeqFeature( @nested_feats  );
+    $seq->add_SeqFeature( $_ ) foreach @nested_feats;
     
     my $atts  = {};
     my $xml = '';
@@ -296,7 +295,7 @@ sub _rearrange_hierarchies { #renamed to not conflict with Bio::Root::_rearrange
     }    
    
     push @addback, (@containers, grep { defined $_ } @genes );
-    $seq->add_SeqFeature(@addback);
+    $seq->add_SeqFeature($_) foreach @addback;
 }
 
 

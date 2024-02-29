@@ -1,5 +1,4 @@
 #
-# $Id: Fasta.pm 16168 2009-09-25 21:07:32Z cjfields $
 #
 # BioPerl module for Bio::Index::Fasta
 #
@@ -49,14 +48,13 @@ Bio::Index::Fasta - Interface for indexing (multiple) fasta files
 =head1 DESCRIPTION
 
 Inherits functions for managing dbm files from Bio::Index::Abstract.pm,
-and provides the basic funtionallity for indexing fasta files, and
+and provides the basic funtionality for indexing fasta files, and
 retrieving the sequence from them. For best results 'use strict'.
 
 Bio::Index::Fasta supports the Bio::DB::BioSeqI interface, meaning
 it can be used as a Sequence database for other parts of bioperl
 
-Additional example code is available in scripts/index/*PLS and in 
-the Bioperl Tutorial (L<http://www.bioperl.org/wiki/Bptutorial.pl>)
+Additional example code is available in scripts/index/.
 
 Note that by default the key for the sequence will be the first continuous
 string after the 'E<gt>' in the fasta header. If you want to use a specific
@@ -106,7 +104,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - James Gilbert
 
@@ -124,7 +122,7 @@ methods. Internal methods are usually preceded with a _
 
 
 package Bio::Index::Fasta;
-
+$Bio::Index::Fasta::VERSION = '1.7.8';
 use strict;
 use warnings;
 
@@ -179,7 +177,17 @@ sub _index_file {
 
     my $id_parser = $self->id_parser;
 
-    open my $FASTA, '<', $file or $self->throw("Can't open file for read : $file");
+    open my $FASTA, '<', $file or $self->throw("Could not read file '$file': $!");
+
+    # In Windows, text files have '\r\n' as line separator, but when reading in
+    # text mode Perl will only show the '\n'. This means that for a line "ABC\r\n",
+    # "length $_" will report 4 although the line is 5 bytes in length.
+    # We assume that all lines have the same line separator and only read current line.
+    my $init_pos   = tell($FASTA);
+    my $curr_line  = <$FASTA>;
+    my $pos_diff   = tell($FASTA) - $init_pos;
+    my $correction = $pos_diff - length $curr_line;
+    seek $FASTA, $init_pos, 0; # Rewind position to proceed to read the file
 
     # Main indexing loop
     while (<$FASTA>) {
@@ -188,8 +196,7 @@ sub _index_file {
             # the following was fixed to allow validation - cjfields
             
             # $begin is the position of the first character after the '>'
-            my $offset = ( $^O =~ /mswin/i ) ? 1 : 0;
-            $begin = tell($FASTA) - length( $_ ) - $offset;
+            $begin = tell($FASTA) - length( $_ ) - $correction;
             
             foreach my $id (&$id_parser($_)) {
                 $self->add_record($id, $i, $begin);

@@ -1,8 +1,7 @@
-# $Id: AlignI.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Align::AlignI
 #
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Jason Stajich <jason@bioperl.org>
 #
@@ -54,15 +53,15 @@ the Bioperl mailing list.  Your participation is much appreciated.
   bioperl-l@bioperl.org                  - General discussion
   http://bioperl.org/wiki/Mailing_lists  - About the mailing lists
 
-=head2 Support 
+=head2 Support
 
 Please direct usage questions or support issues to the mailing list:
 
 I<bioperl-l@bioperl.org>
 
-rather than to the module maintainer directly. Many experienced and 
-reponsive experts will be able look at the problem and quickly 
-address it. Please include a thorough description of the problem 
+rather than to the module maintainer directly. Many experienced and
+reponsive experts will be able look at the problem and quickly
+address it. Please include a thorough description of the problem
 with code and data examples if at all possible.
 
 =head2 Reporting Bugs
@@ -71,7 +70,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Jason Stajich
 
@@ -94,8 +93,8 @@ Internal methods are usually preceded with a _
 
 
 package Bio::Align::AlignI;
+$Bio::Align::AlignI::VERSION = '1.7.8';
 use strict;
-
 
 use base qw(Bio::Root::RootI);
 
@@ -165,13 +164,13 @@ sub purge {
 
  Title     : sort_alphabetically
  Usage     : $ali->sort_alphabetically
- Function  : 
+ Function  :
 
-             Changes the order of the alignment to alphabetical on name 
+             Changes the order of the alignment to alphabetical on name
              followed by numerical by number.
 
  Returns   : an array
- Argument  : 
+ Argument  :
 
 =cut
 
@@ -187,10 +186,10 @@ Methods returning one or more sequences objects.
 =head2 each_seq
 
  Title     : each_seq
- Usage     : foreach $seq ( $align->each_seq() ) 
+ Usage     : foreach $seq ( $align->each_seq() )
  Function  : Gets an array of Seq objects from the alignment
  Returns   : an array
- Argument  : 
+ Argument  :
 
 =cut
 
@@ -205,12 +204,12 @@ sub each_seq {
  Usage     : foreach $seq ( $ali->each_alphabetically() )
  Function  :
 
-             Returns an array of sequence object sorted alphabetically 
+             Returns an array of sequence object sorted alphabetically
              by name and then by start point.
              Does not change the order of the alignment
 
- Returns   : 
- Argument  : 
+ Returns   :
+ Argument  :
 
 =cut
 
@@ -222,8 +221,8 @@ sub each_alphabetically {
 =head2 each_seq_with_id
 
  Title     : each_seq_with_id
- Usage     : foreach $seq ( $align->each_seq_with_id() ) 
- Function  : 
+ Usage     : foreach $seq ( $align->each_seq_with_id() )
+ Function  :
 
              Gets an array of Seq objects from the
              alignment, the contents being those sequences
@@ -243,7 +242,7 @@ sub each_seq_with_id {
 
  Title     : get_seq_by_pos
  Usage     : $seq = $aln->get_seq_by_pos(3) # third sequence from the alignment
- Function  : 
+ Function  :
 
              Gets a sequence based on its position in the alignment.
              Numbering starts from 1.  Sequence positions larger than
@@ -268,7 +267,7 @@ current MSE.
 
  Title     : select
  Usage     : $aln2 = $aln->select(1, 3) # three first sequences
- Function  : 
+ Function  :
 
              Creates a new alignment from a continuous subset of
              sequences.  Numbering starts from 1.  Sequence positions
@@ -290,7 +289,7 @@ sub select {
 
  Title     : select_noncont
  Usage     : $aln2 = $aln->select_noncont(1, 3) # first and 3rd sequences
- Function  : 
+ Function  :
 
              Creates a new alignment from a subset of
              sequences.  Numbering starts from 1.  Sequence positions
@@ -310,7 +309,7 @@ sub select_noncont {
 
  Title     : slice
  Usage     : $aln2 = $aln->slice(20, 30)
- Function  : 
+ Function  :
 
              Creates a slice from the alignment inclusive of start and
              end columns.  Sequences with no residues in the slice are
@@ -319,8 +318,8 @@ sub select_noncont {
              padding.
 
  Returns   : a Bio::SimpleAlign object
- Argument  : positive integer for start column 
-             positive integer for end column 
+ Argument  : positive integer for start column
+             positive integer for end column
 
 =cut
 
@@ -339,14 +338,14 @@ alignment.
 
  Title     : map_chars
  Usage     : $ali->map_chars('\.','-')
- Function  : 
+ Function  :
 
              Does a s/$arg1/$arg2/ on the sequences. Useful for gap
              characters
 
-             Notice that the from (arg1) is interpreted as a regex,
-             so be careful about quoting meta characters (eg
-             $ali->map_chars('.','-') wont do what you want)
+             Notice that the "from" (arg1) is interpreted as a regex,
+             so be careful about quoting meta characters (e.g.
+             $ali->map_chars('.', '-') won't do what you want)
 
  Returns   : None
  Argument  : 'from' rexexp
@@ -364,8 +363,8 @@ sub map_chars {
  Title     : uppercase()
  Usage     : $ali->uppercase()
  Function  : Sets all the sequences to uppercase
- Returns   : 
- Argument  : 
+ Returns   :
+ Argument  :
 
 =cut
 
@@ -395,7 +394,7 @@ sub match_line {
 
  Title     : match()
  Usage     : $ali->match()
- Function  : 
+ Function  :
 
              Goes through all columns and changes residues that are
              identical to residue in first sequence to match '.'
@@ -420,7 +419,7 @@ sub match {
 
  Title     : unmatch()
  Usage     : $ali->unmatch()
- Function  : 
+ Function  :
 
              Undoes the effect of method match. Unsets match_char.
 
@@ -437,7 +436,7 @@ sub unmatch {
 
 =head1 MSE attibutes
 
-Methods for setting and reading the MSE attributes. 
+Methods for setting and reading the MSE attributes.
 
 Note that the methods defining character semantics depend on the user
 to set them sensibly.  They are needed only by certain input/output
@@ -463,8 +462,8 @@ sub id {
  Title     : missing_char
  Usage     : $myalign->missing_char("?")
  Function  : Gets/sets the missing_char attribute of the alignment
-             It is generally recommended to set it to 'n' or 'N' 
-             for nucleotides and to 'X' for protein. 
+             It is generally recommended to set it to 'n' or 'N'
+             for nucleotides and to 'X' for protein.
  Returns   : An missing_char string,
  Argument  : An missing_char string (optional)
 
@@ -522,14 +521,14 @@ sub symbol_chars{
 
 =head1 Alignment descriptors
 
-These read only methods describe the MSE in various ways. 
+These read only methods describe the MSE in various ways.
 
 
 =head2 consensus_string
 
  Title     : consensus_string
  Usage     : $str = $ali->consensus_string($threshold_percent)
- Function  : Makes a strict consensus 
+ Function  : Makes a strict consensus
  Returns   : consensus string
  Argument  : Optional threshold ranging from 0 to 100.
              The consensus residue has to appear at least threshold %
@@ -548,7 +547,7 @@ sub consensus_string {
 
  Title     : consensus_iupac
  Usage     : $str = $ali->consensus_iupac()
- Function  : 
+ Function  :
 
              Makes a consensus using IUPAC ambiguity codes from DNA
              and RNA. The output is in upper case except when gaps in
@@ -575,14 +574,14 @@ sub consensus_iupac {
 
  Title     : is_flush
  Usage     : if( $ali->is_flush() )
-           : 
            :
- Function  : Tells you whether the alignment 
+           :
+ Function  : Tells you whether the alignment
            : is flush, ie all of the same length
-           : 
+           :
            :
  Returns   : 1 or 0
- Argument  : 
+ Argument  :
 
 =cut
 
@@ -594,11 +593,11 @@ sub is_flush {
 =head2 length
 
  Title     : length()
- Usage     : $len = $ali->length() 
+ Usage     : $len = $ali->length()
  Function  : Returns the maximum length of the alignment.
              To be sure the alignment is a block, use is_flush
  Returns   : integer
- Argument  : 
+ Argument  :
 
 =cut
 
@@ -611,13 +610,13 @@ sub length {
 
  Title     : maxname_length
  Usage     : $ali->maxname_length()
- Function  : 
+ Function  :
 
              Gets the maximum length of the displayname in the
              alignment. Used in writing out various MSE formats.
 
  Returns   : integer
- Argument  : 
+ Argument  :
 
 =cut
 
@@ -663,7 +662,7 @@ sub num_sequences {
  Title   : percentage_identity
  Usage   : $id = $align->percentage_identity
  Function: The function calculates the percentage identity of the alignment
- Returns : The percentage identity of the alignment (as defined by the 
+ Returns : The percentage identity of the alignment (as defined by the
 	   implementation)
  Argument: None
 
@@ -678,7 +677,7 @@ sub percentage_identity{
 
  Title   : overall_percentage_identity
  Usage   : $id = $align->overall_percentage_identity
- Function: The function calculates the percentage identity of 
+ Function: The function calculates the percentage identity of
            the conserved columns
  Returns : The percentage identity of the conserved columns
  Args    : None
@@ -695,7 +694,7 @@ sub overall_percentage_identity{
 
  Title   : average_percentage_identity
  Usage   : $id = $align->average_percentage_identity
- Function: The function uses a fast method to calculate the average 
+ Function: The function uses a fast method to calculate the average
            percentage identity of the alignment
  Returns : The average percentage identity of the alignment
  Args    : None
@@ -787,12 +786,12 @@ sub displayname {
 
  Title     : set_displayname_count
  Usage     : $ali->set_displayname_count
- Function  : 
+ Function  :
 
              Sets the names to be name_# where # is the number of
              times this name has been used.
 
- Returns   : None 
+ Returns   : None
  Argument  : None
 
 =cut
@@ -821,7 +820,7 @@ sub set_displayname_flat {
 =head2 set_displayname_normal
 
  Title     : set_displayname_normal
- Usage     : $ali->set_displayname_normal() 
+ Usage     : $ali->set_displayname_normal()
  Function  : Makes all the sequences be displayed as name/start-end
  Returns   : None
  Argument  : None
@@ -831,40 +830,6 @@ sub set_displayname_flat {
 sub set_displayname_normal {
     my ($self) = @_;
     $self->throw_not_implemented();
-}
-
-=head1 Deprecated methods
-
-=head2 no_residues
-
- Title     : no_residues
- Usage     : $no = $ali->no_residues
- Function  : number of residues in total in the alignment
- Returns   : integer
- Argument  : 
- Note      : deprecated in favor of num_residues()
-
-=cut
-
-sub no_residues {
-    # immediate deprecation
-    shift->deprecated();
-}
-
-=head2 no_sequences
-
- Title     : no_sequences
- Usage     : $depth = $ali->no_sequences
- Function  : number of sequence in the sequence alignment
- Returns   : integer
- Argument  : None
- Note      : deprecated in favor of num_sequences() 
-
-=cut
-
-sub no_sequences {
-    # immediate deprecation
-    shift->deprecated();
 }
 
 1;

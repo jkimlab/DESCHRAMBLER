@@ -1,4 +1,3 @@
-# $Id: entrezgene.pm 16123 2009-09-17 12:57:27Z cjfields $
 # BioPerl module for Bio::SeqIO::entrezgene
 #
 # You may distribute this module under the same terms as perl itself
@@ -98,7 +97,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Stefan Kirov
 
@@ -197,7 +196,7 @@ sub next_seq {
 
     #Basic data
     #$xval->{summary}=~s/\n//g;
-    my $seq = Bio::Seq->new(
+    $seq = Bio::Seq->new(
         -display_id       => $xval->{gene}{locus},
         -accession_number => $xval->{'track-info'}{geneid},
         -desc             => $xval->{summary}
@@ -355,11 +354,21 @@ sub next_seq {
     }
 
     #Homology
-    my ( $uncapt, $hom, $anchor ) = _process_src( $xval->{homology}->{source} );
-    foreach my $homann (@$hom) {
-        $self->{_ann}->add_Annotation( 'dblink', $homann );
+    my @homologies; # Sometimes there are multiple entries
+    if (ref $xval->{homology} eq 'ARRAY') {
+        @homologies = @{ $xval->{homology} };
     }
-    push @alluncaptured, $uncapt;
+    else {
+        push @homologies, $xval->{homology};
+    }
+
+    foreach my $homology (@homologies) {
+        my ( $uncapt, $hom, $anchor ) = _process_src( $homology->{source} );
+        foreach my $homann (@$hom) {
+            $self->{_ann}->add_Annotation( 'dblink', $homann );
+        }
+        push @alluncaptured, $uncapt;
+    }
 
     #Index terms
     if (   ( exists( $xval->{'xtra-index-terms'} ) )
@@ -858,6 +867,7 @@ sub _process_locus {
         );
         $gseq->add_SeqFeature($nfeat);
     }
+
     my @products;
     if ( ref( $self->{_current}->{products} ) eq 'ARRAY' ) {
         @products = @{ $self->{_current}->{products} };
@@ -866,6 +876,7 @@ sub _process_locus {
         push @products, $self->{_current}->{products};
     }
     delete $self->{_current}->{products};
+
     my $gstruct = Bio::SeqFeature::Gene::GeneStructure->new();
     foreach my $product (@products) {
         my ( $tr, $uncapt ) =
@@ -891,8 +902,9 @@ sub _process_products_coordinates {
       || 0;    #In case it is not known: should there be an entry at all?
     my $end    = shift || 1;
     my $strand = shift || 1;
-    my ( @coords, @uncapt );
     return unless ( exists( $coord->{accession} ) );
+
+    my ( @coords, @uncapt );
     my $transcript = Bio::SeqFeature::Gene::Transcript->new(
         -primary => $coord->{accession},    #Desc is actually non functional...
         -start   => $start,
@@ -922,13 +934,24 @@ sub _process_products_coordinates {
             push @uncapt, $exon;
         }
     }
+
     my ( $prot, $uncapt );
     if ( exists( $coord->{products} ) ) {
-        my ( $prot, $uncapt ) =
-          _process_products_coordinates( $coord->{products},
-            $start, $end, $strand );
-        $transcript->add_SeqFeature($prot);
-        push @uncapt, $uncapt;
+        my @products; # Sometimes there are multiple entries
+        if (ref $coord->{products} eq 'ARRAY') {
+            @products = @{ $coord->{products} };
+        }
+        else {
+            push @products, $coord->{products};
+        }
+
+        foreach my $product (@products) {
+            my ( $prot, $uncapt ) =
+              _process_products_coordinates( $product,
+                $start, $end, $strand );
+            $transcript->add_SeqFeature($prot);
+            push @uncapt, $uncapt;
+        }
     }
     return $transcript, \@uncapt;
 }
@@ -1165,7 +1188,7 @@ sub _process_grif {
             $refergene = $grif->{source}->{src}->{tag}->{id};
             $refdb     = $grif->{source}->{src}->{db};
         }
-        my $grifobj = new Bio::Annotation::Comment( -text => $grif->{text} );
+        my $grifobj = Bio::Annotation::Comment->new( -text => $grif->{text} );
         $obj = Bio::Annotation::DBLink->new(
             -database   => 'generif',
             -primary_id => $ref->{pmid}
@@ -1178,7 +1201,7 @@ sub _process_grif {
         $type = 'dblink';
     }
     else {
-        $obj = new Bio::Annotation::SimpleValue( $grif->{text}, 'generif' );
+        $obj = Bio::Annotation::SimpleValue->new( $grif->{text}, 'generif' );
         $type = 'generif';
     }
     delete $grif->{text};

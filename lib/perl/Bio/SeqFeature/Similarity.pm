@@ -1,4 +1,3 @@
-# $Id: Similarity.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::SeqFeature::Similarity
 #
@@ -60,7 +59,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Hilmar Lapp
 
@@ -78,6 +77,7 @@ methods. Internal methods are usually preceded with a _
 
 
 package Bio::SeqFeature::Similarity;
+$Bio::SeqFeature::Similarity::VERSION = '1.7.8';
 use strict;
 
 
@@ -189,12 +189,12 @@ sub seqlength {
 =cut
 
 sub seqdesc {
-    my ($self, $value) = @_;
+    my ( $self, $value ) = @_;
 
-    if( defined $value ) { 
-	my $v = Bio::Annotation::SimpleValue->new();
-	$v->value($value);
-	$self->annotation->add_Annotation('description',$v);
+    if ( defined $value ) {
+        my $v = Bio::Annotation::SimpleValue->new();
+        $v->value($value);
+        $self->annotation->add_Annotation( 'description', $v );
     }
     my ($v) = $self->annotation()->get_Annotations('description');
     return defined $v ? $v->value : undef;

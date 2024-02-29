@@ -1,4 +1,3 @@
-# $Id: Physical.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Map::Physical
 #
@@ -20,7 +19,7 @@ Bio::Map::Physical - A class for handling a Physical Map (such as FPC)
 
     use Bio::MapIO;
 
-    # accquire a Bio::Map::Physical using Bio::MapIO::fpc
+    # acquire a Bio::Map::Physical using Bio::MapIO::fpc
     my $mapio = Bio::MapIO->new(-format => "fpc",-file => "rice.fpc",
                                -readcor => 0);
 
@@ -97,7 +96,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Gaurav Gupta
 
@@ -1128,6 +1127,8 @@ sub _calc_markerposition {
 	@sortedctgmarker = sort { $a->{'contig'} <=> $b->{'contig'}
 				                  ||
 				  $b->{'start'}  <=> $a->{'start'}
+				                  ||
+				  $b->{'end'}    <=> $a->{'end'}
 			        } @ctgmarker;
 				
 	my $ctg = -1;
@@ -1156,7 +1157,7 @@ sub _calc_markerposition {
 		
 		$depth = $save_depth = 1;
 	    }
-	    elsif ($sortedctgmarker[$i] <= $y) {
+	    elsif ($sortedctgmarker[$i]->{'end'} <= $y) {
 		$stack[$depth++] = $sortedctgmarker[$i]->{'end'};
 		# MAX
 		if ($x < $sortedctgmarker[$i]->{'start'} ) {

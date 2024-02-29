@@ -1,4 +1,3 @@
-# $Id: MapTiling.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::Search::Tiling::MapTiling
 #
@@ -80,6 +79,41 @@ for convenience upon object construction. These are accessed off the
 object with the L</contexts> method. If contexts don't apply for the
 given report, this returns C<('all')>. 
 
+=head1 TILED ALIGNMENTS
+
+The experimental method L<ALIGNMENTS/get_tiled_alns> will use a tiling
+to concatenate tiled hsps into a series of L<Bio::SimpleAlign>
+objects:
+
+ @alns = $tiling->get_tiled_alns($type, $context);
+
+Each alignment contains two sequences with ids 'query' and 'subject',
+and consists of a concatenation of tiling HSPs which overlap or are
+directly adjacent. The alignment are returned in C<$type> sequence
+order. When HSPs overlap, the alignment sequence is taken from the HSP
+which comes first in the coverage map array.
+
+The sequences in each alignment contain features (even though they are
+L<Bio::LocatableSeq> objects) which map the original query/subject
+coordinates to the new alignment sequence coordinates. You can
+determine the original BLAST fragments this way:
+
+ $aln = ($tiling->get_tiled_alns)[0];
+ $qseq = $aln->get_seq_by_id('query');
+ $hseq = $aln->get_seq_by_id('subject');
+ foreach my $feat ($qseq->get_SeqFeatures) {
+    $org_start = ($feat->get_tag_values('query_start'))[0];
+    $org_end = ($feat->get_tag_values('query_end'))[0];
+    # original fragment as represented in the tiled alignment:
+    $org_fragment = $feat->seq;
+ }
+ foreach my $feat ($hseq->get_SeqFeatures) {
+    $org_start = ($feat->get_tag_values('subject_start'))[0];
+    $org_end = ($feat->get_tag_values('subject_end'))[0];
+    # original fragment as represented in the tiled alignment:
+    $org_fragment = $feat->seq;
+ }
+
 =head1 DESIGN NOTE
 
 The major calculations are made just-in-time, and then memoized. So,
@@ -118,7 +152,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via
 the web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Mark A. Jensen
 
@@ -134,15 +168,14 @@ Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::Search::Tiling::MapTiling;
+$Bio::Search::Tiling::MapTiling::VERSION = '1.7.8';
 use strict;
 use warnings;
-
-# Object preamble - inherits from Bio::Root::Root
-#use lib '../../..';
 
 use Bio::Root::Root;
 use Bio::Search::Tiling::TilingI;
 use Bio::Search::Tiling::MapTileUtils;
+use Bio::LocatableSeq;
 
 # use base qw(Bio::Root::Root Bio::Search::Tiling::TilingI);
 use base qw(Bio::Root::Root Bio::Search::Tiling::TilingI);
@@ -188,7 +221,7 @@ sub new {
     }
     
     # identify available contexts
-    for my $t qw( query hit ) {
+    for my $t (qw( query hit )) {
 	my %contexts;
 	for my $i (0..$#hsps) {
 	    my $ctxt = $self->_context(
@@ -250,6 +283,143 @@ sub rewind_tilings{
     $self->_check_type_arg(\$type);
     $self->_check_context_arg($type, \$context);
     return $self->_tiling_iterator($type, $context)->('REWIND');
+}
+
+=head1 ALIGNMENTS
+
+=head2 get_tiled_alns()
+
+ Title   : get_tiled_alns
+ Usage   : @alns = $tiling->get_tiled_alns($type, $context)
+ Function: Use a tiling to construct a minimal set of alignment 
+           objects covering the region specified by $type/$context
+           by splicing adjacent HSP tiles
+ Returns : an array of Bio::SimpleAlign objects; see Note below
+ Args    : scalar $type: one of 'hit', 'subject', 'query'
+           default is 'query'
+           scalar $context: strand/frame context string
+           Following $type and $context, an array of 
+           ordered, tiled HSP objects can be specified; this is 
+           the tiling that will directly the alignment construction
+           default -- the first tiling provided by a tiling iterator
+ Notes   : Each returned alignment is a concatenation of adjacent tiles.
+           The set of alignments will cover all regions described by the 
+           $type/$context pair in the hit. The pair of sequences in each 
+           alignment have ids 'query' and 'subject', and each sequence 
+           possesses SeqFeatures that map the original query or subject 
+           coordinates to the sequence coordinates in the tiled alignment.
+           
+=cut
+
+sub get_tiled_alns {
+    my $self = shift;
+    my ($type, $context) = @_;
+    $self->_check_type_arg(\$type);
+    $self->_check_context_arg($type, \$context);
+    my $t = shift; # first arg after type/context, arrayref to a tiling
+    my @tiling;
+    if ($t && (ref($t) eq 'ARRAY')) {
+	@tiling = @$t;
+    }
+    else { # otherwise, take the first tiling available
+
+	@tiling = $self->_make_tiling_iterator($type,$context)->(); 
+    }
+    my @ret;
+
+    my @map = $self->coverage_map($type, $context);
+    my @intervals = map {$_->[0]} @map; # disjoint decomp
+    # divide into disjoint covering groups
+    my @groups = covering_groups(@intervals);
+
+    require Bio::SimpleAlign;
+    require Bio::SeqFeature::Generic;
+    # cut hsp aligns along the disjoint decomp
+    # look for gaps...or add gaps?
+    my ($q_start, $h_start, $q_strand, $h_strand);
+    # build seqs
+    for my $grp (@groups) {
+	my $taln = Bio::SimpleAlign->new();
+	my (@qfeats, @hfeats);
+	my $query_string = '';
+	my $hit_string = '';
+	my ($qlen,$hlen) = (0,0);
+	my ($qinc, $hinc, $qstart, $hstart);
+	for my $intvl (@$grp) {
+	    # following just chooses the first available hsp containing the
+	    # interval -- this is arbitrary, could be smarter.
+	    my $aln = ( containing_hsps($intvl, @tiling) )[0]->get_aln;
+	    my $qseq = $aln->get_seq_by_pos(1);
+	    my $hseq = $aln->get_seq_by_pos(2);
+	    $qstart ||= $qseq->start;
+	    $hstart ||= $hseq->start;
+	    # calculate the slice boundaries
+	    my ($beg, $end);
+	    for ($type) {
+		/query/ && do {
+		    $beg = $aln->column_from_residue_number($qseq->id, $intvl->[0]);
+		    $end = $aln->column_from_residue_number($qseq->id, $intvl->[1]);
+		    last;
+		};
+		/subject|hit/ && do {
+		    $beg = $aln->column_from_residue_number($hseq->id, $intvl->[0]);
+		    $end = $aln->column_from_residue_number($hseq->id, $intvl->[1]);
+		    last;
+		};
+	    }
+	    $aln = $aln->slice($beg, $end);
+	    $qseq = $aln->get_seq_by_pos(1);
+	    $hseq = $aln->get_seq_by_pos(2);
+	    $qinc = $qseq->length - $qseq->num_gaps($Bio::LocatableSeq::GAP_SYMBOLS);
+	    $hinc = $hseq->length - $hseq->num_gaps($Bio::LocatableSeq::GAP_SYMBOLS);
+
+	    push @qfeats, Bio::SeqFeature::Generic->new(
+		-start => $qlen+1,
+		-end => $qlen+$qinc,
+		-strand => $qseq->strand,
+		-primary => 'query',
+		-source_tag => 'BLAST',
+		-display_name => 'query coordinates',
+		-tag => { query_id => $qseq->id,
+			  query_desc => $qseq->desc,
+			  query_start => $qstart + (($qseq->strand && $qseq->strand < 0) ? -1 : 1)*$qlen,
+			  query_end => $qstart + (($qseq->strand && $qseq->strand < 0) ? -1 : 1)*($qlen+$qinc-1),
+		}
+		);
+	    push @hfeats, Bio::SeqFeature::Generic->new(
+		-start => $hlen+1,
+		-end => $hlen+$hinc,
+		-strand => $hseq->strand,
+		-primary => 'subject/hit',
+		-source_tag => 'BLAST',
+		-display_name => 'subject/hit coordinates',
+		-tag => { subject_id => $hseq->id,
+			  subject_desc => $hseq->desc,
+			  subject_start => $hstart + (($hseq->strand && $hseq->strand < 0) ? -1 : 1)*$hlen,
+			  subject_end => $hstart + (($hseq->strand && $hseq->strand < 0) ? -1 : 1)*($hlen+$hinc-1)
+		}
+		);
+	    $query_string .= $qseq->seq;
+	    $hit_string .= $hseq->seq;
+	    $qlen += $qinc;
+	    $hlen += $hinc;
+	}
+	# create the LocatableSeqs and add the features to each
+	# then add the seqs to the new aln
+	# note in MapTileUtils, Bio::FeatureHolderI methods have been
+	# mixed into Bio::LocatableSeq
+	my $qseq = Bio::LocatableSeq->new( -id => 'query',
+					   -seq => $query_string);
+	$qseq->add_SeqFeature(@qfeats);
+	my $hseq = Bio::LocatableSeq->new( -id => 'subject',
+					   -seq => $hit_string );
+	$hseq->add_SeqFeature(@hfeats);
+	$taln->add_seq($qseq);
+	$taln->add_seq($hseq);
+	push @ret, $taln;
+    }
+    
+    return @ret;
 }
 
 =head1 STATISTICS
@@ -882,7 +1052,7 @@ sub _calc_coverage_map {
 	@map = sort { $a->[0][0]<=>$b->[0][0] } @map;
 	$self->{"coverage_map_${type}_${context}"} = [@map];
 	# set the _contig_intersection attribute here (side effect)
-	$self->{"_contig_intersection_${type}_${context}"} = [map { $$_[0] } @dj_set];
+	$self->{"_contig_intersection_${type}_${context}"} = [map { $$_[0] } @map];
     }
 
     return 1; # success
@@ -1036,7 +1206,7 @@ sub _calc_stats {
            of the $type ('hit', 'subject', 'query') sequence, 
            and set the correct iterator property of the invocant
  Example :
- Returns : True on success
+ Returns : The iterator
  Args    : scalar $type, one of 'hit', 'subject', 'query';
            default is 'query'
 
@@ -1090,9 +1260,7 @@ sub _make_tiling_iterator {
 
         return @ret;
     };
-
-    $self->{"_tiling_iterator_${type}_${context}"} = $iter;
-    return 1;
+    return $iter;
 }
 
 =head2 _tiling_iterator
@@ -1117,11 +1285,11 @@ sub _tiling_iterator {
     $self->_check_context_arg($type, \$context);
 
     if (!defined $self->{"_tiling_iterator_${type}_${context}"}) {
-	$self->_make_tiling_iterator($type,$context);
+	$self->{"_tiling_iterator_${type}_${context}"} =
+	    $self->_make_tiling_iterator($type,$context);
     }
     return $self->{"_tiling_iterator_${type}_${context}"};
 }
-
 =head2 Construction Helper Methods
 
 See also L<Bio::Search::Tiling::MapTileUtils>.

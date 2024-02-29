@@ -1,4 +1,3 @@
-# $Id: metafasta.pm 16123 2009-09-17 12:57:27Z cjfields $
 #
 # BioPerl module for Bio::AlignIO::metafasta
 #
@@ -59,7 +58,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution.  Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Heikki Lehvaslaiho
 
@@ -75,6 +74,7 @@ methods. Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::AlignIO::metafasta;
+$Bio::AlignIO::metafasta::VERSION = '1.7.8';
 use vars qw($WIDTH);
 use strict;
 
@@ -141,11 +141,12 @@ sub next_aln {
 
         defined $sequence && $sequence =~ s/\s//g; # Remove whitespace
 
-        $seq = Bio::Seq::Meta->new('-seq'=>$sequence,
-				   '-id'=>$id,
-				   '-start'=>$start,
-				   '-end'=>$end
-				  );
+        $seq = Bio::Seq::Meta->new('-seq'        => $sequence,
+				   '-display_id' => $id,
+				   '-start'      => $start,
+				   '-end'        => $end,
+				   '-alphabet'   => $self->alphabet,
+				   );
 
         foreach my $meta (@metas) {
             my ($name,$string) = split /\n/, $meta;

@@ -1,4 +1,3 @@
-# $Id: gameSubs.pm 16123 2009-09-17 12:57:27Z cjfields $
 # some of the following code was pillaged from the CPAN module
 # XML::Handler::Subs
 #
@@ -62,7 +61,7 @@ Report bugs to the Bioperl bug tracking system to help us keep track
 of the bugs and their resolution. Bug reports can be submitted via the
 web:
 
-  http://bugzilla.open-bio.org/
+  https://github.com/bioperl/bioperl-live/issues
 
 =head1 AUTHOR - Sheldon McKay
 
@@ -76,6 +75,7 @@ methods. Internal methods are usually preceded with a _
 =cut
 
 package Bio::SeqIO::game::gameSubs;
+$Bio::SeqIO::game::gameSubs::VERSION = '1.7.8';
 use XML::Parser::PerlSAX;
 use UNIVERSAL;
 use strict;

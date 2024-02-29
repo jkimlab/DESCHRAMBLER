@@ -1,4 +1,3 @@
-# $Id: GFF.pm 16147 2009-09-22 01:26:32Z cjfields $
 
 =head1 NAME
 
@@ -275,7 +274,7 @@ in a vertebrate genome.  Others, such as predicted genes, correspond
 to named biological objects; you probably want to be able to fetch the
 positions of these objects by referring to them by name.
 
-To accomodate named annotations, the GFF format places the object
+To accommodate named annotations, the GFF format places the object
 class and name in the group field.  The name identifies the object,
 and the class prevents similarly-named objects, for example clones and
 sequences, from collding.
@@ -516,7 +515,7 @@ Three default aggregators are provided:
                    "similarity".
 
 In addition, this module provides the optional "wormbase_gene"
-aggregator, which accomodates the WormBase representation of genes.
+aggregator, which accommodates the WormBase representation of genes.
 This aggregator aggregates features of method "exon", "CDS", "5'UTR",
 "3'UTR", "polyA" and "TSS" into a single object.  It also expects to
 find a single feature of type "Sequence" that spans the entire gene.
@@ -598,6 +597,7 @@ package Bio::DB::GFF;
 use strict;
 
 use IO::File;
+use File::Glob ':glob';
 use Bio::DB::GFF::Util::Rearrange;
 use Bio::DB::GFF::RelSegment;
 use Bio::DB::GFF::Feature;
@@ -696,7 +696,7 @@ adaptor-specific arguments:
   -refclass      landmark Class; defaults to "Sequence"
 
 
-The commonly used 'dbi::mysqlopt' adaptor also recogizes the following
+The commonly used 'dbi::mysqlopt' adaptor also recognizes the following
 arguments.
 
   Argument       Description
@@ -1838,10 +1838,10 @@ sub load_gff {
                                                    && tied *$file_or_directory;
 
   my $tied_stdin = tied(*STDIN);
-  open my $SAVEIN,"<&STDIN" unless $tied_stdin;
+  open my $SAVEIN, "<&STDIN" unless $tied_stdin;
   local @ARGV = $self->setup_argv($file_or_directory,'gff','gff3') or return;  # to play tricks with reader
   my $result = $self->do_load_gff('ARGV');
-  open STDIN,"<", $SAVEIN unless $tied_stdin;  # restore STDIN
+  open STDIN, '<', $SAVEIN unless $tied_stdin;  # restore STDIN
   return $result;
 }
 
@@ -1937,7 +1937,7 @@ sub load_fasta {
   open my $SAVEIN, "<&STDIN" unless $tied;
   local @ARGV = $self->setup_argv($file_or_directory,'fa','dna','fasta') or return;  # to play tricks with reader
   my $result = $self->load_sequence('ARGV');
-  open STDIN,"<", $SAVEIN unless $tied;  # restore STDIN
+  open STDIN, '<', $SAVEIN unless $tied;  # restore STDIN
   return $result;
 }
 
@@ -2491,6 +2491,12 @@ sub _load_gff_line {
   my $lineend = $self->{load_data}{lineend};
 
   $self->{load_data}{gff3_flag}++           if $line =~ /^\#\#\s*gff-version\s+3/;
+
+  if (defined $self->{load_data}{gff3_flag} and !defined $self->{load_data}{gff3_warning}) {
+    $self->print_gff3_warning();
+    $self->{load_data}{gff3_warning}=1;
+  }
+
   $self->preferred_groups(split(/\s+/,$1))  if $line =~ /^\#\#\s*group-tags?\s+(.+)/;
 
   if ($line =~ /^\#\#\s*sequence-region\s+(\S+)\s+(-?\d+)\s+(-?\d+)/i) { # header line
@@ -2522,9 +2528,6 @@ sub _load_gff_line {
   foreach (\$score,\$strand,\$phase) {
     undef $$_ if $$_ eq '.';
   }
-
-  print STDERR $self->{load_data}{count}," records$lineend" 
-    if $self->{__verbose__} && $self->{load_data}{count} % 1000 == 0;
 
   my ($gclass,$gname,$tstart,$tstop,$attributes) = $self->split_group($group,$self->{load_data}{gff3_flag});
 
@@ -2805,6 +2808,8 @@ sub dna {
   $self->get_dna($id,$start,$stop,$class);
 }
 
+sub fetch_sequence { shift->dna(@_) } 
+
 sub features_in_range {
   my $self = shift;
   my ($range_type,$refseq,$class,$start,$stop,$types,$parent,$sparse,$automerge,$iterator,$other) =
@@ -2947,6 +2952,15 @@ adaptor it is not used.
 
 =cut
 
+=head2 feature_summary(), coverage_array()
+
+The DBI adaptors provide methods for rapidly fetching coverage
+statistics across a region of interest. Please see
+L<Bio::DB::GFF::Adaptor::dbi> for more information about these
+methods.
+
+=cut
+
 sub get_features{
   my $self = shift;
   my ($search,$options,$callback) = @_;
@@ -2964,7 +2978,7 @@ sub get_features{
  Status  : abstract
 
 This method is used internally.  The callback arguments are the same
-as those used by make_feature().  This method must be overidden by
+as those used by make_feature().  This method must be overridden by
 subclasses.
 
 =cut
@@ -2994,7 +3008,7 @@ This method is used internally to fetch features either by their ID or
 their group ID.  $ids is a arrayref containing a list of IDs, $type is
 one of "feature" or "group", and $callback is a callback.  The
 callback arguments are the same as those used by make_feature().  This
-method must be overidden by subclasses.
+method must be overridden by subclasses.
 
 =cut
 
@@ -3791,6 +3805,23 @@ sub unescape {
   return $v;
 }
 
+sub print_gff3_warning {
+  my $self = shift;
+  print STDERR <<END
+
+You are loading a Bio::DB::GFF database with GFF3 formatted data.
+While this will likely work fine, the Bio::DB::GFF schema does not
+always faithfully capture the complexity represented in GFF3 files.
+Unless you have a specific reason for using Bio::DB::GFF, we suggest
+that you use a Bio::DB::SeqFeature::Store database and its corresponding
+loader, bp_seqfeature_load.pl.
+
+END
+;
+
+  return;
+}
+
 
 package Bio::DB::GFF::ID_Iterator;
 use strict;
@@ -3815,6 +3846,20 @@ sub next_seq {
   $self->throw("id does not exist") unless $segment;
   return $segment;
 }
+
+package Bio::DB::GFF::FeatureIterator;
+
+sub new {
+    my $self     = shift;
+    my @features = @_;
+    return bless \@features,ref $self || $self;
+}
+sub next_seq {
+  my $self  = shift;
+  return unless @$self;
+  return shift @$self;
+}
+
 
 1;
 
@@ -3849,4 +3894,3 @@ This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
-
